@@ -6,14 +6,15 @@ import (
 )
 
 type Channel struct {
-	name     string
+	Name     string
 	mutex    *sync.Mutex
 	clients  map[*Client]bool
 	password string
 }
 
-func NewChannel() *Channel {
+func NewChannel(name string) *Channel {
 	channel := &Channel{
+		Name:     name,
 		mutex:    &sync.Mutex{},
 		clients:  make(map[*Client]bool),
 		password: "",
@@ -21,19 +22,20 @@ func NewChannel() *Channel {
 	return channel
 }
 
-func (ch *Channel) join(client *Client, password string) error {
-	if password != "" && ch.password != password {
+func (channel *Channel) Join(client *Client, password string) error {
+	if password != "" && channel.password != password {
 		return errors.New("incorrect password")
 	}
 
-	ch.mutex.Lock()
-	defer ch.mutex.Unlock()
-	ch.clients[client] = true
+	channel.mutex.Lock()
+	defer channel.mutex.Unlock()
+
+	channel.clients[client] = true
 
 	return nil
 }
 
-func (ch *Channel) leave(client *Client) error {
+func (ch *Channel) Part(client *Client) error {
 	if !ch.clients[client] {
 		return errors.New("not a channel member")
 	}
@@ -41,4 +43,10 @@ func (ch *Channel) leave(client *Client) error {
 	defer ch.mutex.Unlock()
 	delete(ch.clients, client)
 	return nil
+}
+
+func (ch *Channel) Broadcast(message string) {
+	for c := range ch.clients {
+		c.Out <- message
+	}
 }

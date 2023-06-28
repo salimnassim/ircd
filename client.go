@@ -9,7 +9,6 @@ type Client struct {
 	Username   string
 	Connection net.Conn
 	Handshake  bool
-	channels   map[string]bool
 	In         chan string
 	Out        chan string
 }
@@ -20,8 +19,13 @@ func NewClient(connection net.Conn) (*Client, error) {
 		Username:   "",
 		Connection: connection,
 		Handshake:  false,
-		channels:   make(map[string]bool),
 		In:         make(chan string),
 		Out:        make(chan string, 1),
 	}, nil
+}
+
+func (client *Client) Close() {
+	client.Connection.Close()
+	close(client.In)
+	close(client.Out)
 }
