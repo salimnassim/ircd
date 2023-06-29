@@ -7,9 +7,9 @@ import (
 )
 
 type Channel struct {
+	mu       *sync.RWMutex
 	Name     string
 	topic    *ChannelTopic
-	mutex    *sync.Mutex
 	clients  map[*Client]bool
 	password string
 }
@@ -28,7 +28,7 @@ func NewChannel(name string) *Channel {
 			Timestamp: 0,
 			Author:    "",
 		},
-		mutex:    &sync.Mutex{},
+		mu:       &sync.RWMutex{},
 		clients:  make(map[*Client]bool),
 		password: "",
 	}
@@ -36,8 +36,8 @@ func NewChannel(name string) *Channel {
 }
 
 func (channel *Channel) SetTopic(topic string, author string) {
-	channel.mutex.Lock()
-	defer channel.mutex.Unlock()
+	channel.mu.Lock()
+	defer channel.mu.Unlock()
 	channel.topic.Topic = topic
 	channel.topic.Timestamp = int(time.Now().Unix())
 	channel.topic.Author = author
@@ -52,8 +52,8 @@ func (channel *Channel) AddClient(client *Client, password string) error {
 		return errors.New("incorrect password")
 	}
 
-	channel.mutex.Lock()
-	defer channel.mutex.Unlock()
+	channel.mu.Lock()
+	defer channel.mu.Unlock()
 
 	channel.clients[client] = true
 
@@ -64,8 +64,8 @@ func (ch *Channel) RemoveClient(client *Client) error {
 	if !ch.clients[client] {
 		return errors.New("not a channel member")
 	}
-	ch.mutex.Lock()
-	defer ch.mutex.Unlock()
+	ch.mu.Lock()
+	defer ch.mu.Unlock()
 	delete(ch.clients, client)
 	return nil
 }

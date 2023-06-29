@@ -8,7 +8,7 @@ import (
 )
 
 type Server struct {
-	mu       sync.Mutex
+	mu       *sync.RWMutex
 	Name     string
 	clients  map[*Client]bool
 	channels map[*Channel]bool
@@ -24,6 +24,7 @@ type ServerClients struct {
 
 func NewServer(name string) *Server {
 	server := &Server{
+		mu:       &sync.RWMutex{},
 		Name:     name,
 		clients:  make(map[*Client]bool),
 		channels: make(map[*Channel]bool),
@@ -83,7 +84,7 @@ func (server *Server) Counts() ServerClients {
 	}
 }
 
-// Adds client to client list
+// Adds client to client map
 func (server *Server) AddClient(client *Client) {
 	server.mu.Lock()
 	defer server.mu.Unlock()
@@ -92,7 +93,7 @@ func (server *Server) AddClient(client *Client) {
 	server.Gauges["ircd_clients"].Inc()
 }
 
-// Removes client from client list
+// Removes client from client map
 func (server *Server) RemoveClient(client *Client) {
 	server.mu.Lock()
 	defer server.mu.Unlock()
@@ -111,8 +112,8 @@ func (server *Server) RemoveClient(client *Client) {
 
 // Returns a pointer to client by nickname
 func (server *Server) GetClient(nickname string) (*Client, error) {
-	server.mu.Lock()
-	defer server.mu.Unlock()
+	server.mu.RLock()
+	defer server.mu.RUnlock()
 	for client := range server.clients {
 		if client.Nickname == nickname {
 			return client, nil
@@ -123,8 +124,8 @@ func (server *Server) GetClient(nickname string) (*Client, error) {
 
 // Returns a pointer to channel by name
 func (server *Server) GetChannel(name string) (*Channel, error) {
-	server.mu.Lock()
-	defer server.mu.Unlock()
+	server.mu.RLock()
+	defer server.mu.RUnlock()
 	for channel := range server.channels {
 		if channel.Name == name {
 			return channel, nil
@@ -145,6 +146,7 @@ func (server *Server) CreateChannel(name string) *Channel {
 	return channel
 }
 
+// Removes client from channel map
 func (server *Server) RemoveChannel(channel *Channel) error {
 	server.mu.Lock()
 	defer server.mu.Unlock()
