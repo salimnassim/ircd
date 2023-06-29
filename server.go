@@ -2,9 +2,7 @@ package ircd
 
 import (
 	"errors"
-	"math/rand"
 	"sync"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -14,7 +12,6 @@ type Server struct {
 	Name     string
 	clients  map[*Client]bool
 	channels map[*Channel]bool
-	random   *rand.Rand
 	Gauges   map[string]prometheus.Gauge
 	Counters map[string]prometheus.Counter
 }
@@ -30,7 +27,6 @@ func NewServer(name string) *Server {
 		Name:     name,
 		clients:  make(map[*Client]bool),
 		channels: make(map[*Channel]bool),
-		random:   rand.New(rand.NewSource(time.Now().UnixNano())),
 		Gauges:   make(map[string]prometheus.Gauge),
 		Counters: make(map[string]prometheus.Counter),
 	}
@@ -68,10 +64,6 @@ func NewServer(name string) *Server {
 	}
 
 	return server
-}
-
-func (server *Server) GetRandomInt() int {
-	return server.random.Intn(10000)
 }
 
 // Returns the number active users and channels on the server
@@ -119,16 +111,20 @@ func (server *Server) RemoveClient(client *Client) {
 
 // Returns a pointer to client by nickname
 func (server *Server) GetClient(nickname string) (*Client, error) {
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	for client := range server.clients {
 		if client.Nickname == nickname {
 			return client, nil
 		}
 	}
-	return nil, errors.New("channel not found")
+	return nil, errors.New("client not found")
 }
 
 // Returns a pointer to channel by name
 func (server *Server) GetChannel(name string) (*Channel, error) {
+	server.mu.Lock()
+	defer server.mu.Unlock()
 	for channel := range server.channels {
 		if channel.Name == name {
 			return channel, nil
