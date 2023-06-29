@@ -45,6 +45,7 @@ func handleConnection(server *ircd.Server, connection net.Conn) {
 	}
 
 	server.AddClient(client)
+	client.Hostname = strings.Split(client.Connection.LocalAddr().String(), ":")[0]
 
 	go handleConnectionRead(client, server)
 	go handleConnectionIn(client)
@@ -56,12 +57,10 @@ func handleConnectionOut(client *ircd.Client) {
 		n, err := client.Connection.Write([]byte(message + "\r\n"))
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to write message to client (%s)", client.Connection.RemoteAddr())
-			continue
+			break
 		}
 		log.Info().Msgf("out(%5d)> %s", n, message)
 	}
-
-	client.Connection.Close()
 }
 
 func handleConnectionIn(client *ircd.Client) {
@@ -88,14 +87,16 @@ func handleConnectionRead(client *ircd.Client, server *ircd.Server) {
 			client.Out <- pong
 			continue
 		}
-
 		if strings.HasPrefix(line, "NICK") {
+			nickname := split[1]
+
 			if _, nok := server.GetClient(split[1]); nok {
-				client.Out <- fmt.Sprintf(":%s %s 433 :Nickname is already in use", server.Name, client.Nickname)
-				continue
+				nicknext := fmt.Sprintf("%s%d", nickname, server.GetRandom())
+				client.Out <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use. Your nickname has been changed to %s", server.Name, nickname, nicknext)
+				nickname = nicknext
 			}
 
-			client.Nickname = split[1]
+			client.Nickname = nickname
 
 			if !client.Handshake {
 				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname..", client.Nickname)
@@ -114,19 +115,31 @@ func handleConnectionRead(client *ircd.Client, server *ircd.Server) {
 
 		if strings.HasPrefix(line, "PRIVMSG") {
 			target := split[1]
-			message := strings.Replace(split[2], ":", "", 1)
+			message := strings.Split(line, ":")[1]
 
-			if strings.HasPrefix(target, "?#~") {
+			// to channel
+			if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "?") || strings.HasPrefix(target, "~") {
 				channel, err := server.GetChannel(target)
 				if err != nil {
-					log.Error().Err(err).Msgf("channel %s does not exist", target)
+					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+						server.Name,
+						client.Nickname)
+					log.Error().Err(err).Msgf("privmsg channel %s does not exist", target)
 					continue
 				}
-				log.Debug().Msgf("channel is %s", channel.Name)
-				channel.Broadcast(message)
+				channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.GetTarget(), target, message), client, true)
+			} else {
+				// to user
+				tc, ok := server.GetClient(target)
+				if !ok {
+					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+						server.Name,
+						client.Nickname)
+					log.Error().Err(err).Msgf("privmsg channel %s does not exist", target)
+					continue
+				}
+				tc.Out <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.Nickname, tc.Nickname, message)
 			}
-
-			// todo: user to user
 			continue
 		}
 
@@ -138,43 +151,93 @@ func handleConnectionRead(client *ircd.Client, server *ircd.Server) {
 				channel = server.CreateChannel(target)
 
 			}
-			err = channel.Join(client, "")
+			err = channel.AddClient(client, "")
 			if err != nil {
 				log.Error().Err(err).Msgf("cant join channel %s", target)
 				continue
 			}
 
 			channel.Broadcast(
-				fmt.Sprintf(":%s!%s@%s JOIN %s",
-					client.Nickname, client.Username, client.Connection.RemoteAddr(), target),
+				fmt.Sprintf(":%s JOIN %s",
+					client.GetTarget(), target),
+				client,
+				false,
 			)
+
+			topic := channel.GetTopic()
+			if topic.Topic == "" {
+				client.Out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
+					server.Name,
+					client.Nickname,
+					channel.Name,
+				)
+			} else {
+				client.Out <- fmt.Sprintf(":%s 332 %s %s :%s",
+					server.Name,
+					client.Nickname,
+					channel.Name,
+					topic.Topic,
+				)
+			}
 
 			continue
 		}
 
-		if strings.HasPrefix(strings.ToUpper(line), "LUSERS") {
-			log.Debug().Msgf("%v", server.Clients)
-			log.Debug().Msgf("%v", server.Channels)
+		if strings.HasPrefix(line, "PART") {
+			target := split[1]
 
-			client.Out <- fmt.Sprintf("%s :There are %d users and %d invisible on %d servers",
+			channel, err := server.GetChannel(target)
+			if err != nil {
+				log.Error().Err(err).Msgf("tried to part channel that does not exist %s", target)
+			}
+
+			channel.Broadcast(fmt.Sprintf(":%s PART %s", client.GetTarget(), target), client, false)
+			channel.RemoveClient(client)
+		}
+
+		if strings.HasPrefix(strings.ToUpper(line), "LUSERS") {
+			counts := server.Counts()
+			client.Out <- fmt.Sprintf(":%s 251 %s :There are %d users and %d invisible on %d servers",
+				server.Name,
 				client.Nickname,
-				len(server.Clients),
-				len(server.Clients),
+				counts.Active,
+				counts.Invisible,
 				1,
 			)
+			client.Out <- fmt.Sprintf(":%s 254 %s %d :channels formed",
+				server.Name,
+				client.Nickname,
+				counts.Channels)
+			continue
+		}
+
+		if strings.HasPrefix(line, "TOPIC") {
+			target := split[1]
+			message := strings.Replace(split[2], ":", "", 1)
+
+			channel, err := server.GetChannel(target)
+			if err != nil {
+				log.Error().Err(err).Msgf("tried to change topic %s", target)
+			}
+
+			channel.SetTopic(message, client.Nickname)
+			channel.Broadcast(
+				fmt.Sprintf(":%s 332 %s %s :%s",
+					server.Name,
+					client.Nickname,
+					channel.Name,
+					message),
+				client, false)
 			continue
 		}
 
 		if strings.HasPrefix(line, "QUIT") {
-			log.Debug().Msgf("%v", server.Channels)
-			log.Debug().Msgf("%v", server.Clients)
 			break
 		}
 
 	}
 
 	log.Info().Msgf("closing client from connection read (%s)", client.Connection.RemoteAddr())
-
 	client.Close()
 	server.RemoveClient(client)
 }
