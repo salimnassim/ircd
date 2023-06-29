@@ -4,14 +4,26 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"strings"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/rs/zerolog/log"
 	"github.com/salimnassim/ircd"
 )
 
 func main() {
+
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+
+		http.ListenAndServe(":2112", mux)
+		select {}
+	}()
+
 	listener, err := net.Listen("tcp", ":6667")
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to listen")
@@ -90,8 +102,9 @@ func handleConnectionRead(client *ircd.Client, server *ircd.Server) {
 		if strings.HasPrefix(line, "NICK") {
 			nickname := split[1]
 
-			if _, nok := server.GetClient(split[1]); nok {
-				nicknext := fmt.Sprintf("%s%d", nickname, server.GetRandom())
+			_, err := server.GetClient(split[1])
+			if err != nil {
+				nicknext := fmt.Sprintf("%s-%d", nickname, server.GetRandomInt())
 				client.Out <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use. Your nickname has been changed to %s", server.Name, nickname, nicknext)
 				nickname = nicknext
 			}
@@ -128,10 +141,11 @@ func handleConnectionRead(client *ircd.Client, server *ircd.Server) {
 					continue
 				}
 				channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.GetTarget(), target, message), client, true)
+				server.Counters["ircd_channels_privmsg"].Inc()
 			} else {
 				// to user
-				tc, ok := server.GetClient(target)
-				if !ok {
+				tc, err := server.GetClient(target)
+				if err != nil {
 					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 						server.Name,
 						client.Nickname)
@@ -139,6 +153,7 @@ func handleConnectionRead(client *ircd.Client, server *ircd.Server) {
 					continue
 				}
 				tc.Out <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.Nickname, tc.Nickname, message)
+				server.Counters["ircd_clients_privmsg"].Inc()
 			}
 			continue
 		}
@@ -149,7 +164,6 @@ func handleConnectionRead(client *ircd.Client, server *ircd.Server) {
 			channel, err := server.GetChannel(target)
 			if err != nil && channel == nil {
 				channel = server.CreateChannel(target)
-
 			}
 			err = channel.AddClient(client, "")
 			if err != nil {
