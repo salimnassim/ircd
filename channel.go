@@ -70,6 +70,8 @@ func (ch *Channel) RemoveClient(client *Client) error {
 	return nil
 }
 
+// Send message to all clients on the channel.
+// If skip is true, the client in source will not receive the message
 func (ch *Channel) Broadcast(message string, source *Client, skip bool) {
 	for c := range ch.clients {
 		if skip && c.Nickname == source.Nickname {
