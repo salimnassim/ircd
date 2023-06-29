@@ -94,41 +94,42 @@ func HandleConnectionRead(client *Client, server *Server) {
 		}
 
 		if strings.HasPrefix(line, "JOIN") {
-			target := split[1]
+			targets := strings.Split(split[1], ",")
 
-			channel, err := server.GetChannel(target)
-			if err != nil && channel == nil {
-				channel = server.CreateChannel(target)
-			}
-			err = channel.AddClient(client, "")
-			if err != nil {
-				log.Error().Err(err).Msgf("cant join channel %s", target)
-				continue
-			}
+			for _, target := range targets {
+				channel, err := server.GetChannel(target)
+				if err != nil && channel == nil {
+					channel = server.CreateChannel(target)
+				}
+				err = channel.AddClient(client, "")
+				if err != nil {
+					log.Error().Err(err).Msgf("cant join channel %s", target)
+					continue
+				}
 
-			channel.Broadcast(
-				fmt.Sprintf(":%s JOIN %s",
-					client.GetTarget(), target),
-				client,
-				false,
-			)
-
-			topic := channel.GetTopic()
-			if topic.Topic == "" {
-				client.Out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
-					server.Name,
-					client.Nickname,
-					channel.Name,
+				channel.Broadcast(
+					fmt.Sprintf(":%s JOIN %s",
+						client.GetTarget(), target),
+					client,
+					false,
 				)
-			} else {
-				client.Out <- fmt.Sprintf(":%s 332 %s %s :%s",
-					server.Name,
-					client.Nickname,
-					channel.Name,
-					topic.Topic,
-				)
-			}
 
+				topic := channel.GetTopic()
+				if topic.Topic == "" {
+					client.Out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
+						server.Name,
+						client.Nickname,
+						channel.Name,
+					)
+				} else {
+					client.Out <- fmt.Sprintf(":%s 332 %s %s :%s",
+						server.Name,
+						client.Nickname,
+						channel.Name,
+						topic.Topic,
+					)
+				}
+			}
 			continue
 		}
 
