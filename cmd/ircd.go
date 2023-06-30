@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	_ "net/http/pprof"
+
 	"github.com/rs/zerolog/log"
 	"github.com/salimnassim/ircd"
 )
@@ -29,11 +31,9 @@ func main() {
 
 	log.Info().Msg("starting http, listening on :2112")
 	go func() {
-		mux := http.NewServeMux()
+		http.Handle("/metrics", promhttp.Handler())
 
-		mux.Handle("/metrics", promhttp.Handler())
-
-		http.ListenAndServe(":2112", mux)
+		http.ListenAndServe(":2112", nil)
 		select {}
 	}()
 
