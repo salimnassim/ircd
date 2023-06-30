@@ -83,6 +83,6 @@ func (ch *Channel) Broadcast(message string, source *Client, skip bool) {
 		if skip && c.nickname == source.nickname {
 			continue
 		}
-		c.out <- message
+		c.send <- message
 	}
 }

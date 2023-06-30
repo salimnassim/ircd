@@ -55,11 +55,10 @@ func handleConnection(server *ircd.Server, connection net.Conn) {
 	id := uuid.Must(uuid.NewRandom()).String()
 	client, err := ircd.NewClient(connection, id)
 	if err != nil {
+		connection.Close()
 		log.Error().Err(err).Msg("unable to create client")
 		return
 	}
 
 	go ircd.HandleConnectionRead(client, server)
-	go ircd.HandleConnectionIn(client, server)
-	go ircd.HandleConnectionOut(client)
 }

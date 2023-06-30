@@ -9,10 +9,12 @@ import (
 )
 
 func HandleConnectionRead(client *Client, server *Server) {
+	go HandleConnectionIn(client, server)
+	go HandleConnectionOut(client, server)
+
 	reader := bufio.NewReader(client.connection)
 
 	for {
-
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to read from client (%s)", client.connection.RemoteAddr())
@@ -20,7 +22,10 @@ func HandleConnectionRead(client *Client, server *Server) {
 		}
 		line = strings.Trim(line, "\r\n")
 
-		client.in <- line
+		// send line to recv
+		client.recv <- line
+
+		// split
 		split := strings.Split(line, " ")
 
 		if strings.HasPrefix(line, "PRIVMSG") {
@@ -31,7 +36,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 			if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "?") || strings.HasPrefix(target, "~") {
 				channel, err := server.Channel(target)
 				if err != nil {
-					client.out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+					client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 						server.name,
 						client.nickname)
 					log.Error().Err(err).Msgf("privmsg channel %s does not exist", target)
@@ -43,13 +48,13 @@ func HandleConnectionRead(client *Client, server *Server) {
 				// to user
 				tc, found := server.ClientByNickname(target)
 				if !found {
-					client.out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+					client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 						server.name,
 						client.nickname)
 					log.Error().Err(err).Msgf("privmsg user %s does not exist", target)
 					continue
 				}
-				tc.out <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.nickname, tc.nickname, message)
+				tc.send <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.nickname, tc.nickname, message)
 				server.counters["ircd_clients_privmsg"].Inc()
 			}
 			continue
@@ -78,13 +83,13 @@ func HandleConnectionRead(client *Client, server *Server) {
 
 				topic := channel.Topic()
 				if topic.text == "" {
-					client.out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
+					client.send <- fmt.Sprintf(":%s 331 %s %s :no topic set",
 						server.name,
 						client.nickname,
 						channel.name,
 					)
 				} else {
-					client.out <- fmt.Sprintf(":%s 332 %s %s :%s",
+					client.send <- fmt.Sprintf(":%s 332 %s %s :%s",
 						server.name,
 						client.nickname,
 						channel.name,
@@ -135,12 +140,13 @@ func HandleConnectionRead(client *Client, server *Server) {
 	}
 
 	log.Info().Msgf("closing client from connection read (%s)", client.connection.RemoteAddr())
+
 	err := client.Close()
 	if err != nil {
-		log.Error().Err(err).Msg("unable to close client on read handler")
+		log.Error().Err(err).Msg("unable to close client on write handler")
 	}
 	err = server.RemoveClient(client)
 	if err != nil {
-		log.Error().Err(err).Msg("unable to remove client on read handler")
+		log.Error().Err(err).Msg("unable to remove client on write handler")
 	}
 }

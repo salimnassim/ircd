@@ -14,8 +14,8 @@ type Client struct {
 	hostname   string
 	connection net.Conn
 	handshake  bool
-	in         chan string
-	out        chan string
+	recv       chan string
+	send       chan string
 }
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
@@ -27,8 +27,8 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 		hostname:   "",
 		connection: connection,
 		handshake:  false,
-		in:         make(chan string),
-		out:        make(chan string, 1),
+		recv:       make(chan string),
+		send:       make(chan string, 1),
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func (client *Client) Target() string {
 }
 
 func (client *Client) Write(message string) (int, error) {
-	n, err := client.connection.Write([]byte(message + "\r\n"))
+	n, err := client.connection.Write([]byte(message))
 	return n, err
 }
 
@@ -58,7 +58,8 @@ func (client *Client) Close() error {
 	if err != nil {
 		return err
 	}
-	close(client.in)
-	close(client.out)
+
+	// close(client.recv)
+	// close(client.send)
 	return nil
 }

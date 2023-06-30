@@ -9,7 +9,7 @@ import (
 )
 
 func HandleConnectionIn(client *Client, server *Server) {
-	for message := range client.in {
+	for message := range client.recv {
 		parsed, err := Parse(message)
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)
@@ -18,7 +18,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// PING
 		if parsed.Command == "PING" {
 			pong := strings.Replace(parsed.Raw, "PING", "PONG", 1)
-			client.out <- pong
+			client.send <- pong
 			continue
 		}
 
@@ -26,7 +26,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		if parsed.Command == "NICK" {
 			// has enough params?
 			if len(parsed.Params) != 1 {
-				client.out <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.", server.name, parsed.Command)
+				client.send <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.", server.name, parsed.Command)
 				log.Error().Msg("not enough params for nick")
 				continue
 			}
@@ -34,13 +34,13 @@ func HandleConnectionIn(client *Client, server *Server) {
 			// validate nick
 			ok := server.regex["nick"].MatchString(parsed.Params[0])
 			if !ok {
-				client.out <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.name, parsed.Params[0])
+				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.name, parsed.Params[0])
 				continue
 			}
 
 			_, exists := server.ClientByNickname(parsed.Params[0])
 			if exists {
-				client.out <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.name, parsed.Params[0])
+				client.send <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.name, parsed.Params[0])
 				continue
 			}
 
@@ -49,8 +49,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			// check for handshake
 			if !client.handshake {
-				client.out <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s", client.nickname, client.id)
-				client.out <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname..", client.nickname)
+				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s", client.nickname, client.id)
+				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname..", client.nickname)
 
 				// lookup address
 				// todo: resolver
@@ -62,8 +62,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.SetHostname(addr[0])
 				}
 
-				client.out <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.name, client.nickname)
-				client.out <- fmt.Sprintf(":%s 376 %s :End of /MOTD command", server.name, client.nickname)
+				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.name, client.nickname)
+				client.send <- fmt.Sprintf(":%s 376 %s :End of /MOTD command", server.name, client.nickname)
 				client.handshake = true
 
 				server.AddClient(client)
@@ -76,12 +76,12 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// USER
 		if parsed.Command == "USER" {
 			if len(parsed.Params) < 4 {
-				client.out <- fmt.Sprintf(":%s 461 %s %s :Not enough parameters.", server.name, client.nickname, strings.Join(parsed.Params, " "))
+				client.send <- fmt.Sprintf(":%s 461 %s %s :Not enough parameters.", server.name, client.nickname, strings.Join(parsed.Params, " "))
 				continue
 			}
 
 			if client.username != "" {
-				client.out <- fmt.Sprintf(":%s 462 %s :You may not reregister.", server.name, client.nickname)
+				client.send <- fmt.Sprintf(":%s 462 %s :You may not reregister.", server.name, client.nickname)
 				continue
 			}
 
@@ -97,7 +97,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// LUSERS
 		if parsed.Command == "LUSERS" {
 			clients, channels := server.Stats()
-			client.out <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.", server.name, client.nickname, clients, channels)
+			client.send <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.", server.name, client.nickname, clients, channels)
 			continue
 		}
 
