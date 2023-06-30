@@ -72,6 +72,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 				client.Out <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.Name, client.Nickname)
 				client.Out <- fmt.Sprintf(":%s 376 %s :End of /MOTD command", server.Name, client.Nickname)
 				client.Handshake = true
+
+				server.AddClient(client)
 			}
 
 			log.Debug().Msgf("prefix: %s, command: %s, args: %s", parsed.Prefix, parsed.Command, strings.Join(parsed.Params, "|"))
