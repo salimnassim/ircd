@@ -15,20 +15,21 @@ type Channel struct {
 }
 
 type ChannelTopic struct {
-	Topic     string
-	Timestamp int
-	Author    string
+	text      string
+	timestamp int
+	author    string
 }
 
 func NewChannel(name string) *Channel {
 	channel := &Channel{
+		mu:   &sync.RWMutex{},
 		Name: name,
 		topic: &ChannelTopic{
-			Topic:     "",
-			Timestamp: 0,
-			Author:    "",
+			text:      "",
+			timestamp: 0,
+			author:    "",
 		},
-		mu:       &sync.RWMutex{},
+
 		clients:  make(map[*Client]bool),
 		password: "",
 	}
@@ -38,9 +39,9 @@ func NewChannel(name string) *Channel {
 func (channel *Channel) SetTopic(topic string, author string) {
 	channel.mu.Lock()
 	defer channel.mu.Unlock()
-	channel.topic.Topic = topic
-	channel.topic.Timestamp = int(time.Now().Unix())
-	channel.topic.Author = author
+	channel.topic.text = topic
+	channel.topic.timestamp = int(time.Now().Unix())
+	channel.topic.author = author
 }
 
 func (channel *Channel) Topic() *ChannelTopic {
