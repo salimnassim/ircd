@@ -80,7 +80,8 @@ func Parse(line string) (Message, error) {
 
 	if next == -1 {
 		if len(line) > pos {
-			message.Command = line[pos:]
+			cmd := line[pos:]
+			message.Command = strings.ToUpper(cmd)
 			return message, nil
 		}
 
