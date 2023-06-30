@@ -20,7 +20,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 		}
 		line = strings.Trim(line, "\r\n")
 
-		client.In <- line
+		client.in <- line
 		split := strings.Split(line, " ")
 
 		if strings.HasPrefix(line, "PRIVMSG") {
@@ -31,26 +31,26 @@ func HandleConnectionRead(client *Client, server *Server) {
 			if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "?") || strings.HasPrefix(target, "~") {
 				channel, err := server.Channel(target)
 				if err != nil {
-					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
-						server.Name,
-						client.Nickname)
+					client.out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+						server.name,
+						client.nickname)
 					log.Error().Err(err).Msgf("privmsg channel %s does not exist", target)
 					continue
 				}
 				channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.Target(), target, message), client, true)
-				server.Counters["ircd_channels_privmsg"].Inc()
+				server.counters["ircd_channels_privmsg"].Inc()
 			} else {
 				// to user
 				tc, found := server.ClientByNickname(target)
 				if !found {
-					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
-						server.Name,
-						client.Nickname)
+					client.out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+						server.name,
+						client.nickname)
 					log.Error().Err(err).Msgf("privmsg user %s does not exist", target)
 					continue
 				}
-				tc.Out <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.Nickname, tc.Nickname, message)
-				server.Counters["ircd_clients_privmsg"].Inc()
+				tc.out <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.nickname, tc.nickname, message)
+				server.counters["ircd_clients_privmsg"].Inc()
 			}
 			continue
 		}
@@ -78,16 +78,16 @@ func HandleConnectionRead(client *Client, server *Server) {
 
 				topic := channel.Topic()
 				if topic.text == "" {
-					client.Out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
-						server.Name,
-						client.Nickname,
-						channel.Name,
+					client.out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
+						server.name,
+						client.nickname,
+						channel.name,
 					)
 				} else {
-					client.Out <- fmt.Sprintf(":%s 332 %s %s :%s",
-						server.Name,
-						client.Nickname,
-						channel.Name,
+					client.out <- fmt.Sprintf(":%s 332 %s %s :%s",
+						server.name,
+						client.nickname,
+						channel.name,
 						topic.text,
 					)
 				}
@@ -117,12 +117,12 @@ func HandleConnectionRead(client *Client, server *Server) {
 				continue
 			}
 
-			channel.SetTopic(message, client.Nickname)
+			channel.SetTopic(message, client.nickname)
 			channel.Broadcast(
 				fmt.Sprintf(":%s 332 %s %s :%s",
-					server.Name,
-					client.Nickname,
-					channel.Name,
+					server.name,
+					client.nickname,
+					channel.name,
 					message),
 				client, false)
 			continue

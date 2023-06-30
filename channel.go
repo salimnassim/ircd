@@ -8,7 +8,7 @@ import (
 
 type Channel struct {
 	mu       *sync.RWMutex
-	Name     string
+	name     string
 	topic    *ChannelTopic
 	clients  map[*Client]bool
 	password string
@@ -23,7 +23,7 @@ type ChannelTopic struct {
 func NewChannel(name string) *Channel {
 	channel := &Channel{
 		mu:   &sync.RWMutex{},
-		Name: name,
+		name: name,
 		topic: &ChannelTopic{
 			text:      "",
 			timestamp: 0,
@@ -80,9 +80,9 @@ func (ch *Channel) Broadcast(message string, source *Client, skip bool) {
 		if !alive {
 			continue
 		}
-		if skip && c.Nickname == source.Nickname {
+		if skip && c.nickname == source.nickname {
 			continue
 		}
-		c.Out <- message
+		c.out <- message
 	}
 }

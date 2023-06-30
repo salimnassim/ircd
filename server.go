@@ -18,21 +18,23 @@ type ServerConfig struct {
 
 type Server struct {
 	mu       *sync.RWMutex
-	Name     string
+	name     string
 	clients  map[*Client]bool
 	channels map[*Channel]bool
-	Gauges   map[string]prometheus.Gauge
-	Counters map[string]prometheus.Counter
+
+	// metrics
+	gauges   map[string]prometheus.Gauge
+	counters map[string]prometheus.Counter
 }
 
 func NewServer(config ServerConfig) *Server {
 	server := &Server{
 		mu:       &sync.RWMutex{},
-		Name:     config.Name,
+		name:     config.Name,
 		clients:  make(map[*Client]bool),
 		channels: make(map[*Channel]bool),
-		Gauges:   make(map[string]prometheus.Gauge),
-		Counters: make(map[string]prometheus.Counter),
+		gauges:   make(map[string]prometheus.Gauge),
+		counters: make(map[string]prometheus.Counter),
 	}
 
 	registerMetrics(server)
@@ -42,35 +44,35 @@ func NewServer(config ServerConfig) *Server {
 
 // Register prometheus metrics
 func registerMetrics(server *Server) {
-	server.Gauges["ircd_clients"] =
+	server.gauges["ircd_clients"] =
 		prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "ircd_clients",
 			Help: "Number of connected clients",
 		})
 
-	server.Gauges["ircd_channels"] =
+	server.gauges["ircd_channels"] =
 		prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "ircd_channels",
 			Help: "Number of channels",
 		})
 
-	server.Counters["ircd_channels_privmsg"] =
+	server.counters["ircd_channels_privmsg"] =
 		prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "ircd_channels_privmsg",
 			Help: "Number of PRIVMSG sent to channels",
 		})
 
-	server.Counters["ircd_clients_privmsg"] =
+	server.counters["ircd_clients_privmsg"] =
 		prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "ircd_clients_privmsg",
 			Help: "Number of PRIVMSG sent to clients",
 		})
 
-	for _, v := range server.Gauges {
+	for _, v := range server.gauges {
 		prometheus.MustRegister(v)
 	}
 
-	for _, v := range server.Counters {
+	for _, v := range server.counters {
 		prometheus.MustRegister(v)
 	}
 }
@@ -85,25 +87,25 @@ func (server *Server) Stats() (int, int) {
 
 // Adds client to client map
 func (server *Server) AddClient(client *Client) error {
-	log.Info().Msgf("adding client %s", client.Nickname)
+	log.Info().Msgf("adding client %s", client.nickname)
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
 	server.clients[client] = true
-	server.Gauges["ircd_clients"].Inc()
+	server.gauges["ircd_clients"].Inc()
 
 	return nil
 }
 
 // Removes client from client map
 func (server *Server) RemoveClient(client *Client) error {
-	log.Info().Msgf("removing client %s", client.Nickname)
+	log.Info().Msgf("removing client %s", client.nickname)
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
 	for channel := range server.channels {
 		for c := range channel.clients {
-			if c.Nickname == client.Nickname {
+			if c == client {
 				err := channel.RemoveClient(c)
 				if err != nil {
 					return err
@@ -113,7 +115,7 @@ func (server *Server) RemoveClient(client *Client) error {
 	}
 
 	delete(server.clients, client)
-	server.Gauges["ircd_clients"].Dec()
+	server.gauges["ircd_clients"].Dec()
 
 	return nil
 }
@@ -124,7 +126,7 @@ func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
 	defer server.mu.RUnlock()
 
 	for client := range server.clients {
-		if client.Nickname == nickname {
+		if client.nickname == nickname {
 			return client, true
 		}
 	}
@@ -151,7 +153,7 @@ func (server *Server) Channel(name string) (*Channel, error) {
 	defer server.mu.RUnlock()
 
 	for channel := range server.channels {
-		if channel.Name == name {
+		if channel.name == name {
 			return channel, nil
 		}
 	}
@@ -167,21 +169,21 @@ func (server *Server) CreateChannel(name string) *Channel {
 
 	channel := NewChannel(name)
 	server.channels[channel] = true
-	server.Gauges["ircd_channels"].Inc()
+	server.gauges["ircd_channels"].Inc()
 
 	return channel
 }
 
 // Removes client from channel map
 func (server *Server) RemoveChannel(channel *Channel) error {
-	log.Info().Msgf("removing channel %s", channel.Name)
+	log.Info().Msgf("removing channel %s", channel.name)
 
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
 	if _, ok := server.channels[channel]; ok {
 		delete(server.channels, channel)
-		server.Gauges["ircd_channels"].Dec()
+		server.gauges["ircd_channels"].Dec()
 		return nil
 	}
 

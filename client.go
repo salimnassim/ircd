@@ -7,29 +7,29 @@ import (
 )
 
 type Client struct {
-	ID         string
-	Nickname   string
-	Username   string
-	Realname   string
+	id         string
+	nickname   string
+	username   string
+	realname   string
 	hostname   string
-	Invisible  bool
+	invisible  bool
 	connection net.Conn
-	Handshake  bool
-	In         chan string
-	Out        chan string
+	handshake  bool
+	in         chan string
+	out        chan string
 }
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
 	return &Client{
-		ID:         id,
-		Nickname:   "",
-		Username:   "",
-		Realname:   "",
+		id:         id,
+		nickname:   "",
+		username:   "",
+		realname:   "",
 		hostname:   "",
 		connection: connection,
-		Handshake:  false,
-		In:         make(chan string),
-		Out:        make(chan string, 1),
+		handshake:  false,
+		in:         make(chan string),
+		out:        make(chan string, 1),
 	}, nil
 }
 
@@ -46,7 +46,7 @@ func (client *Client) Hostname() string {
 }
 
 func (client *Client) Target() string {
-	return fmt.Sprintf("%s!%s@%s", client.Nickname, client.Username, client.Hostname())
+	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.Hostname())
 }
 
 func (client *Client) Write(message string) (int, error) {
@@ -59,7 +59,7 @@ func (client *Client) Close() error {
 	if err != nil {
 		return err
 	}
-	close(client.In)
-	close(client.Out)
+	close(client.in)
+	close(client.out)
 	return nil
 }
