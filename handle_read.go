@@ -95,11 +95,11 @@ func HandleConnectionRead(client *Client, server *Server) {
 			} else {
 				// to user
 				tc, found := server.ClientByNickname(target)
-				if found {
+				if !found {
 					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 						server.Name,
 						client.Nickname)
-					log.Error().Err(err).Msgf("privmsg channel %s does not exist", target)
+					log.Error().Err(err).Msgf("privmsg user %s does not exist", target)
 					continue
 				}
 				tc.Out <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.Nickname, tc.Nickname, message)
