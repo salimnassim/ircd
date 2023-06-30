@@ -10,6 +10,7 @@ type Client struct {
 	ID         string
 	Nickname   string
 	Username   string
+	Realname   string
 	hostname   string
 	Invisible  bool
 	connection net.Conn
@@ -23,6 +24,7 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 		ID:         id,
 		Nickname:   "",
 		Username:   "",
+		Realname:   "",
 		hostname:   "",
 		connection: connection,
 		Handshake:  false,

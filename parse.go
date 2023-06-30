@@ -5,16 +5,6 @@ import (
 	"strings"
 )
 
-type MessageType int
-
-const (
-	NICK = iota
-	USER
-	JOIN
-	PART
-	PRIVMSG
-)
-
 func Parse(line string) (Message, error) {
 
 	if len(line) > 512 {
