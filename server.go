@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"errors"
+	"regexp"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,6 +23,9 @@ type Server struct {
 	clients  map[*Client]bool
 	channels map[*Channel]bool
 
+	// regex cache
+	regex map[string]*regexp.Regexp
+
 	// metrics
 	gauges   map[string]prometheus.Gauge
 	counters map[string]prometheus.Counter
@@ -33,13 +37,24 @@ func NewServer(config ServerConfig) *Server {
 		name:     config.Name,
 		clients:  make(map[*Client]bool),
 		channels: make(map[*Channel]bool),
+		regex:    make(map[string]*regexp.Regexp),
 		gauges:   make(map[string]prometheus.Gauge),
 		counters: make(map[string]prometheus.Counter),
 	}
 
+	compileRegexp(server)
 	registerMetrics(server)
 
 	return server
+}
+
+// Compiles expressions and caches them to a map
+func compileRegexp(server *Server) {
+	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,16})`)
+	if err != nil {
+		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
+	}
+	server.regex["nick"] = rgxNick
 }
 
 // Register prometheus metrics
@@ -97,7 +112,7 @@ func (server *Server) AddClient(client *Client) error {
 	return nil
 }
 
-// Removes client from client map
+// Removes client from channels and client map
 func (server *Server) RemoveClient(client *Client) error {
 	log.Info().Msgf("removing client %s", client.nickname)
 	server.mu.Lock()

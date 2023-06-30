@@ -3,19 +3,12 @@ package ircd
 import (
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
 
 	"github.com/rs/zerolog/log"
 )
 
 func HandleConnectionIn(client *Client, server *Server) {
-
-	rgxNickname, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,16})`)
-	if err != nil {
-		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
-	}
-
 	for message := range client.in {
 		parsed, err := Parse(message)
 		if err != nil {
@@ -39,7 +32,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 			}
 
 			// validate nick
-			ok := rgxNickname.MatchString(parsed.Params[0])
+			ok := server.regex["nick"].MatchString(parsed.Params[0])
 			if !ok {
 				client.out <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.name, parsed.Params[0])
 				continue
@@ -92,6 +85,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
+			// todo: validate
 			username := parsed.Params[0]
 			realname := parsed.Params[3]
 
