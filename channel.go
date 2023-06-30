@@ -44,6 +44,8 @@ func (channel *Channel) SetTopic(topic string, author string) {
 }
 
 func (channel *Channel) Topic() *ChannelTopic {
+	channel.mu.RLock()
+	defer channel.mu.RUnlock()
 	return channel.topic
 }
 
@@ -73,7 +75,10 @@ func (ch *Channel) RemoveClient(client *Client) error {
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message
 func (ch *Channel) Broadcast(message string, source *Client, skip bool) {
-	for c := range ch.clients {
+	for c, alive := range ch.clients {
+		if !alive {
+			continue
+		}
 		if skip && c.Nickname == source.Nickname {
 			continue
 		}

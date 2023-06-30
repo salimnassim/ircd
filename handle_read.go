@@ -4,18 +4,25 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"regexp"
 	"strings"
 
 	"github.com/rs/zerolog/log"
 )
 
 func HandleConnectionRead(client *Client, server *Server) {
-	reader := bufio.NewReader(client.Connection)
+	reader := bufio.NewReader(client.connection)
+
+	validNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,16})`)
+	if err != nil {
+		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
+	}
+
 	for {
 
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			log.Error().Err(err).Msgf("unable to read from client (%s)", client.Connection.RemoteAddr())
+			log.Error().Err(err).Msgf("unable to read from client (%s)", client.connection.RemoteAddr())
 			break
 		}
 		line = strings.Trim(line, "\r\n")
@@ -31,6 +38,17 @@ func HandleConnectionRead(client *Client, server *Server) {
 		if strings.HasPrefix(line, "NICK") {
 			nickname := split[1]
 
+			// todo: validate nickname
+			ok := validNick.MatchString(nickname)
+			if !ok {
+				client.Out <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.Name, nickname)
+				continue
+			}
+			if err != nil {
+				log.Error().Err(err).Msg("unable to match nickname regex")
+				continue
+			}
+
 			_, exists := server.ClientByNickname(split[1])
 			if exists {
 				client.Out <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.Name, nickname)
@@ -40,12 +58,13 @@ func HandleConnectionRead(client *Client, server *Server) {
 			client.Nickname = nickname
 
 			if !client.Handshake {
+				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s", client.Nickname, client.ID)
 				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname..", client.Nickname)
-				addr, err := net.LookupAddr(strings.Split(client.Connection.RemoteAddr().String(), ":")[0])
+				addr, err := net.LookupAddr(strings.Split(client.connection.RemoteAddr().String(), ":")[0])
 				if err != nil {
-					client.Hostname = strings.Split(client.Connection.RemoteAddr().String(), ":")[0]
+					client.SetHostname(strings.Split(client.connection.RemoteAddr().String(), ":")[0])
 				} else {
-					client.Hostname = addr[0]
+					client.SetHostname(addr[0])
 				}
 
 				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Checking ident (not really)", client.Nickname)
@@ -168,6 +187,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 			channel, err := server.Channel(target)
 			if err != nil {
 				log.Error().Err(err).Msgf("tried to change topic %s", target)
+				continue
 			}
 
 			channel.SetTopic(message, client.Nickname)
@@ -187,7 +207,13 @@ func HandleConnectionRead(client *Client, server *Server) {
 
 	}
 
-	log.Info().Msgf("closing client from connection read (%s)", client.Connection.RemoteAddr())
-	client.Close()
-	server.RemoveClient(client)
+	log.Info().Msgf("closing client from connection read (%s)", client.connection.RemoteAddr())
+	err = client.Close()
+	if err != nil {
+		log.Error().Err(err).Msg("unable to close client on read handler")
+	}
+	err = server.RemoveClient(client)
+	if err != nil {
+		log.Error().Err(err).Msg("unable to remove client on read handler")
+	}
 }

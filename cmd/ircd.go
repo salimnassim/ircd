@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/rs/zerolog/log"
@@ -13,13 +14,11 @@ import (
 
 func main() {
 
-	go func() {
-		mux := http.NewServeMux()
-		mux.Handle("/metrics", promhttp.Handler())
+	config := ircd.ServerConfig{
+		Name: "ircd",
+	}
 
-		http.ListenAndServe(":2112", mux)
-		select {}
-	}()
+	server := ircd.NewServer(config)
 
 	listener, err := net.Listen("tcp", ":6667")
 	if err != nil {
@@ -28,10 +27,17 @@ func main() {
 	}
 	defer listener.Close()
 
-	server := ircd.NewServer(os.Getenv("SERVER_NAME"))
+	log.Info().Msg("starting http, listening on :2112")
+	go func() {
+		mux := http.NewServeMux()
 
-	log.Info().Msg("starting server, listening on :6667")
+		mux.Handle("/metrics", promhttp.Handler())
 
+		http.ListenAndServe(":2112", mux)
+		select {}
+	}()
+
+	log.Info().Msg("starting irc, listening on :6667")
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
@@ -43,11 +49,11 @@ func main() {
 	}
 
 }
-
 func handleConnection(server *ircd.Server, connection net.Conn) {
 	log.Info().Msgf("handling connection")
 
-	client, err := ircd.NewClient(connection)
+	id := uuid.Must(uuid.NewRandom()).String()
+	client, err := ircd.NewClient(connection, id)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to create client")
 		return
