@@ -44,10 +44,10 @@ func (channel *Channel) SetTopic(topic string, author string) {
 	channel.topic.author = author
 }
 
-func (channel *Channel) Topic() *ChannelTopic {
+func (channel *Channel) Topic() ChannelTopic {
 	channel.mu.RLock()
 	defer channel.mu.RUnlock()
-	return channel.topic
+	return *channel.topic
 }
 
 func (channel *Channel) AddClient(client *Client, password string) error {
