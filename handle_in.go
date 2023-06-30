@@ -22,15 +22,15 @@ func HandleConnectionIn(client *Client, server *Server) {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)
 		}
 
-		// if parsed.Command == "PING" {
-		// 	pong := strings.Replace(parsed.Raw, "PING", "PONG", 1)
-		// 	client.Out <- pong
-		// 	continue
-		// }
+		// PING
+		if parsed.Command == "PING" {
+			pong := strings.Replace(parsed.Raw, "PING", "PONG", 1)
+			client.Out <- pong
+			continue
+		}
 
 		// NICK
 		if parsed.Command == "NICK" {
-
 			// has enough params?
 			if len(parsed.Params) != 1 {
 				client.Out <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.", server.Name, parsed.Command)
@@ -51,6 +51,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
+			// set nickname
 			client.Nickname = parsed.Params[0]
 
 			// check for handshake
@@ -59,6 +60,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname..", client.Nickname)
 
 				// lookup address
+				// todo: resolver
 				addr, err := net.LookupAddr(strings.Split(client.connection.RemoteAddr().String(), ":")[0])
 				if err != nil {
 					// if it cant be resolved use ip
@@ -66,8 +68,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 				} else {
 					client.SetHostname(addr[0])
 				}
-
-				// client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Checking ident", client.Nickname)
 
 				client.Out <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.Name, client.Nickname)
 				client.Out <- fmt.Sprintf(":%s 376 %s :End of /MOTD command", server.Name, client.Nickname)
@@ -95,6 +95,13 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			client.Username = username
 			client.Realname = realname
+			continue
+		}
+
+		// LUSERS
+		if parsed.Command == "LUSERS" {
+			clients, channels := server.Stats()
+			client.Out <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.", server.Name, client.Nickname, clients, channels)
 			continue
 		}
 

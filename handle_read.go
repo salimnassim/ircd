@@ -23,12 +23,6 @@ func HandleConnectionRead(client *Client, server *Server) {
 		client.In <- line
 		split := strings.Split(line, " ")
 
-		if strings.HasPrefix(line, "PING") {
-			pong := strings.Replace(line, "PING", "PONG", 1)
-			client.Out <- pong
-			continue
-		}
-
 		if strings.HasPrefix(line, "PRIVMSG") {
 			target := split[1]
 			message := strings.Split(line, ":")[1]
@@ -83,7 +77,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 				)
 
 				topic := channel.Topic()
-				if topic.Topic == "" {
+				if topic.text == "" {
 					client.Out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
 						server.Name,
 						client.Nickname,
@@ -94,7 +88,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 						server.Name,
 						client.Nickname,
 						channel.Name,
-						topic.Topic,
+						topic.text,
 					)
 				}
 			}
@@ -111,21 +105,6 @@ func HandleConnectionRead(client *Client, server *Server) {
 
 			channel.Broadcast(fmt.Sprintf(":%s PART %s", client.Target(), target), client, false)
 			channel.RemoveClient(client)
-		}
-
-		if strings.HasPrefix(strings.ToUpper(line), "LUSERS") {
-			client.Out <- fmt.Sprintf(":%s 251 %s :There are %d users and %d invisible on %d servers",
-				server.Name,
-				client.Nickname,
-				-1,
-				-1,
-				-1,
-			)
-			client.Out <- fmt.Sprintf(":%s 254 %s %d :channels formed",
-				server.Name,
-				client.Nickname,
-				-1)
-			continue
 		}
 
 		if strings.HasPrefix(line, "TOPIC") {
