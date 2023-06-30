@@ -1,7 +1,6 @@
 package ircd_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/salimnassim/ircd"
@@ -28,6 +27,8 @@ func TestMessageParse(t *testing.T) {
 		{input: "PRIVMSG #test :hey", want: ircd.Message{Command: "PRIVMSG", Params: []string{"#test", "hey"}}},
 		{input: "lusers", want: ircd.Message{Command: "LUSERS"}},
 		{input: "PRIVMSG 123 :\u0001PING 1688102122 530516\u0001", want: ircd.Message{Command: "PRIVMSG"}},
+		{input: "MODE salami +i", want: ircd.Message{Command: "MODE", Params: []string{"salami", "+i"}}},
+		{input: "MODE salami -i", want: ircd.Message{Command: "MODE", Params: []string{"salami", "-i"}}},
 	}
 
 	for _, tc := range tests {
@@ -41,7 +42,6 @@ func TestMessageParse(t *testing.T) {
 			if len(tc.want.Params) > 0 {
 				for idx, val := range tc.want.Params {
 					if got.Params[idx] != val {
-						fmt.Printf("got: %s, want: %s", val, tc.want.Params[idx])
 						t.Errorf("got: %s, want: %s", val, tc.want.Params[idx])
 					}
 				}
