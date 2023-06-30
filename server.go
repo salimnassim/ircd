@@ -75,6 +75,14 @@ func registerMetrics(server *Server) {
 	}
 }
 
+// Returns the number of connected clients, and channels
+func (server *Server) Stats() (int, int) {
+	server.mu.RLock()
+	defer server.mu.RUnlock()
+
+	return len(server.clients), len(server.channels)
+}
+
 // Adds client to client map
 func (server *Server) AddClient(client *Client) error {
 	log.Info().Msgf("adding client %s", client.Nickname)
