@@ -1,8 +1,6 @@
 package ircd_test
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/salimnassim/ircd"
@@ -10,22 +8,22 @@ import (
 
 type test struct {
 	input string
-	want  []string
+	want  ircd.Message
 }
 
-func Test(t *testing.T) {
+func TestMessageParse(t *testing.T) {
 
 	tests := []test{
-		{input: "version", want: []string{"a/b/c"}},
-		{input: "CAP LS", want: []string{"a", "b", "c"}},
-		{input: "NICK salami", want: []string{"a/b/c"}},
-		{input: "USER salami salami localhost :salami", want: []string{"abc"}},
-		{input: "PONG ircd", want: []string{"a/b/c"}},
-		{input: "JOIN #foo", want: []string{"a/b/c"}},
-		{input: ":salami1!salami@localhost JOIN #foo", want: []string{"a/b/c"}},
-		{input: ":salami1!salami@localhost PART #foo", want: []string{"a/b/c"}},
-		{input: "PRIVMSG #test :hey", want: []string{"a/b/c"}},
-		{input: "lusers", want: []string{"a/b/c"}},
+		{input: "version", want: ircd.Message{Command: "VERSION"}},
+		{input: "CAP LS", want: ircd.Message{Command: "CAP"}},
+		{input: "NICK salami", want: ircd.Message{Command: "NICK"}},
+		{input: "USER salami salami localhost :salami", want: ircd.Message{Command: "USER"}},
+		{input: "PONG ircd", want: ircd.Message{Command: "PONG"}},
+		{input: "JOIN #foo", want: ircd.Message{Command: "JOIN"}},
+		{input: ":salami1!salami@localhost JOIN #foo", want: ircd.Message{Command: "JOIN"}},
+		{input: ":salami1!salami@localhost PART #foo", want: ircd.Message{Command: "PART"}},
+		{input: "PRIVMSG #test :hey", want: ircd.Message{Command: "PRIVMSG"}},
+		{input: "lusers", want: ircd.Message{Command: "LUSERS"}},
 	}
 
 	for _, tc := range tests {
@@ -33,6 +31,8 @@ func Test(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		fmt.Printf("got: %s, %s, %s\n\n", got.Command, got.Prefix, strings.Join(got.Params, ";"))
+		if got.Command != tc.want.Command {
+			t.Errorf("got: %s, want: %s", got.Command, tc.want.Command)
+		}
 	}
 }
