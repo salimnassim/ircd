@@ -162,17 +162,17 @@ func (server *Server) Channels() map[*Channel]bool {
 	return server.channels
 }
 
-// Returns a pointer to channel by name
-func (server *Server) Channel(name string) (*Channel, error) {
+// Returns a pointer to channel by name. bool will be true if channel exists
+func (server *Server) Channel(name string) (*Channel, bool) {
 	server.mu.RLock()
 	defer server.mu.RUnlock()
 
 	for channel := range server.channels {
 		if channel.name == name {
-			return channel, nil
+			return channel, true
 		}
 	}
-	return nil, errors.New("channel not found")
+	return nil, false
 }
 
 // Creates a channel and returns a pointer to it

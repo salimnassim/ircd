@@ -11,4 +11,5 @@ func HandleConnectionOut(client *Client, server *Server) {
 		}
 		log.Info().Msgf("out(%5d)> %s", n, message)
 	}
+	log.Info().Msg("client exited handle send loop")
 }
