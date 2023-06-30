@@ -12,7 +12,6 @@ type Client struct {
 	username   string
 	realname   string
 	hostname   string
-	invisible  bool
 	connection net.Conn
 	handshake  bool
 	in         chan string
