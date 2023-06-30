@@ -3,8 +3,6 @@ package ircd
 import (
 	"bufio"
 	"fmt"
-	"net"
-	"regexp"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -12,11 +10,6 @@ import (
 
 func HandleConnectionRead(client *Client, server *Server) {
 	reader := bufio.NewReader(client.connection)
-
-	validNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,16})`)
-	if err != nil {
-		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
-	}
 
 	for {
 
@@ -33,46 +26,6 @@ func HandleConnectionRead(client *Client, server *Server) {
 		if strings.HasPrefix(line, "PING") {
 			pong := strings.Replace(line, "PING", "PONG", 1)
 			client.Out <- pong
-			continue
-		}
-		if strings.HasPrefix(line, "NICK") {
-			nickname := split[1]
-
-			// todo: validate nickname
-			ok := validNick.MatchString(nickname)
-			if !ok {
-				client.Out <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.Name, nickname)
-				continue
-			}
-			if err != nil {
-				log.Error().Err(err).Msg("unable to match nickname regex")
-				continue
-			}
-
-			_, exists := server.ClientByNickname(split[1])
-			if exists {
-				client.Out <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.Name, nickname)
-				continue
-			}
-
-			client.Nickname = nickname
-
-			if !client.Handshake {
-				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s", client.Nickname, client.ID)
-				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname..", client.Nickname)
-				addr, err := net.LookupAddr(strings.Split(client.connection.RemoteAddr().String(), ":")[0])
-				if err != nil {
-					client.SetHostname(strings.Split(client.connection.RemoteAddr().String(), ":")[0])
-				} else {
-					client.SetHostname(addr[0])
-				}
-
-				client.Out <- fmt.Sprintf("NOTICE %s :AUTH :*** Checking ident (not really)", client.Nickname)
-
-				client.Out <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network!", server.Name, client.Nickname)
-				client.Out <- fmt.Sprintf(":%s 376 %s :End of /MOTD command", server.Name, client.Nickname)
-				client.Handshake = true
-			}
 			continue
 		}
 
@@ -203,7 +156,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 	}
 
 	log.Info().Msgf("closing client from connection read (%s)", client.connection.RemoteAddr())
-	err = client.Close()
+	err := client.Close()
 	if err != nil {
 		log.Error().Err(err).Msg("unable to close client on read handler")
 	}
