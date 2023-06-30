@@ -44,7 +44,7 @@ func (client *Client) Hostname() string {
 	return client.hostname
 }
 
-func (client *Client) Target() string {
+func (client *Client) Prefix() string {
 	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.Hostname())
 }
 
