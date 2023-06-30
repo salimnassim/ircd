@@ -76,11 +76,6 @@ func HandleConnectionRead(client *Client, server *Server) {
 			continue
 		}
 
-		if strings.HasPrefix(line, "USER") {
-			client.Username = split[1]
-			continue
-		}
-
 		if strings.HasPrefix(line, "PRIVMSG") {
 			target := split[1]
 			message := strings.Split(line, ":")[1]

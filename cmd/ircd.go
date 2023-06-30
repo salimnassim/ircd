@@ -60,6 +60,6 @@ func handleConnection(server *ircd.Server, connection net.Conn) {
 	}
 
 	go ircd.HandleConnectionRead(client, server)
-	go ircd.HandleConnectionIn(client)
+	go ircd.HandleConnectionIn(client, server)
 	go ircd.HandleConnectionOut(client)
 }
