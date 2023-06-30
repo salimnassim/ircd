@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	_ "net/http/pprof"
@@ -45,20 +44,7 @@ func main() {
 			continue
 		}
 		log.Info().Msgf("accepted connection from %s", connection.RemoteAddr())
-		go handleConnection(server, connection)
+		go ircd.HandleConnectionRead(connection, server)
 	}
 
-}
-func handleConnection(server *ircd.Server, connection net.Conn) {
-	log.Info().Msgf("handling connection")
-
-	id := uuid.Must(uuid.NewRandom()).String()
-	client, err := ircd.NewClient(connection, id)
-	if err != nil {
-		connection.Close()
-		log.Error().Err(err).Msg("unable to create client")
-		return
-	}
-
-	go ircd.HandleConnectionRead(client, server)
 }
