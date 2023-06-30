@@ -101,6 +101,137 @@ func HandleConnectionIn(client *Client, server *Server) {
 			continue
 		}
 
+		// JOIN
+		if parsed.Command == "JOIN" {
+			// join can have multiple channels separated by a comma
+			targets := strings.Split(parsed.Params[0], ",")
+
+			// todo: check and validate params - numeric
+
+			for _, target := range targets {
+
+				// ptr to existing channel or channel that will be created
+				var channel *Channel
+
+				// check if channel exists
+				channel, exists := server.Channel(target)
+				if !exists {
+					// create if not
+					channel = server.CreateChannel(target)
+				}
+
+				// add client to channel
+				err = channel.AddClient(client, "")
+				if err != nil {
+					// todo: numeric
+					log.Error().Err(err).Msgf("cant join channel %s", target)
+					continue
+				}
+
+				// broadcast to all clients on the channel
+				// that a client has joined
+				channel.Broadcast(
+					fmt.Sprintf(":%s JOIN %s", client.Prefix(), target),
+					client,
+					false,
+				)
+
+				topic := channel.Topic()
+				if topic.text == "" {
+					// send no topic
+					client.send <- fmt.Sprintf(":%s 331 %s %s :no topic set",
+						server.name,
+						client.nickname,
+						channel.name,
+					)
+				} else {
+					// send topic if not empty
+					client.send <- fmt.Sprintf(":%s 332 %s %s :%s",
+						server.name,
+						client.nickname,
+						channel.name,
+						topic.text,
+					)
+				}
+
+			}
+
+			continue
+		}
+
+		// PART
+		if parsed.Command == "PART" {
+			targets := strings.Split(parsed.Params[0], ",")
+
+			for _, target := range targets {
+				// try to get channel
+				channel, exists := server.Channel(target)
+				if !exists {
+					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
+					continue
+				}
+
+				// remove client
+				err := channel.RemoveClient(client)
+				if err != nil {
+					client.send <- fmt.Sprintf(":%s 462 %s :You're not on that channel.", server.name, target)
+					continue
+				}
+
+				// broadcast that user has left the channel
+				channel.Broadcast(fmt.Sprintf(":%s PART %s", client.Prefix(), target), client, false)
+			}
+
+			continue
+		}
+
+		// TOPIC
+		if parsed.Command == "TOPIC" {
+			target := parsed.Params[0]
+			remainder := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
+
+			// todo: check and validate
+
+			log.Debug().Msgf("target: %s, topic: %s", target, remainder)
+
+			// try to get channel
+			channel, exists := server.Channel(target)
+			if !exists {
+				client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
+				continue
+			}
+
+			// set topic
+			channel.SetTopic(remainder, client.nickname)
+
+			// get topic
+			topic := channel.Topic()
+
+			// broadcast new topic to clients on channel
+			channel.Broadcast(
+				fmt.Sprintf(":%s 332 %s %s :%s",
+					server.name,
+					client.nickname,
+					channel.name,
+					topic.text),
+				client, false)
+
+			// broadcast time and author
+			channel.Broadcast(
+				fmt.Sprintf(":%s 329 %s %s %s %s %d",
+					server.name,
+					client.nickname,
+					channel.name,
+					topic.text,
+					topic.author,
+					topic.timestamp),
+				client, false)
+
+			continue
+		}
+
 		log.Info().Msgf(" in(%5d)> %s", len(message), message)
 	}
+
+	log.Info().Msg("client exited handle recv loop")
 }
