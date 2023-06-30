@@ -43,7 +43,7 @@ func (channel *Channel) SetTopic(topic string, author string) {
 	channel.topic.Author = author
 }
 
-func (channel *Channel) GetTopic() *ChannelTopic {
+func (channel *Channel) Topic() *ChannelTopic {
 	return channel.topic
 }
 

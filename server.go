@@ -16,12 +16,6 @@ type Server struct {
 	Counters map[string]prometheus.Counter
 }
 
-type ServerClients struct {
-	Active    int
-	Invisible int
-	Channels  int
-}
-
 func NewServer(name string) *Server {
 	server := &Server{
 		mu:       &sync.RWMutex{},
@@ -32,6 +26,13 @@ func NewServer(name string) *Server {
 		Counters: make(map[string]prometheus.Counter),
 	}
 
+	registerMetrics(server)
+
+	return server
+}
+
+// Register prometheus metrics
+func registerMetrics(server *Server) {
 	server.Gauges["ircd_clients"] =
 		prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "ircd_clients",
@@ -63,34 +64,17 @@ func NewServer(name string) *Server {
 	for _, v := range server.Counters {
 		prometheus.MustRegister(v)
 	}
-
-	return server
-}
-
-// Returns the number active users and channels on the server
-func (server *Server) Counts() ServerClients {
-	active := len(server.clients)
-	channels := len(server.channels)
-	invisible := 0
-	for client := range server.clients {
-		if client.Invisible {
-			invisible++
-		}
-	}
-	return ServerClients{
-		Active:    active,
-		Invisible: invisible,
-		Channels:  channels,
-	}
 }
 
 // Adds client to client map
-func (server *Server) AddClient(client *Client) {
+func (server *Server) AddClient(client *Client) error {
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
 	server.clients[client] = true
 	server.Gauges["ircd_clients"].Inc()
+
+	return nil
 }
 
 // Removes client from client map
@@ -111,21 +95,23 @@ func (server *Server) RemoveClient(client *Client) {
 }
 
 // Returns a pointer to client by nickname
-func (server *Server) GetClient(nickname string) (*Client, error) {
+func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
 	server.mu.RLock()
 	defer server.mu.RUnlock()
+
 	for client := range server.clients {
 		if client.Nickname == nickname {
-			return client, nil
+			return client, true
 		}
 	}
-	return nil, errors.New("client not found")
+	return nil, false
 }
 
 // Returns a pointer to channel by name
-func (server *Server) GetChannel(name string) (*Channel, error) {
+func (server *Server) Channel(name string) (*Channel, error) {
 	server.mu.RLock()
 	defer server.mu.RUnlock()
+
 	for channel := range server.channels {
 		if channel.Name == name {
 			return channel, nil

@@ -28,7 +28,7 @@ func NewClient(connection net.Conn) (*Client, error) {
 	}, nil
 }
 
-func (client *Client) GetTarget() string {
+func (client *Client) Target() string {
 	return fmt.Sprintf("%s!%s@%s", client.Nickname, client.Username, client.Hostname)
 }
 

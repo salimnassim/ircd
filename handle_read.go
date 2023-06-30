@@ -12,12 +12,13 @@ import (
 func HandleConnectionRead(client *Client, server *Server) {
 	reader := bufio.NewReader(client.Connection)
 	for {
+
 		line, err := reader.ReadString('\n')
-		line = strings.Trim(line, "\r\n")
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to read from client (%s)", client.Connection.RemoteAddr())
 			break
 		}
+		line = strings.Trim(line, "\r\n")
 
 		client.In <- line
 		split := strings.Split(line, " ")
@@ -30,8 +31,8 @@ func HandleConnectionRead(client *Client, server *Server) {
 		if strings.HasPrefix(line, "NICK") {
 			nickname := split[1]
 
-			_, err := server.GetClient(split[1])
-			if err == nil {
+			_, exists := server.ClientByNickname(split[1])
+			if exists {
 				client.Out <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.Name, nickname)
 				continue
 			}
@@ -67,7 +68,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 
 			// to channel
 			if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "?") || strings.HasPrefix(target, "~") {
-				channel, err := server.GetChannel(target)
+				channel, err := server.Channel(target)
 				if err != nil {
 					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 						server.Name,
@@ -75,12 +76,12 @@ func HandleConnectionRead(client *Client, server *Server) {
 					log.Error().Err(err).Msgf("privmsg channel %s does not exist", target)
 					continue
 				}
-				channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.GetTarget(), target, message), client, true)
+				channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.Target(), target, message), client, true)
 				server.Counters["ircd_channels_privmsg"].Inc()
 			} else {
 				// to user
-				tc, err := server.GetClient(target)
-				if err != nil {
+				tc, found := server.ClientByNickname(target)
+				if found {
 					client.Out <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 						server.Name,
 						client.Nickname)
@@ -97,7 +98,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 			targets := strings.Split(split[1], ",")
 
 			for _, target := range targets {
-				channel, err := server.GetChannel(target)
+				channel, err := server.Channel(target)
 				if err != nil && channel == nil {
 					channel = server.CreateChannel(target)
 				}
@@ -109,12 +110,12 @@ func HandleConnectionRead(client *Client, server *Server) {
 
 				channel.Broadcast(
 					fmt.Sprintf(":%s JOIN %s",
-						client.GetTarget(), target),
+						client.Target(), target),
 					client,
 					false,
 				)
 
-				topic := channel.GetTopic()
+				topic := channel.Topic()
 				if topic.Topic == "" {
 					client.Out <- fmt.Sprintf(":%s 331 %s %s :no topic set",
 						server.Name,
@@ -136,28 +137,27 @@ func HandleConnectionRead(client *Client, server *Server) {
 		if strings.HasPrefix(line, "PART") {
 			target := split[1]
 
-			channel, err := server.GetChannel(target)
+			channel, err := server.Channel(target)
 			if err != nil {
 				log.Error().Err(err).Msgf("tried to part channel that does not exist %s", target)
 			}
 
-			channel.Broadcast(fmt.Sprintf(":%s PART %s", client.GetTarget(), target), client, false)
+			channel.Broadcast(fmt.Sprintf(":%s PART %s", client.Target(), target), client, false)
 			channel.RemoveClient(client)
 		}
 
 		if strings.HasPrefix(strings.ToUpper(line), "LUSERS") {
-			counts := server.Counts()
 			client.Out <- fmt.Sprintf(":%s 251 %s :There are %d users and %d invisible on %d servers",
 				server.Name,
 				client.Nickname,
-				counts.Active,
-				counts.Invisible,
-				1,
+				-1,
+				-1,
+				-1,
 			)
 			client.Out <- fmt.Sprintf(":%s 254 %s %d :channels formed",
 				server.Name,
 				client.Nickname,
-				counts.Channels)
+				-1)
 			continue
 		}
 
@@ -165,7 +165,7 @@ func HandleConnectionRead(client *Client, server *Server) {
 			target := split[1]
 			message := strings.Replace(split[2], ":", "", 1)
 
-			channel, err := server.GetChannel(target)
+			channel, err := server.Channel(target)
 			if err != nil {
 				log.Error().Err(err).Msgf("tried to change topic %s", target)
 			}
