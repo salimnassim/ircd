@@ -152,6 +152,14 @@ func HandleConnectionIn(client *Client, server *Server) {
 						channel.name,
 						topic.text,
 					)
+					// send time and author
+					client.send <- fmt.Sprintf(":%s 329 %s %s %s %s %d",
+						server.name,
+						client.nickname,
+						channel.name,
+						topic.text,
+						topic.author,
+						topic.timestamp)
 				}
 
 			}
@@ -214,17 +222,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.nickname,
 					channel.name,
 					topic.text),
-				client, false)
-
-			// broadcast time and author
-			channel.Broadcast(
-				fmt.Sprintf(":%s 329 %s %s %s %s %d",
-					server.name,
-					client.nickname,
-					channel.name,
-					topic.text,
-					topic.author,
-					topic.timestamp),
 				client, false)
 
 			continue
