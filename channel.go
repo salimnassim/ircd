@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -71,6 +72,21 @@ func (ch *Channel) RemoveClient(client *Client) error {
 	defer ch.mu.Unlock()
 	delete(ch.clients, client)
 	return nil
+}
+
+// Returns channel users delimited by a space for RPL_NAMREPLY
+func (ch *Channel) Names() string {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
+	var names string
+	clients := ch.clients
+	for client := range clients {
+		// todo: add modes
+		names = names + fmt.Sprintf("%s ", client.nickname)
+	}
+
+	return names
 }
 
 // Send message to all clients on the channel.

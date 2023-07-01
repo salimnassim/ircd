@@ -62,7 +62,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.SetHostname(addr[0])
 				}
 
+				// cloak
+				client.SetHostname(client.id)
+
 				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.name, client.nickname)
+				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s, running version -1", server.name, client.nickname, server.name)
 				client.send <- fmt.Sprintf(":%s 376 %s :End of /MOTD command", server.name, client.nickname)
 				client.handshake = true
 
@@ -161,6 +165,18 @@ func HandleConnectionIn(client *Client, server *Server) {
 						topic.author,
 						topic.timestamp)
 				}
+
+				// get channel names (user list)
+				names := channel.Names()
+
+				// send names to client
+				client.send <- fmt.Sprintf(":%s 353 %s %s %s :%s",
+					server.name,
+					client.nickname,
+					"=",
+					channel.name,
+					names,
+				)
 
 			}
 
