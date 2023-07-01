@@ -45,6 +45,10 @@ func (client *Client) SetHostname(hostname string) {
 	client.hostname = hostname
 }
 
+func (client *Client) SetNickname(nickname string) {
+	client.nickname = nickname
+}
+
 func (client *Client) Hostname() string {
 	return client.hostname
 }
