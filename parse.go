@@ -6,6 +6,9 @@ import (
 )
 
 func Parse(line string) (Message, error) {
+	if len(line) == 0 {
+		return Message{}, nil
+	}
 
 	if len(line) > 512 {
 		return Message{}, errors.New("message too long")

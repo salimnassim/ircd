@@ -11,7 +11,7 @@ type test struct {
 	want  ircd.Message
 }
 
-func TestMessageParse(t *testing.T) {
+func TestParse(t *testing.T) {
 
 	tests := []test{
 		{input: "PING", want: ircd.Message{Command: "PING"}},
@@ -29,6 +29,9 @@ func TestMessageParse(t *testing.T) {
 		{input: "PRIVMSG 123 :\u0001PING 1688102122 530516\u0001", want: ircd.Message{Command: "PRIVMSG"}},
 		{input: "MODE salami +i", want: ircd.Message{Command: "MODE", Params: []string{"salami", "+i"}}},
 		{input: "MODE salami -i", want: ircd.Message{Command: "MODE", Params: []string{"salami", "-i"}}},
+		{input: "WHO salami", want: ircd.Message{Command: "WHO", Params: []string{"salami"}}},
+		{input: "WHO #test", want: ircd.Message{Command: "WHO", Params: []string{"#test"}}},
+		{input: "", want: ircd.Message{Command: ""}},
 	}
 
 	for _, tc := range tests {
