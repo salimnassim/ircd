@@ -137,8 +137,8 @@ func (server *Server) RemoveClient(client *Client) error {
 
 // Returns a pointer to client by nickname
 func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
-	server.mu.RLock()
-	defer server.mu.RUnlock()
+	server.mu.Lock()
+	defer server.mu.Unlock()
 
 	for client := range server.clients {
 		if client.nickname == nickname {
@@ -148,11 +148,16 @@ func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
 	return nil, false
 }
 
-func (server *Server) Clients() map[*Client]bool {
+func (server *Server) Clients() []Client {
 	server.mu.RLock()
 	defer server.mu.RUnlock()
 
-	return server.clients
+	var clients []Client
+	for c := range server.clients {
+		clients = append(clients, *c)
+	}
+
+	return clients
 }
 
 func (server *Server) Channels() map[*Channel]bool {
