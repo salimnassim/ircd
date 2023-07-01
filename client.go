@@ -49,12 +49,8 @@ func (client *Client) SetNickname(nickname string) {
 	client.nickname = nickname
 }
 
-func (client *Client) Hostname() string {
-	return client.hostname
-}
-
 func (client *Client) Prefix() string {
-	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.Hostname())
+	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.hostname)
 }
 
 func (client *Client) Write(message string) (int, error) {

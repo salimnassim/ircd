@@ -2,7 +2,6 @@ package ircd
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"strings"
 
@@ -21,8 +20,8 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		return
 	}
 
-	go HandleConnectionIn(client, server)
 	go HandleConnectionOut(client, server)
+	go HandleConnectionIn(client, server)
 
 	reader := bufio.NewReader(client.connection)
 	for {
@@ -35,46 +34,6 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 
 		// send line to recv
 		client.recv <- line
-
-		// split
-		split := strings.Split(line, " ")
-
-		if strings.HasPrefix(line, "PRIVMSG") {
-			target := split[1]
-			message := strings.Split(line, ":")[1]
-
-			// to channel
-			if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "?") || strings.HasPrefix(target, "~") {
-				channel, ok := server.Channel(target)
-				if !ok {
-					client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
-						server.name,
-						client.nickname)
-					log.Error().Err(err).Msgf("privmsg channel %s does not exist", target)
-					continue
-				}
-				channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.Prefix(), target, message), client, true)
-				server.counters["ircd_channels_privmsg"].Inc()
-			} else {
-				// to user
-				tc, found := server.ClientByNickname(target)
-				if !found {
-					client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
-						server.name,
-						client.nickname)
-					log.Error().Err(err).Msgf("privmsg user %s does not exist", target)
-					continue
-				}
-				tc.send <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.nickname, tc.nickname, message)
-				server.counters["ircd_clients_privmsg"].Inc()
-			}
-			continue
-		}
-
-		if strings.HasPrefix(line, "QUIT") {
-			break
-		}
-
 	}
 
 	log.Info().Msgf("closing client from connection read (%s)", client.connection.RemoteAddr())

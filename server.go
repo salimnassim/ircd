@@ -102,9 +102,10 @@ func (server *Server) Stats() (int, int) {
 
 // Adds client to client map
 func (server *Server) AddClient(client *Client) error {
-	log.Info().Msgf("adding client %s", client.nickname)
 	server.mu.Lock()
 	defer server.mu.Unlock()
+
+	log.Debug().Msgf("+ USER %s", client.String())
 
 	server.clients[client] = true
 	server.gauges["ircd_clients"].Inc()
@@ -114,9 +115,10 @@ func (server *Server) AddClient(client *Client) error {
 
 // Removes client from channels and client map
 func (server *Server) RemoveClient(client *Client) error {
-	log.Info().Msgf("removing client %s", client.nickname)
 	server.mu.Lock()
 	defer server.mu.Unlock()
+
+	log.Debug().Msgf("- USER %s", client.String())
 
 	for channel := range server.channels {
 		for c := range channel.clients {
@@ -142,6 +144,7 @@ func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
 
 	for client := range server.clients {
 		if client.nickname == nickname {
+			log.Debug().Msgf("!!! ClientByNickname(match=%s, lookup=%s)", client.nickname, nickname)
 			return client, true
 		}
 	}

@@ -9,11 +9,14 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/salimnassim/ircd"
 )
 
 func main() {
+
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	config := ircd.ServerConfig{
 		Name: "ircd",

@@ -15,10 +15,12 @@ func HandleConnectionIn(client *Client, server *Server) {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)
 		}
 
-		log.Info().Msgf(" in(%5d)> %s\n[command: %s, prefix: %s, params: %s]\n",
-			len(message), parsed.Raw, parsed.Command, parsed.Prefix, strings.Join(parsed.Params, ","))
+		log.Debug().Msgf(" in(%5d)> [command: %5s, prefix: %s, params: %s] %s",
+			len(message), parsed.Command, parsed.Prefix, strings.Join(parsed.Params, ","), parsed.Raw)
 
 		// PING
+		// https://modern.ircdocs.horse/#ping-message
+		// https://modern.ircdocs.horse/#pong-message
 		if parsed.Command == "PING" {
 			pong := strings.Replace(parsed.Raw, "PING", "PONG", 1)
 			client.send <- pong
@@ -26,9 +28,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 		}
 
 		// NICK
+		// https://modern.ircdocs.horse/#nick-message
 		if parsed.Command == "NICK" {
 			// has enough params?
 			if len(parsed.Params) != 1 {
+				//
 				client.send <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.", server.name, parsed.Command)
 				continue
 			}
@@ -43,12 +47,14 @@ func HandleConnectionIn(client *Client, server *Server) {
 			_, exists := server.ClientByNickname(parsed.Params[0])
 			if exists {
 				client.send <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.name, parsed.Params[0])
+
 				continue
 			}
 
 			// set nickname
+
+			log.Debug().Msgf("!!! SetNickname(from_params=%s, lookup=%s)", parsed.Params[0], client.nickname)
 			client.SetNickname(parsed.Params[0])
-			log.Debug().Msgf("%s === %v", parsed.Params[0], parsed)
 
 			// check for handshake
 			if !client.handshake {
@@ -57,10 +63,10 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 				// lookup address
 				// todo: resolver
-				addr, err := net.LookupAddr(strings.Split(client.connection.RemoteAddr().String(), ":")[0])
+				addr, err := net.LookupAddr(client.IP())
 				if err != nil {
 					// if it cant be resolved use ip
-					client.SetHostname(strings.Split(client.connection.RemoteAddr().String(), ":")[0])
+					client.SetHostname(client.IP())
 				} else {
 					client.SetHostname(addr[0])
 				}

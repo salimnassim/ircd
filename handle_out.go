@@ -9,7 +9,7 @@ func HandleConnectionOut(client *Client, server *Server) {
 			log.Error().Err(err).Msgf("unable to write message to client (%s)", client.connection.RemoteAddr())
 			break
 		}
-		log.Info().Msgf("out(%5d)> %s", n, message)
+		log.Debug().Msgf("out(%5d)> %s", n, message)
 	}
 	log.Info().Msg("client exited handle send loop")
 }
