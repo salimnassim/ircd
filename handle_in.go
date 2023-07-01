@@ -15,6 +15,9 @@ func HandleConnectionIn(client *Client, server *Server) {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)
 		}
 
+		log.Info().Msgf(" in(%5d)> %s\n[command: %s, prefix: %s, params: %s]\n",
+			len(message), parsed.Raw, parsed.Command, parsed.Prefix, strings.Join(parsed.Params, ","))
+
 		// PING
 		if parsed.Command == "PING" {
 			pong := strings.Replace(parsed.Raw, "PING", "PONG", 1)
@@ -27,7 +30,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 			// has enough params?
 			if len(parsed.Params) != 1 {
 				client.send <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.", server.name, parsed.Command)
-				log.Error().Msg("not enough params for nick")
 				continue
 			}
 
@@ -45,7 +47,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 			}
 
 			// set nickname
-			client.nickname = parsed.Params[0]
+			client.SetNickname(parsed.Params[0])
+			log.Debug().Msgf("%s === %v", parsed.Params[0], parsed)
 
 			// check for handshake
 			if !client.handshake {
@@ -63,7 +66,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				}
 
 				// cloak
-				client.SetHostname(client.id)
+				client.SetHostname(client.id + ".cloak")
 
 				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.name, client.nickname)
 				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s, running version -1", server.name, client.nickname, server.name)
@@ -101,6 +104,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 		if parsed.Command == "LUSERS" {
 			clients, channels := server.Stats()
 			client.send <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.", server.name, client.nickname, clients, channels)
+
+			for _, c := range server.Clients() {
+				log.Debug().Msgf("id: %s, nick: %s, ", c.id, c.nickname)
+			}
+
 			continue
 		}
 
@@ -239,8 +247,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			continue
 		}
-
-		log.Info().Msgf(" in(%5d)> %s", len(message), message)
 	}
 
 	log.Info().Msg("client exited handle recv loop")
