@@ -73,7 +73,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 				server.AddClient(client)
 			}
 
-			log.Debug().Msgf("prefix: %s, command: %s, args: %s", parsed.Prefix, parsed.Command, strings.Join(parsed.Params, "|"))
 			continue
 		}
 
@@ -215,8 +214,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 			remainder := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
 
 			// todo: check and validate
-
-			log.Debug().Msgf("target: %s, topic: %s", target, remainder)
 
 			// try to get channel
 			channel, exists := server.Channel(target)
