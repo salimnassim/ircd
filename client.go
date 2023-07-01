@@ -18,6 +18,11 @@ type Client struct {
 	send       chan string
 }
 
+func (client *Client) String() string {
+	return fmt.Sprintf("id: %s, nickname: %s, username: %s, realname: %s, hostname: %s, handshake: %t",
+		client.id, client.nickname, client.username, client.realname, client.hostname, client.handshake)
+}
+
 func NewClient(connection net.Conn, id string) (*Client, error) {
 	return &Client{
 		id:         id,
