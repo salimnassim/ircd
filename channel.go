@@ -76,11 +76,14 @@ func (ch *Channel) RemoveClient(client *Client) error {
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message
 func (ch *Channel) Broadcast(message string, source *Client, skip bool) {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
 	for c, alive := range ch.clients {
 		if !alive {
 			continue
 		}
-		if skip && c.nickname == source.nickname {
+		if skip && c == source {
 			continue
 		}
 		c.send <- message
