@@ -253,6 +253,44 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			continue
 		}
+
+		// PRIVMSG
+		// https://modern.ircdocs.horse/#privmsg-message
+		if parsed.Command == "PRIVMSG" {
+			targets := strings.Split(parsed.Params[0], ",")
+			message := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
+
+			for _, target := range targets {
+
+				// todo: check and validate target
+
+				// is channel
+				if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
+					channel, exists := server.Channel(target)
+					if !exists {
+						client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+							server.name,
+							client.nickname)
+						continue
+					}
+					// send message to channel
+					channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.Prefix(), channel.name, message), client, true)
+					server.counters["ircd_channels_privmsg"].Inc()
+					continue
+				}
+				// is user
+				dest, exists := server.ClientByNickname(target)
+				if !exists {
+					client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
+						server.name,
+						client.nickname)
+					continue
+				}
+				dest.send <- fmt.Sprintf(":%s PRIVMSG %s :%s", client.nickname, dest.nickname, message)
+				continue
+			}
+
+		}
 	}
 
 	log.Info().Msg("client exited handle recv loop")
