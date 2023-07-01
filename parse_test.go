@@ -16,6 +16,7 @@ func TestParse(t *testing.T) {
 	tests := []test{
 		{input: "PING", want: ircd.Message{Command: "PING"}},
 		{input: "PING 12345", want: ircd.Message{Command: "PING", Params: []string{"12345"}}},
+		{input: "PING LAG206400570", want: ircd.Message{Command: "PING", Params: []string{"LAG206400570"}}},
 		{input: "version", want: ircd.Message{Command: "VERSION"}},
 		{input: "CAP LS", want: ircd.Message{Command: "CAP", Params: []string{"LS"}}},
 		{input: "NICK salami", want: ircd.Message{Command: "NICK", Params: []string{"salami"}}},
