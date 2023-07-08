@@ -4,8 +4,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/pyroscope-io/client/pyroscope"
 
 	_ "net/http/pprof"
 
@@ -15,6 +17,29 @@ import (
 )
 
 func main() {
+
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
+
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: "ircd",
+		ServerAddress:   "http://pyroscope:4040",
+		Logger:          pyroscope.StandardLogger,
+		Tags:            map[string]string{"hostname": os.Getenv("HOSTNAME")},
+
+		ProfileTypes: []pyroscope.ProfileType{
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
