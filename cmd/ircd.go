@@ -24,7 +24,7 @@ func main() {
 	pyroscope.Start(pyroscope.Config{
 		ApplicationName: "ircd",
 		ServerAddress:   "http://pyroscope:4040",
-		Logger:          pyroscope.StandardLogger,
+		Logger:          nil,
 		Tags:            map[string]string{"hostname": os.Getenv("HOSTNAME")},
 
 		ProfileTypes: []pyroscope.ProfileType{

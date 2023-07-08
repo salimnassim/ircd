@@ -66,6 +66,19 @@ func (channel *Channel) AddClient(client *Client, password string) error {
 	return nil
 }
 
+func (channel *Channel) IsMember(client Client) bool {
+	channel.mu.RLock()
+	defer channel.mu.RUnlock()
+
+	for cl := range channel.clients {
+		if cl.id == client.id {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (ch *Channel) RemoveClient(client *Client) error {
 	ch.mu.Lock()
 	defer ch.mu.Unlock()

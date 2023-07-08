@@ -47,13 +47,10 @@ func HandleConnectionIn(client *Client, server *Server) {
 			_, exists := server.ClientByNickname(parsed.Params[0])
 			if exists {
 				client.send <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.name, parsed.Params[0])
-
 				continue
 			}
 
 			// set nickname
-
-			log.Debug().Msgf("!!! SetNickname(from_params=%s, lookup=%s)", parsed.Params[0], client.nickname)
 			client.SetNickname(parsed.Params[0])
 
 			// check for handshake
@@ -72,7 +69,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				}
 
 				prefix := 4
-				if strings.Count(client.IP(), "") >= 2 {
+				if strings.Count(client.IP(), ":") >= 2 {
 					prefix = 6
 				}
 
@@ -318,11 +315,10 @@ func HandleConnectionIn(client *Client, server *Server) {
 			var buf string
 			channels := server.Channels()
 			for _, ch := range channels {
-				_, ok := ch.clients[who]
-				if ok {
+				if ch.IsMember(who) {
 					prefix := "?"
 					name := strings.Replace(ch.name, "#", "", 1)
-					if ch.owner == who {
+					if ch.owner.nickname == who.nickname {
 						prefix = "~"
 					}
 					buf = buf + fmt.Sprintf("%s%s ", prefix, name)
