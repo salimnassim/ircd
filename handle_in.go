@@ -71,8 +71,13 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.SetHostname(addr[0])
 				}
 
+				prefix := 4
+				if strings.Count(client.IP(), "") >= 2 {
+					prefix = 6
+				}
+
 				// cloak
-				client.SetHostname(client.id + ".cloak")
+				client.SetHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, client.id))
 
 				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.name, client.nickname)
 				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s, running version -1", server.name, client.nickname, server.name)
@@ -108,13 +113,16 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 		// LUSERS
 		if parsed.Command == "LUSERS" {
-			clients, channels := server.Stats()
-			client.send <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.", server.name, client.nickname, clients, channels)
+			clientCount, channelCount := server.Stats()
+			client.send <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.", server.name, client.nickname, clientCount, channelCount)
 
-			for _, c := range server.Clients() {
-				log.Debug().Msgf("id: %s, nick: %s, ", c.id, c.nickname)
+			var buf string
+			clients := server.Clients()
+			for _, c := range clients {
+				buf = buf + fmt.Sprintf("%s ", c.nickname)
 			}
 
+			client.send <- fmt.Sprintf("NOTICE %s :DEBUG :*** %s", client.nickname, buf)
 			continue
 		}
 
@@ -134,7 +142,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				channel, exists := server.Channel(target)
 				if !exists {
 					// create if not
-					channel = server.CreateChannel(target)
+					channel = server.CreateChannel(target, client)
 				}
 
 				// add client to channel
@@ -290,6 +298,56 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
+		}
+
+		// WHOIS
+		if parsed.Command == "WHOIS" {
+			target := parsed.Params[0]
+
+			// todo: check and validate
+
+			who, exists := server.ClientByNickname(target)
+			if !exists {
+				client.send <- fmt.Sprintf(
+					":%s 401 %s :no such nick",
+					server.name,
+					client.nickname)
+				continue
+			}
+
+			var buf string
+			channels := server.Channels()
+			for _, ch := range channels {
+				_, ok := ch.clients[who]
+				if ok {
+					prefix := "?"
+					name := strings.Replace(ch.name, "#", "", 1)
+					if ch.owner == who {
+						prefix = "~"
+					}
+					buf = buf + fmt.Sprintf("%s%s ", prefix, name)
+				}
+			}
+
+			client.send <- fmt.Sprintf(
+				":%s 311 %s %s %s %s * :%s",
+				server.name,
+				client.nickname,
+				who.nickname,
+				who.username,
+				who.hostname,
+				who.realname,
+			)
+
+			client.send <- fmt.Sprintf(
+				":%s 319 %s %s :%s",
+				server.name,
+				client.nickname,
+				who.nickname,
+				buf,
+			)
+
+			continue
 		}
 	}
 

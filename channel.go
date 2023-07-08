@@ -11,7 +11,8 @@ type Channel struct {
 	mu       *sync.RWMutex
 	name     string
 	topic    *ChannelTopic
-	clients  map[*Client]bool
+	clients  map[*Client]interface{}
+	owner    *Client
 	password string
 }
 
@@ -21,19 +22,20 @@ type ChannelTopic struct {
 	author    string
 }
 
-func NewChannel(name string) *Channel {
+func NewChannel(channelName string, owner *Client) *Channel {
 	channel := &Channel{
 		mu:   &sync.RWMutex{},
-		name: name,
+		name: channelName,
 		topic: &ChannelTopic{
 			text:      "",
 			timestamp: 0,
 			author:    "",
 		},
-
-		clients:  make(map[*Client]bool),
+		clients:  make(map[*Client]interface{}),
+		owner:    owner,
 		password: "",
 	}
+
 	return channel
 }
 
@@ -52,12 +54,12 @@ func (channel *Channel) Topic() ChannelTopic {
 }
 
 func (channel *Channel) AddClient(client *Client, password string) error {
+	channel.mu.Lock()
+	defer channel.mu.Unlock()
+
 	if password != "" && channel.password != password {
 		return errors.New("incorrect password")
 	}
-
-	channel.mu.Lock()
-	defer channel.mu.Unlock()
 
 	channel.clients[client] = true
 
@@ -65,11 +67,14 @@ func (channel *Channel) AddClient(client *Client, password string) error {
 }
 
 func (ch *Channel) RemoveClient(client *Client) error {
-	if !ch.clients[client] {
-		return errors.New("not a channel member")
-	}
 	ch.mu.Lock()
 	defer ch.mu.Unlock()
+
+	_, ok := ch.clients[client]
+	if !ok {
+		return errors.New("not a channel member")
+	}
+
 	delete(ch.clients, client)
 	return nil
 }
@@ -95,10 +100,7 @@ func (ch *Channel) Broadcast(message string, source *Client, skip bool) {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
 
-	for c, alive := range ch.clients {
-		if !alive {
-			continue
-		}
+	for c := range ch.clients {
 		if skip && c == source {
 			continue
 		}

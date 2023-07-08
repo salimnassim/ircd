@@ -20,8 +20,8 @@ type ServerConfig struct {
 type Server struct {
 	mu       *sync.RWMutex
 	name     string
-	clients  map[*Client]bool
-	channels map[*Channel]bool
+	clients  map[*Client]interface{}
+	channels map[*Channel]interface{}
 
 	// regex cache
 	regex map[string]*regexp.Regexp
@@ -35,8 +35,8 @@ func NewServer(config ServerConfig) *Server {
 	server := &Server{
 		mu:       &sync.RWMutex{},
 		name:     config.Name,
-		clients:  make(map[*Client]bool),
-		channels: make(map[*Channel]bool),
+		clients:  make(map[*Client]interface{}),
+		channels: make(map[*Channel]interface{}),
 		regex:    make(map[string]*regexp.Regexp),
 		gauges:   make(map[string]prometheus.Gauge),
 		counters: make(map[string]prometheus.Counter),
@@ -163,11 +163,16 @@ func (server *Server) Clients() []Client {
 	return clients
 }
 
-func (server *Server) Channels() map[*Channel]bool {
+func (server *Server) Channels() []Channel {
 	server.mu.RLock()
 	defer server.mu.RUnlock()
 
-	return server.channels
+	var channels []Channel
+	for c := range server.channels {
+		channels = append(channels, *c)
+	}
+
+	return channels
 }
 
 // Returns a pointer to channel by name. bool will be true if channel exists
@@ -184,13 +189,13 @@ func (server *Server) Channel(name string) (*Channel, bool) {
 }
 
 // Creates a channel and returns a pointer to it
-func (server *Server) CreateChannel(name string) *Channel {
+func (server *Server) CreateChannel(name string, owner *Client) *Channel {
 	log.Info().Msgf("creating channel %s", name)
 
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
-	channel := NewChannel(name)
+	channel := NewChannel(name, owner)
 	server.channels[channel] = true
 	server.gauges["ircd_channels"].Inc()
 
