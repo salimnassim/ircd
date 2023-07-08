@@ -10,7 +10,7 @@ services:
     image: "prom/prometheus"
     restart: unless-stopped
     volumes:
-      - /home/salami/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ~/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     environment:
@@ -22,8 +22,11 @@ services:
     ports:
       - '3000:3000'
   ircd:
+    image: ircd:latest
     restart: on-failure
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "0.0.0.0:6667:6667"
       - "2112:2112"
