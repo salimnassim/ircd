@@ -44,8 +44,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
-			_, exists := server.ClientByNickname(parsed.Params[0])
-			if exists {
+			who, exists := server.ClientByNickname(parsed.Params[0])
+			if exists || who != nil {
 				client.send <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.name, parsed.Params[0])
 				continue
 			}
@@ -88,6 +88,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		}
 
 		// USER
+		// https://modern.ircdocs.horse/#user-message
 		if parsed.Command == "USER" {
 			if len(parsed.Params) < 4 {
 				client.send <- fmt.Sprintf(":%s 461 %s %s :Not enough parameters.", server.name, client.nickname, strings.Join(parsed.Params, " "))
@@ -115,6 +116,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			var buf string
 			clients := server.Clients()
+			log.Debug().Msgf("%v", clients)
 			for _, c := range clients {
 				buf = buf + fmt.Sprintf("%s ", c.nickname)
 			}
@@ -312,34 +314,36 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
+			copy := *who
+
 			var buf string
 			channels := server.Channels()
 			for _, ch := range channels {
-				if ch.IsMember(who) {
+				_, ok := ch.clients[who]
+				if ok {
 					prefix := "?"
 					name := strings.Replace(ch.name, "#", "", 1)
-					if ch.owner.nickname == who.nickname {
-						prefix = "~"
-					}
 					buf = buf + fmt.Sprintf("%s%s ", prefix, name)
 				}
 			}
 
+			// https://modern.ircdocs.horse/#rplwhoisuser-311
 			client.send <- fmt.Sprintf(
 				":%s 311 %s %s %s %s * :%s",
 				server.name,
 				client.nickname,
-				who.nickname,
-				who.username,
-				who.hostname,
-				who.realname,
+				copy.nickname,
+				copy.username,
+				copy.hostname,
+				copy.realname,
 			)
 
+			// https://modern.ircdocs.horse/#rplwhoischannels-319
 			client.send <- fmt.Sprintf(
 				":%s 319 %s %s :%s",
 				server.name,
 				client.nickname,
-				who.nickname,
+				copy.nickname,
 				buf,
 			)
 
