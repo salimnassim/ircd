@@ -104,6 +104,7 @@ func (server *Server) Stats() (int, int) {
 func (server *Server) AddClient(client *Client) error {
 	server.mu.Lock()
 	defer server.mu.Unlock()
+
 	server.clients[client] = true
 	server.gauges["ircd_clients"].Inc()
 
@@ -135,17 +136,17 @@ func (server *Server) RemoveClient(client *Client) error {
 }
 
 // Returns a pointer to client by nickname
-func (server *Server) ClientByNickname(nickname string) (Client, bool) {
-	server.mu.Lock()
-	defer server.mu.Unlock()
+func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
+	server.mu.RLock()
+	defer server.mu.RUnlock()
 
 	for client := range server.clients {
 		if client.nickname == nickname {
-			return *client, true
+			return client, true
 		}
 	}
 
-	return Client{}, false
+	return nil, false
 }
 
 func (server *Server) Clients() []Client {
