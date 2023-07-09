@@ -2,158 +2,214 @@ package ircd
 
 import (
 	"errors"
+	"regexp"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rs/zerolog/log"
 )
+
+type Messager interface {
+	message(string)
+}
+
+type ServerConfig struct {
+	Name string
+}
 
 type Server struct {
 	mu       *sync.RWMutex
-	Name     string
-	clients  map[*Client]bool
-	channels map[*Channel]bool
-	Gauges   map[string]prometheus.Gauge
-	Counters map[string]prometheus.Counter
+	name     string
+	clients  map[*Client]interface{}
+	channels map[*Channel]interface{}
+
+	// regex cache
+	regex map[string]*regexp.Regexp
+
+	// metrics
+	gauges   map[string]prometheus.Gauge
+	counters map[string]prometheus.Counter
 }
 
-type ServerClients struct {
-	Active    int
-	Invisible int
-	Channels  int
-}
-
-func NewServer(name string) *Server {
+func NewServer(config ServerConfig) *Server {
 	server := &Server{
 		mu:       &sync.RWMutex{},
-		Name:     name,
-		clients:  make(map[*Client]bool),
-		channels: make(map[*Channel]bool),
-		Gauges:   make(map[string]prometheus.Gauge),
-		Counters: make(map[string]prometheus.Counter),
+		name:     config.Name,
+		clients:  make(map[*Client]interface{}),
+		channels: make(map[*Channel]interface{}),
+		regex:    make(map[string]*regexp.Regexp),
+		gauges:   make(map[string]prometheus.Gauge),
+		counters: make(map[string]prometheus.Counter),
 	}
 
-	server.Gauges["ircd_clients"] =
+	compileRegexp(server)
+	registerMetrics(server)
+
+	return server
+}
+
+// Compiles expressions and caches them to a map
+func compileRegexp(server *Server) {
+	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,16})`)
+	if err != nil {
+		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
+	}
+	server.regex["nick"] = rgxNick
+}
+
+// Register prometheus metrics
+func registerMetrics(server *Server) {
+	server.gauges["ircd_clients"] =
 		prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "ircd_clients",
 			Help: "Number of connected clients",
 		})
 
-	server.Gauges["ircd_channels"] =
+	server.gauges["ircd_channels"] =
 		prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "ircd_channels",
 			Help: "Number of channels",
 		})
 
-	server.Counters["ircd_channels_privmsg"] =
+	server.counters["ircd_channels_privmsg"] =
 		prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "ircd_channels_privmsg",
 			Help: "Number of PRIVMSG sent to channels",
 		})
 
-	server.Counters["ircd_clients_privmsg"] =
+	server.counters["ircd_clients_privmsg"] =
 		prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "ircd_clients_privmsg",
 			Help: "Number of PRIVMSG sent to clients",
 		})
 
-	for _, v := range server.Gauges {
+	for _, v := range server.gauges {
 		prometheus.MustRegister(v)
 	}
 
-	for _, v := range server.Counters {
+	for _, v := range server.counters {
 		prometheus.MustRegister(v)
 	}
-
-	return server
 }
 
-// Returns the number active users and channels on the server
-func (server *Server) Counts() ServerClients {
-	active := len(server.clients)
-	channels := len(server.channels)
-	invisible := 0
-	for client := range server.clients {
-		if client.Invisible {
-			invisible++
-		}
-	}
-	return ServerClients{
-		Active:    active,
-		Invisible: invisible,
-		Channels:  channels,
-	}
+// Returns the number of connected clients, and channels
+func (server *Server) Stats() (int, int) {
+	server.mu.RLock()
+	defer server.mu.RUnlock()
+
+	return len(server.clients), len(server.channels)
 }
 
 // Adds client to client map
-func (server *Server) AddClient(client *Client) {
+func (server *Server) AddClient(client *Client) error {
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
 	server.clients[client] = true
-	server.Gauges["ircd_clients"].Inc()
+	server.gauges["ircd_clients"].Inc()
+
+	return nil
 }
 
-// Removes client from client map
-func (server *Server) RemoveClient(client *Client) {
+// Removes client from channels and client map
+func (server *Server) RemoveClient(client *Client) error {
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
+	log.Debug().Msgf("- USER %s", client.String())
+
 	for channel := range server.channels {
 		for c := range channel.clients {
-			if c.Nickname == client.Nickname {
-				channel.RemoveClient(c)
+			if c == client {
+				err := channel.RemoveClient(c)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 
 	delete(server.clients, client)
-	server.Gauges["ircd_clients"].Dec()
+	server.gauges["ircd_clients"].Dec()
+
+	return nil
 }
 
 // Returns a pointer to client by nickname
-func (server *Server) GetClient(nickname string) (*Client, error) {
+func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
 	server.mu.RLock()
 	defer server.mu.RUnlock()
+
 	for client := range server.clients {
-		if client.Nickname == nickname {
-			return client, nil
+		if client.nickname == nickname {
+			return client, true
 		}
 	}
-	return nil, errors.New("client not found")
+
+	return nil, false
 }
 
-// Returns a pointer to channel by name
-func (server *Server) GetChannel(name string) (*Channel, error) {
+func (server *Server) Clients() []Client {
 	server.mu.RLock()
 	defer server.mu.RUnlock()
+
+	var clients []Client
+	for c := range server.clients {
+		clients = append(clients, *c)
+	}
+
+	return clients
+}
+
+func (server *Server) Channels() []Channel {
+	server.mu.RLock()
+	defer server.mu.RUnlock()
+
+	var channels []Channel
+	for c := range server.channels {
+		channels = append(channels, *c)
+	}
+
+	return channels
+}
+
+// Returns a pointer to channel by name. bool will be true if channel exists
+func (server *Server) Channel(name string) (*Channel, bool) {
+	server.mu.RLock()
+	defer server.mu.RUnlock()
+
 	for channel := range server.channels {
-		if channel.Name == name {
-			return channel, nil
+		if channel.name == name {
+			return channel, true
 		}
 	}
-	return nil, errors.New("channel not found")
+	return nil, false
 }
 
 // Creates a channel and returns a pointer to it
-func (server *Server) CreateChannel(name string) *Channel {
+func (server *Server) CreateChannel(name string, owner *Client) *Channel {
+	log.Info().Msgf("creating channel %s", name)
+
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
-	channel := NewChannel(name)
+	channel := NewChannel(name, owner)
 	server.channels[channel] = true
-	server.Gauges["ircd_channels"].Inc()
+	server.gauges["ircd_channels"].Inc()
 
 	return channel
 }
 
 // Removes client from channel map
 func (server *Server) RemoveChannel(channel *Channel) error {
+	log.Info().Msgf("removing channel %s", channel.name)
+
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
 	if _, ok := server.channels[channel]; ok {
 		delete(server.channels, channel)
-		server.Gauges["ircd_channels"].Dec()
+		server.gauges["ircd_channels"].Dec()
 		return nil
 	}
 

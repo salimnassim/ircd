@@ -4,22 +4,50 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/pyroscope-io/client/pyroscope"
 
+	_ "net/http/pprof"
+
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/salimnassim/ircd"
 )
 
 func main() {
 
-	go func() {
-		mux := http.NewServeMux()
-		mux.Handle("/metrics", promhttp.Handler())
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
 
-		http.ListenAndServe(":2112", mux)
-		select {}
-	}()
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: "ircd",
+		ServerAddress:   "http://pyroscope:4040",
+		Logger:          nil,
+		Tags:            map[string]string{"hostname": os.Getenv("HOSTNAME")},
+
+		ProfileTypes: []pyroscope.ProfileType{
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
+
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+	config := ircd.ServerConfig{
+		Name: "ircd",
+	}
+
+	server := ircd.NewServer(config)
 
 	listener, err := net.Listen("tcp", ":6667")
 	if err != nil {
@@ -28,10 +56,15 @@ func main() {
 	}
 	defer listener.Close()
 
-	server := ircd.NewServer(os.Getenv("SERVER_NAME"))
+	log.Info().Msg("starting http, listening on :2112")
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
 
-	log.Info().Msg("starting server, listening on :6667")
+		http.ListenAndServe(":2112", nil)
+		select {}
+	}()
 
+	log.Info().Msg("starting irc, listening on :6667")
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
@@ -39,23 +72,7 @@ func main() {
 			continue
 		}
 		log.Info().Msgf("accepted connection from %s", connection.RemoteAddr())
-		go handleConnection(server, connection)
+		go ircd.HandleConnectionRead(connection, server)
 	}
 
-}
-
-func handleConnection(server *ircd.Server, connection net.Conn) {
-	log.Info().Msgf("handling connection")
-
-	client, err := ircd.NewClient(connection)
-	if err != nil {
-		log.Error().Err(err).Msg("unable to create client")
-		return
-	}
-
-	server.AddClient(client)
-
-	go ircd.HandleConnectionRead(client, server)
-	go ircd.HandleConnectionIn(client)
-	go ircd.HandleConnectionOut(client)
 }
