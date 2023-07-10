@@ -86,6 +86,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// USER
 		// https://modern.ircdocs.horse/#user-message
 		if parsed.Command == "USER" {
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
+
 			if len(parsed.Params) < 4 {
 				client.send <- fmt.Sprintf(":%s 461 %s %s :Not enough parameters.", server.name, client.nickname, strings.Join(parsed.Params, " "))
 				continue
@@ -115,6 +120,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// JOIN
 		// https://modern.ircdocs.horse/#join-message
 		if parsed.Command == "JOIN" {
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
+
 			// join can have multiple channels separated by a comma
 			targets := strings.Split(parsed.Params[0], ",")
 
@@ -197,6 +207,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// PART
 		// https://modern.ircdocs.horse/#part-message
 		if parsed.Command == "PART" {
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
+
 			targets := strings.Split(parsed.Params[0], ",")
 
 			for _, target := range targets {
@@ -257,6 +272,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// PRIVMSG
 		// https://modern.ircdocs.horse/#privmsg-message
 		if parsed.Command == "PRIVMSG" {
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
+
 			targets := strings.Split(parsed.Params[0], ",")
 			message := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
 
