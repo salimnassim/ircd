@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -74,7 +75,7 @@ func (client *Client) Prefix() string {
 }
 
 func (client *Client) Write(message string) (int, error) {
-	n, err := client.connection.Write([]byte(message))
+	n, err := io.WriteString(client.connection, message)
 	return n, err
 }
 
