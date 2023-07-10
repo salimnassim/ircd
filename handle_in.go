@@ -130,7 +130,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			for _, target := range targets {
 
-				if !strings.HasPrefix(target, "#") || !strings.HasPrefix(target, "&") || len(target) > 9 {
+				if !strings.HasPrefix(target, "#") && !strings.HasPrefix(target, "&") || len(target) > 9 {
 					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
 					continue
 				}
