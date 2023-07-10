@@ -35,7 +35,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 			}
 
 			// nicks should be more than 1 character
-			if len(parsed.Params[0]) < 2 || len(parsed.Params[0]) > 21 {
+			if len(parsed.Params[0]) < 2 || len(parsed.Params[0]) > 9 {
 				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.name, parsed.Params[0])
 				continue
 			}
@@ -109,8 +109,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 			username := parsed.Params[0]
 			realname := parsed.Params[3]
 
-			client.username = username
-			client.realname = realname
+			client.SetUsername(username, realname)
 			continue
 		}
 
