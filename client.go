@@ -58,12 +58,12 @@ func (client *Client) SetNickname(nickname string) {
 	client.nickname = nickname
 }
 
-func (client *Client) GetNickname() string {
-	client.mu.RLock()
-	defer client.mu.RUnlock()
+func (client *Client) SetUsername(username string, realname string) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
 
-	nickname := client.nickname
-	return nickname
+	client.username = username
+	client.realname = realname
 }
 
 func (client *Client) Prefix() string {
