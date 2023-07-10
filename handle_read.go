@@ -33,7 +33,17 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 			log.Error().Err(err).Msgf("unable to read from client (%s)", client.connection.RemoteAddr())
 			break
 		}
+
 		line = strings.Trim(line, "\r\n")
+
+		// PING
+		// https://modern.ircdocs.horse/#ping-message
+		// https://modern.ircdocs.horse/#pong-message
+		if strings.HasPrefix(line, "PING") {
+			client.send <- strings.Replace(line, "PING", "PONG", 1)
+			continue
+		}
+
 		// send to receive channel
 		client.recv <- line
 	}

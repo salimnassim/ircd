@@ -16,14 +16,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 			continue
 		}
 
-		// PING
-		// https://modern.ircdocs.horse/#ping-message
-		// https://modern.ircdocs.horse/#pong-message
-		if parsed.Command == "PING" {
-			pong := strings.Replace(parsed.Raw, "PING", "PONG", 1)
-			client.send <- pong
-			continue
-		}
+		log.Debug().Msgf("%s: %s", client.Prefix(), parsed.Raw)
 
 		// NICK
 		// https://modern.ircdocs.horse/#nick-message
@@ -58,8 +51,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			// check for handshake
 			if !client.handshake {
-				log.Debug().Msgf("exists: %t, nick: %s", exists, parsed.Params[0])
-
 				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s", client.nickname, client.id)
 				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your IP address is: %s", client.nickname, client.IP())
 				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname...", client.nickname)
