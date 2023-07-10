@@ -108,8 +108,8 @@ func (server *Server) RemoveClient(client *Client) error {
 	defer server.mu.Unlock()
 
 	for channel := range server.channels {
-		for c := range channel.clients {
-			if c == client {
+		for v, c := range channel.clients {
+			if v == client.id {
 				err := channel.RemoveClient(c)
 				if err != nil {
 					return err

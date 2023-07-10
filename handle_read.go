@@ -21,9 +21,11 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 	// add client to store
 	server.clients.Add(client)
 
+	// starts goroutines for procesing incoming and outgoing messages
 	go HandleConnectionOut(client, server)
 	go HandleConnectionIn(client, server)
 
+	// read input from client
 	reader := bufio.NewReader(client.connection)
 	for {
 		line, err := reader.ReadString('\n')
@@ -32,9 +34,11 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 			break
 		}
 		line = strings.Trim(line, "\r\n")
+		// send to receive channel
 		client.recv <- line
 	}
 
+	// cleanup
 	err = client.Close()
 	if err != nil {
 		log.Error().Err(err).Msg("unable to close client on write handler")

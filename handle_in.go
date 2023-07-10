@@ -304,9 +304,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		if parsed.Command == "WHOIS" {
 			target := parsed.Params[0]
 
-			// todo: check and validate
-
-			who, exists := server.clients.GetByNickname(target)
+			whois, exists := server.clients.Whois(target)
 			if !exists {
 				client.send <- fmt.Sprintf(
 					":%s 401 %s :no such nick",
@@ -315,26 +313,15 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
-			var buf string
-			channels := server.Channels()
-			for _, ch := range channels {
-				_, ok := ch.clients[who]
-				if ok {
-					prefix := "?"
-					name := strings.Replace(ch.name, "#", "", 1)
-					buf = buf + fmt.Sprintf("%s%s ", prefix, name)
-				}
-			}
-
 			// https://modern.ircdocs.horse/#rplwhoisuser-311
 			client.send <- fmt.Sprintf(
 				":%s 311 %s %s %s %s * :%s",
 				server.name,
 				client.nickname,
-				who.nickname,
-				who.username,
-				who.hostname,
-				who.realname,
+				whois.nickname,
+				whois.username,
+				whois.hostname,
+				whois.realname,
 			)
 
 			// https://modern.ircdocs.horse/#rplwhoischannels-319
@@ -342,8 +329,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 				":%s 319 %s %s :%s",
 				server.name,
 				client.nickname,
-				who.nickname,
-				buf,
+				whois.nickname,
+				strings.Join(whois.channels, " "),
 			)
 
 			continue
