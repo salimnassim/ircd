@@ -2,11 +2,14 @@ package ircd
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strings"
+	"sync"
 )
 
 type Client struct {
+	mu         *sync.RWMutex
 	id         string
 	nickname   string
 	username   string
@@ -25,6 +28,7 @@ func (client *Client) String() string {
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
 	return &Client{
+		mu:         &sync.RWMutex{},
 		id:         id,
 		nickname:   "",
 		username:   "",
@@ -38,23 +42,40 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 }
 
 func (client *Client) IP() string {
-	return strings.Split(client.connection.RemoteAddr().Network(), ":")[0]
+	return strings.Split(client.connection.RemoteAddr().String(), ":")[0]
 }
 
 func (client *Client) SetHostname(hostname string) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+
 	client.hostname = hostname
 }
 
 func (client *Client) SetNickname(nickname string) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+
 	client.nickname = nickname
 }
 
+func (client *Client) SetUsername(username string, realname string) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+
+	client.username = username
+	client.realname = realname
+}
+
 func (client *Client) Prefix() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
 	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.hostname)
 }
 
 func (client *Client) Write(message string) (int, error) {
-	n, err := client.connection.Write([]byte(message))
+	n, err := io.WriteString(client.connection, message)
 	return n, err
 }
 
@@ -64,7 +85,5 @@ func (client *Client) Close() error {
 		return err
 	}
 
-	// close(client.recv)
-	// close(client.send)
 	return nil
 }

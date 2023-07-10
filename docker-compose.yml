@@ -22,14 +22,19 @@ services:
     ports:
       - '3000:3000'
   ircd:
-    image: ircd:latest
+    image: ircd-race:latest
     restart: on-failure
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.race
     ports:
       - "0.0.0.0:6667:6667"
       - "2112:2112"
+    environment:
+      - SERVER_NAME=ircd
+      - PYROSCOPE_ENABLE=1
+      - PYROSCOPE_ADDRESS=http://pyroscope:4040
+      - PROMETHEUS_ENABLE=1
 volumes:
   prometheus_data:
     external: false

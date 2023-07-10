@@ -10,8 +10,6 @@ import (
 )
 
 func HandleConnectionRead(connection net.Conn, server *Server) {
-	log.Info().Msgf("handling connection")
-
 	id := uuid.Must(uuid.NewRandom()).String()
 	client, err := NewClient(connection, id)
 	if err != nil {
@@ -20,9 +18,14 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		return
 	}
 
+	// add client to store
+	server.clients.Add(client)
+
+	// starts goroutines for procesing incoming and outgoing messages
 	go HandleConnectionOut(client, server)
 	go HandleConnectionIn(client, server)
 
+	// read input from client
 	reader := bufio.NewReader(client.connection)
 	for {
 		line, err := reader.ReadString('\n')
@@ -30,14 +33,22 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 			log.Error().Err(err).Msgf("unable to read from client (%s)", client.connection.RemoteAddr())
 			break
 		}
+
 		line = strings.Trim(line, "\r\n")
 
-		// send line to recv
+		// PING
+		// https://modern.ircdocs.horse/#ping-message
+		// https://modern.ircdocs.horse/#pong-message
+		if strings.HasPrefix(line, "PING") {
+			client.send <- strings.Replace(line, "PING", "PONG", 1)
+			continue
+		}
+
+		// send to receive channel
 		client.recv <- line
 	}
 
-	log.Info().Msgf("closing client from connection read (%s)", client.connection.RemoteAddr())
-
+	// cleanup
 	err = client.Close()
 	if err != nil {
 		log.Error().Err(err).Msg("unable to close client on write handler")
