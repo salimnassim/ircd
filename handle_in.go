@@ -27,7 +27,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
-			// nicks should be more than 1 character
+			// nicks should be more than 1 character and less than 9
 			if len(parsed.Params[0]) < 2 || len(parsed.Params[0]) > 9 {
 				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.name, parsed.Params[0])
 				continue
@@ -121,22 +121,25 @@ func HandleConnectionIn(client *Client, server *Server) {
 			// todo: check and validate params - numeric
 
 			for _, target := range targets {
-
 				// ptr to existing channel or channel that will be created
 				var channel *Channel
 
-				// check if channel exists
-				channel, exists := server.Channel(target)
+				channel, exists := server.channels.GetByName(target)
 				if !exists {
-					// create if not
-					channel = server.CreateChannel(target, client)
+					// create channel if it does not exist
+					channel = NewChannel(target, client)
+					server.channels.Add(target, channel)
 				}
 
 				// add client to channel
 				err = channel.AddClient(client, "")
 				if err != nil {
-					// todo: numeric
-					log.Error().Err(err).Msgf("cant join channel %s", target)
+					// https://modern.ircdocs.horse/#errbadchannelkey-475
+					client.send <- fmt.Sprintf(":%s 475 %s %s :Cannot join channel (+k)",
+						server.name,
+						client.nickname,
+						channel.name,
+					)
 					continue
 				}
 
@@ -144,7 +147,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				// that a client has joined
 				channel.Broadcast(
 					fmt.Sprintf(":%s JOIN %s", client.Prefix(), target),
-					client,
+					client.id,
 					false,
 				)
 
@@ -198,7 +201,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			for _, target := range targets {
 				// try to get channel
-				channel, exists := server.Channel(target)
+				channel, exists := server.channels.GetByName(target)
 				if !exists {
 					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
 					continue
@@ -212,7 +215,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				}
 
 				// broadcast that user has left the channel
-				channel.Broadcast(fmt.Sprintf(":%s PART %s", client.Prefix(), target), client, false)
+				channel.Broadcast(fmt.Sprintf(":%s PART %s", client.Prefix(), target), client.id, false)
 			}
 
 			continue
@@ -227,7 +230,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 			// todo: check and validate
 
 			// try to get channel
-			channel, exists := server.Channel(target)
+			channel, exists := server.channels.GetByName(target)
 			if !exists {
 				client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
 				continue
@@ -246,7 +249,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.nickname,
 					channel.name,
 					topic.text),
-				client, false)
+				client.id, false)
 
 			continue
 		}
@@ -263,7 +266,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 				// is channel
 				if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
-					channel, exists := server.Channel(target)
+					channel, exists := server.channels.GetByName(target)
 					if !exists {
 						client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 							server.name,
@@ -271,7 +274,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 						continue
 					}
 					// send message to channel
-					channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.Prefix(), channel.name, message), client, true)
+					channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s", client.Prefix(), channel.name, message), client.id, true)
 					server.counters["ircd_channels_privmsg"].Inc()
 					continue
 				}

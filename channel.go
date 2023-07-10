@@ -96,12 +96,12 @@ func (ch *Channel) Names() string {
 
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message
-func (ch *Channel) Broadcast(message string, source *Client, skip bool) {
+func (ch *Channel) Broadcast(message string, sourceId string, skip bool) {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
 
 	for id, c := range ch.clients {
-		if skip && id == source.id {
+		if skip && id == sourceId {
 			continue
 		}
 		c.send <- message
