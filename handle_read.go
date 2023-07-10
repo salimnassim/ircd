@@ -10,8 +10,6 @@ import (
 )
 
 func HandleConnectionRead(connection net.Conn, server *Server) {
-	log.Info().Msgf("handling connection")
-
 	id := uuid.Must(uuid.NewRandom()).String()
 	client, err := NewClient(connection, id)
 	if err != nil {
@@ -19,6 +17,9 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		log.Error().Err(err).Msg("unable to create client")
 		return
 	}
+
+	// add client to store
+	server.clients.Add(client)
 
 	go HandleConnectionOut(client, server)
 	go HandleConnectionIn(client, server)
@@ -31,12 +32,8 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 			break
 		}
 		line = strings.Trim(line, "\r\n")
-
-		// send line to recv
 		client.recv <- line
 	}
-
-	log.Info().Msgf("closing client from connection read (%s)", client.connection.RemoteAddr())
 
 	err = client.Close()
 	if err != nil {

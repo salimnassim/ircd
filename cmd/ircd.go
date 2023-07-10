@@ -59,6 +59,7 @@ func main() {
 	log.Info().Msg("starting http, listening on :2112")
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
+		http.HandleFunc("/debug", server.IndexHandler)
 
 		http.ListenAndServe(":2112", nil)
 		select {}

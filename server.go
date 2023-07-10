@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"errors"
+	"net/http"
 	"regexp"
 	"sync"
 
@@ -20,7 +21,7 @@ type ServerConfig struct {
 type Server struct {
 	mu       *sync.RWMutex
 	name     string
-	clients  map[*Client]interface{}
+	clients  ClientStoreable
 	channels map[*Channel]interface{}
 
 	// regex cache
@@ -31,11 +32,15 @@ type Server struct {
 	counters map[string]prometheus.Counter
 }
 
+func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 func NewServer(config ServerConfig) *Server {
 	server := &Server{
 		mu:       &sync.RWMutex{},
 		name:     config.Name,
-		clients:  make(map[*Client]interface{}),
+		clients:  NewClientStore(),
 		channels: make(map[*Channel]interface{}),
 		regex:    make(map[string]*regexp.Regexp),
 		gauges:   make(map[string]prometheus.Gauge),
@@ -94,29 +99,13 @@ func registerMetrics(server *Server) {
 
 // Returns the number of connected clients, and channels
 func (server *Server) Stats() (int, int) {
-	server.mu.RLock()
-	defer server.mu.RUnlock()
-
-	return len(server.clients), len(server.channels)
-}
-
-// Adds client to client map
-func (server *Server) AddClient(client *Client) error {
-	server.mu.Lock()
-	defer server.mu.Unlock()
-
-	server.clients[client] = true
-	server.gauges["ircd_clients"].Inc()
-
-	return nil
+	return server.clients.Size(), len(server.channels)
 }
 
 // Removes client from channels and client map
 func (server *Server) RemoveClient(client *Client) error {
 	server.mu.Lock()
 	defer server.mu.Unlock()
-
-	log.Debug().Msgf("- USER %s", client.String())
 
 	for channel := range server.channels {
 		for c := range channel.clients {
@@ -129,36 +118,10 @@ func (server *Server) RemoveClient(client *Client) error {
 		}
 	}
 
-	delete(server.clients, client)
+	server.clients.Remove(client)
 	server.gauges["ircd_clients"].Dec()
 
 	return nil
-}
-
-// Returns a pointer to client by nickname
-func (server *Server) ClientByNickname(nickname string) (*Client, bool) {
-	server.mu.RLock()
-	defer server.mu.RUnlock()
-
-	for client := range server.clients {
-		if client.nickname == nickname {
-			return client, true
-		}
-	}
-
-	return nil, false
-}
-
-func (server *Server) Clients() []Client {
-	server.mu.RLock()
-	defer server.mu.RUnlock()
-
-	var clients []Client
-	for c := range server.clients {
-		clients = append(clients, *c)
-	}
-
-	return clients
 }
 
 func (server *Server) Channels() []Channel {
@@ -188,8 +151,6 @@ func (server *Server) Channel(name string) (*Channel, bool) {
 
 // Creates a channel and returns a pointer to it
 func (server *Server) CreateChannel(name string, owner *Client) *Channel {
-	log.Info().Msgf("creating channel %s", name)
-
 	server.mu.Lock()
 	defer server.mu.Unlock()
 
@@ -202,8 +163,6 @@ func (server *Server) CreateChannel(name string, owner *Client) *Channel {
 
 // Removes client from channel map
 func (server *Server) RemoveChannel(channel *Channel) error {
-	log.Info().Msgf("removing channel %s", channel.name)
-
 	server.mu.Lock()
 	defer server.mu.Unlock()
 

@@ -13,10 +13,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 		parsed, err := Parse(message)
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)
+			continue
 		}
-
-		log.Debug().Msgf(" in(%5d)> [command: %5s, prefix: %s, params: %s] %s",
-			len(message), parsed.Command, parsed.Prefix, strings.Join(parsed.Params, ","), parsed.Raw)
 
 		// PING
 		// https://modern.ircdocs.horse/#ping-message
@@ -32,31 +30,39 @@ func HandleConnectionIn(client *Client, server *Server) {
 		if parsed.Command == "NICK" {
 			// has enough params?
 			if len(parsed.Params) != 1 {
-				//
 				client.send <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.", server.name, parsed.Command)
 				continue
 			}
 
-			// validate nick
+			// nicks should be more than 1 character
+			if len(parsed.Params[0]) < 2 || len(parsed.Params[0]) > 21 {
+				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.name, parsed.Params[0])
+				continue
+			}
+
+			// validate nickname
 			ok := server.regex["nick"].MatchString(parsed.Params[0])
 			if !ok {
 				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.", server.name, parsed.Params[0])
 				continue
 			}
 
-			who, exists := server.ClientByNickname(parsed.Params[0])
-			if exists || who != nil {
+			// check if nick is already in use
+			_, exists := server.clients.GetByNickname(parsed.Params[0])
+			if exists {
 				client.send <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.", server.name, parsed.Params[0])
 				continue
 			}
 
-			// set nickname
 			client.SetNickname(parsed.Params[0])
 
 			// check for handshake
 			if !client.handshake {
+				log.Debug().Msgf("exists: %t, nick: %s", exists, parsed.Params[0])
+
 				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s", client.nickname, client.id)
-				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname..", client.nickname)
+				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your IP address is: %s", client.nickname, client.IP())
+				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname...", client.nickname)
 
 				// lookup address
 				// todo: resolver
@@ -75,15 +81,14 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 				// cloak
 				client.SetHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, client.id))
+				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your hostname has been cloaked to %s", client.nickname, client.hostname)
 
 				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂", server.name, client.nickname)
 				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s, running version -1", server.name, client.nickname, server.name)
 				client.send <- fmt.Sprintf(":%s 376 %s :End of /MOTD command", server.name, client.nickname)
 				client.handshake = true
-
-				server.AddClient(client)
+				continue
 			}
-
 			continue
 		}
 
@@ -110,22 +115,15 @@ func HandleConnectionIn(client *Client, server *Server) {
 		}
 
 		// LUSERS
+		// https://modern.ircdocs.horse/#lusers-message
 		if parsed.Command == "LUSERS" {
 			clientCount, channelCount := server.Stats()
 			client.send <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.", server.name, client.nickname, clientCount, channelCount)
-
-			var buf string
-			clients := server.Clients()
-			log.Debug().Msgf("%v", clients)
-			for _, c := range clients {
-				buf = buf + fmt.Sprintf("%s ", c.nickname)
-			}
-
-			client.send <- fmt.Sprintf("NOTICE %s :DEBUG :*** %s", client.nickname, buf)
 			continue
 		}
 
 		// JOIN
+		// https://modern.ircdocs.horse/#join-message
 		if parsed.Command == "JOIN" {
 			// join can have multiple channels separated by a comma
 			targets := strings.Split(parsed.Params[0], ",")
@@ -204,6 +202,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		}
 
 		// PART
+		// https://modern.ircdocs.horse/#part-message
 		if parsed.Command == "PART" {
 			targets := strings.Split(parsed.Params[0], ",")
 
@@ -230,6 +229,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		}
 
 		// TOPIC
+		// https://modern.ircdocs.horse/#topic-message
 		if parsed.Command == "TOPIC" {
 			target := parsed.Params[0]
 			remainder := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
@@ -286,7 +286,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 					continue
 				}
 				// is user
-				dest, exists := server.ClientByNickname(target)
+				dest, exists := server.clients.GetByNickname(target)
 				if !exists {
 					client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
 						server.name,
@@ -300,12 +300,13 @@ func HandleConnectionIn(client *Client, server *Server) {
 		}
 
 		// WHOIS
+		// https://modern.ircdocs.horse/#whois-message
 		if parsed.Command == "WHOIS" {
 			target := parsed.Params[0]
 
 			// todo: check and validate
 
-			who, exists := server.ClientByNickname(target)
+			who, exists := server.clients.GetByNickname(target)
 			if !exists {
 				client.send <- fmt.Sprintf(
 					":%s 401 %s :no such nick",
@@ -313,8 +314,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.nickname)
 				continue
 			}
-
-			copy := *who
 
 			var buf string
 			channels := server.Channels()
@@ -332,10 +331,10 @@ func HandleConnectionIn(client *Client, server *Server) {
 				":%s 311 %s %s %s %s * :%s",
 				server.name,
 				client.nickname,
-				copy.nickname,
-				copy.username,
-				copy.hostname,
-				copy.realname,
+				who.nickname,
+				who.username,
+				who.hostname,
+				who.realname,
 			)
 
 			// https://modern.ircdocs.horse/#rplwhoischannels-319
@@ -343,7 +342,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				":%s 319 %s %s :%s",
 				server.name,
 				client.nickname,
-				copy.nickname,
+				who.nickname,
 				buf,
 			)
 
@@ -351,5 +350,4 @@ func HandleConnectionIn(client *Client, server *Server) {
 		}
 	}
 
-	log.Info().Msg("client exited handle recv loop")
 }
