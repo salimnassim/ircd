@@ -128,9 +128,15 @@ func HandleConnectionIn(client *Client, server *Server) {
 			// join can have multiple channels separated by a comma
 			targets := strings.Split(parsed.Params[0], ",")
 
-			// todo: check and validate params - numeric
-
 			for _, target := range targets {
+
+				if !strings.HasPrefix(target, "#") || !strings.HasPrefix(target, "&") || len(target) > 9 {
+					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
+					continue
+				}
+
+				// todo: regex validate name
+
 				// ptr to existing channel or channel that will be created
 				var channel *Channel
 
@@ -239,6 +245,11 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// TOPIC
 		// https://modern.ircdocs.horse/#topic-message
 		if parsed.Command == "TOPIC" {
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
+
 			target := parsed.Params[0]
 			remainder := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
 
@@ -315,8 +326,12 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// WHOIS
 		// https://modern.ircdocs.horse/#whois-message
 		if parsed.Command == "WHOIS" {
-			target := parsed.Params[0]
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
 
+			target := parsed.Params[0]
 			whois, exists := server.clients.Whois(target)
 			if !exists {
 				client.send <- fmt.Sprintf(
