@@ -30,6 +30,11 @@ services:
     ports:
       - "0.0.0.0:6667:6667"
       - "2112:2112"
+    environment:
+      - SERVER_NAME=ircd
+      - PYROSCOPE_ENABLE=1
+      - PYROSCOPE_ADDRESS=http://pyroscope:4040
+      - PROMETHEUS_ENABLE=1
 volumes:
   prometheus_data:
     external: false

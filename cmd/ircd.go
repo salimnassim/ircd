@@ -9,8 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/pyroscope-io/client/pyroscope"
 
-	_ "net/http/pprof"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/salimnassim/ircd"
@@ -18,28 +16,30 @@ import (
 
 func main() {
 
-	runtime.SetMutexProfileFraction(5)
-	runtime.SetBlockProfileRate(5)
+	if os.Getenv("PYROSCOPE_ENABLE") != "" {
+		runtime.SetMutexProfileFraction(5)
+		runtime.SetBlockProfileRate(5)
 
-	pyroscope.Start(pyroscope.Config{
-		ApplicationName: "ircd",
-		ServerAddress:   "http://pyroscope:4040",
-		Logger:          nil,
-		Tags:            map[string]string{"hostname": os.Getenv("HOSTNAME")},
+		pyroscope.Start(pyroscope.Config{
+			ApplicationName: "ircd",
+			ServerAddress:   os.Getenv("PYROSCOPE_ADDRESS"),
+			Logger:          nil,
+			Tags:            map[string]string{"hostname": os.Getenv("HOSTNAME")},
 
-		ProfileTypes: []pyroscope.ProfileType{
-			pyroscope.ProfileCPU,
-			pyroscope.ProfileAllocObjects,
-			pyroscope.ProfileAllocSpace,
-			pyroscope.ProfileInuseObjects,
-			pyroscope.ProfileInuseSpace,
-			pyroscope.ProfileGoroutines,
-			pyroscope.ProfileMutexCount,
-			pyroscope.ProfileMutexDuration,
-			pyroscope.ProfileBlockCount,
-			pyroscope.ProfileBlockDuration,
-		},
-	})
+			ProfileTypes: []pyroscope.ProfileType{
+				pyroscope.ProfileCPU,
+				pyroscope.ProfileAllocObjects,
+				pyroscope.ProfileAllocSpace,
+				pyroscope.ProfileInuseObjects,
+				pyroscope.ProfileInuseSpace,
+				pyroscope.ProfileGoroutines,
+				pyroscope.ProfileMutexCount,
+				pyroscope.ProfileMutexDuration,
+				pyroscope.ProfileBlockCount,
+				pyroscope.ProfileBlockDuration,
+			},
+		})
+	}
 
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
@@ -58,7 +58,11 @@ func main() {
 
 	log.Info().Msg("starting http, listening on :2112")
 	go func() {
-		http.Handle("/metrics", promhttp.Handler())
+
+		if os.Getenv("PROMETHEUS_ENABLE") != "" {
+			http.Handle("/metrics", promhttp.Handler())
+		}
+
 		http.HandleFunc("/debug", server.IndexHandler)
 
 		http.ListenAndServe(":2112", nil)
