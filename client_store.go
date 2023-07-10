@@ -60,8 +60,8 @@ func (cs *ClientStore) Get(client *Client) (*Client, bool) {
 	cs.mutex.RLock()
 	defer cs.mutex.RUnlock()
 
-	for v, c := range cs.clients {
-		if v == client.id {
+	for id, c := range cs.clients {
+		if id == client.id {
 			return c, true
 		}
 	}
@@ -74,29 +74,33 @@ func (cs *ClientStore) GetByNickname(nickname string) (*Client, bool) {
 	defer cs.mutex.RUnlock()
 
 	for _, c := range cs.clients {
+		c.mu.RLock()
 		if c.nickname == nickname {
+			c.mu.RUnlock()
 			return c, true
 		}
+		c.mu.RUnlock()
 	}
 
 	return nil, false
 }
 
 func (cs *ClientStore) Whois(nickname string) (clientWhois, bool) {
-	cs.mutex.RLock()
-	defer cs.mutex.RUnlock()
-
 	var ptr *Client
+
+	cs.mutex.RLock()
 	for _, c := range cs.clients {
 		if c.nickname == nickname {
 			ptr = c
 		}
 	}
+	cs.mutex.RUnlock()
 
 	if ptr == nil {
 		return clientWhois{}, false
 	}
 
+	ptr.mu.Lock()
 	whois := clientWhois{
 		nickname: ptr.nickname,
 		username: ptr.username,
@@ -104,6 +108,7 @@ func (cs *ClientStore) Whois(nickname string) (clientWhois, bool) {
 		hostname: ptr.hostname,
 		channels: []string{},
 	}
+	ptr.mu.Unlock()
 
 	return whois, true
 }
