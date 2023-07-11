@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -20,19 +21,17 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 
 	// add client to store
 	server.clients.Add(client)
-	server.gauges["ircd_clients"].Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
 	go HandleConnectionOut(client, server)
 	go HandleConnectionIn(client, server)
 
 	// read input from client
-
-	scanner := bufio.NewScanner(client.connection)
+	scanner := bufio.NewScanner(client.reader)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if err != nil {
-			log.Error().Err(err).Msgf("unable to read from client (%s)", client.connection.RemoteAddr())
+			log.Error().Err(err).Msgf("unable to read from client (%s)", client.ip)
 			break
 		}
 
@@ -42,6 +41,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		// https://modern.ircdocs.horse/#ping-message
 		// https://modern.ircdocs.horse/#pong-message
 		if strings.HasPrefix(line, "PING") {
+			client.SetPing(time.Now().Unix())
 			client.send <- strings.Replace(line, "PING", "PONG", 1)
 			continue
 		}
@@ -51,7 +51,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 	}
 
 	// cleanup
-	err = client.Close()
+	err = connection.Close()
 	if err != nil {
 		log.Error().Err(err).Msg("unable to close client on write handler")
 	}

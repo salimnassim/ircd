@@ -10,6 +10,10 @@ import (
 )
 
 func HandleConnectionIn(client *Client, server *Server) {
+	defer func() {
+		client.stop <- true
+	}()
+
 	for message := range client.recv {
 		parsed, err := Parse(message)
 		if err != nil {
@@ -59,22 +63,22 @@ func HandleConnectionIn(client *Client, server *Server) {
 				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s",
 					client.nickname, client.id)
 				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your IP address is: %s",
-					client.nickname, client.IP())
+					client.nickname, client.ip)
 				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname...",
 					client.nickname)
 
 				// lookup address
 				// todo: resolver
-				addr, err := net.LookupAddr(client.IP())
+				addr, err := net.LookupAddr(client.ip)
 				if err != nil {
 					// if it cant be resolved use ip
-					client.SetHostname(client.IP())
+					client.SetHostname(client.ip)
 				} else {
 					client.SetHostname(addr[0])
 				}
 
 				prefix := 4
-				if strings.Count(client.IP(), ":") >= 2 {
+				if strings.Count(client.ip, ":") >= 2 {
 					prefix = 6
 				}
 
@@ -322,7 +326,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 					// send message to channel
 					channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
 						client.Prefix(), channel.name, message), client.id, true)
-					server.counters["ircd_channels_privmsg"].Inc()
 					continue
 				}
 				// is user

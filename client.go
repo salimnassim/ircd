@@ -2,23 +2,32 @@ package ircd
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Client struct {
-	mu         *sync.RWMutex
-	id         string
-	nickname   string
-	username   string
-	realname   string
-	hostname   string
-	connection net.Conn
-	handshake  bool
-	recv       chan string
-	send       chan string
-	stop       chan interface{}
+	mu       *sync.RWMutex
+	id       string
+	ip       string
+	nickname string
+	username string
+	realname string
+	hostname string
+
+	handshake bool
+	ping      int64
+
+	conn   net.Conn
+	reader io.Reader
+	writer io.Writer
+
+	recv chan string
+	send chan string
+	stop chan interface{}
 }
 
 func (client *Client) String() string {
@@ -27,23 +36,32 @@ func (client *Client) String() string {
 }
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
+	ip := strings.Split(connection.RemoteAddr().String(), ":")[0]
+
 	return &Client{
-		mu:         &sync.RWMutex{},
-		id:         id,
-		nickname:   "",
-		username:   "",
-		realname:   "",
-		hostname:   "",
-		connection: connection,
-		handshake:  false,
-		recv:       make(chan string),
-		send:       make(chan string),
-		stop:       make(chan interface{}),
+		mu:        &sync.RWMutex{},
+		id:        id,
+		ip:        ip,
+		nickname:  "",
+		username:  "",
+		realname:  "",
+		hostname:  "",
+		ping:      time.Now().Unix(),
+		handshake: false,
+		conn:      connection,
+		reader:    connection,
+		writer:    connection,
+		recv:      make(chan string),
+		send:      make(chan string),
+		stop:      make(chan interface{}),
 	}, nil
 }
 
-func (client *Client) IP() string {
-	return strings.Split(client.connection.RemoteAddr().String(), ":")[0]
+func (client *Client) SetPing(ping int64) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+
+	client.ping = ping
 }
 
 func (client *Client) SetHostname(hostname string) {
@@ -80,18 +98,4 @@ func (client *Client) Prefix() string {
 	defer client.mu.RUnlock()
 
 	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.hostname)
-}
-
-func (client *Client) Write(message string) (int, error) {
-	n, err := client.connection.Write([]byte(message + "\r\n"))
-	return n, err
-}
-
-func (client *Client) Close() error {
-	err := client.connection.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
