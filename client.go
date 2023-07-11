@@ -2,7 +2,6 @@ package ircd
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"strings"
 	"sync"
@@ -19,6 +18,7 @@ type Client struct {
 	handshake  bool
 	recv       chan string
 	send       chan string
+	stop       chan interface{}
 }
 
 func (client *Client) String() string {
@@ -37,7 +37,8 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 		connection: connection,
 		handshake:  false,
 		recv:       make(chan string),
-		send:       make(chan string, 1),
+		send:       make(chan string),
+		stop:       make(chan interface{}),
 	}, nil
 }
 
@@ -67,6 +68,13 @@ func (client *Client) SetUsername(username string, realname string) {
 	client.realname = realname
 }
 
+func (client *Client) Nickname() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
+	return client.nickname
+}
+
 func (client *Client) Prefix() string {
 	client.mu.RLock()
 	defer client.mu.RUnlock()
@@ -75,7 +83,7 @@ func (client *Client) Prefix() string {
 }
 
 func (client *Client) Write(message string) (int, error) {
-	n, err := io.WriteString(client.connection, message)
+	n, err := client.connection.Write([]byte(message + "\r\n"))
 	return n, err
 }
 

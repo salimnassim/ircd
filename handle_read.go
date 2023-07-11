@@ -20,15 +20,17 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 
 	// add client to store
 	server.clients.Add(client)
+	server.gauges["ircd_clients"].Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
 	go HandleConnectionOut(client, server)
 	go HandleConnectionIn(client, server)
 
 	// read input from client
-	reader := bufio.NewReader(client.connection)
-	for {
-		line, err := reader.ReadString('\n')
+
+	scanner := bufio.NewScanner(client.connection)
+	for scanner.Scan() {
+		line := scanner.Text()
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to read from client (%s)", client.connection.RemoteAddr())
 			break

@@ -4,14 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 )
 
 type Channel struct {
 	mu       *sync.RWMutex
 	name     string
 	topic    *ChannelTopic
-	clients  map[string]*Client
+	clients  sync.Map
 	owner    *Client
 	password string
 }
@@ -31,7 +30,7 @@ func NewChannel(channelName string, owner *Client) *Channel {
 			timestamp: 0,
 			author:    "",
 		},
-		clients:  map[string]*Client{},
+		clients:  sync.Map{},
 		owner:    owner,
 		password: "",
 	}
@@ -39,57 +38,43 @@ func NewChannel(channelName string, owner *Client) *Channel {
 	return channel
 }
 
-func (channel *Channel) SetTopic(topic string, author string) {
-	channel.mu.Lock()
-	defer channel.mu.Unlock()
-	channel.topic.text = topic
-	channel.topic.timestamp = int(time.Now().Unix())
-	channel.topic.author = author
-}
+// func (channel *Channel) SetTopic(topic string, author string) {
+// 	channel.mu.Lock()
+// 	defer channel.mu.Unlock()
+// 	channel.topic.text = topic
+// 	channel.topic.timestamp = int(time.Now().Unix())
+// 	channel.topic.author = author
+// }
 
-func (channel *Channel) Topic() ChannelTopic {
-	channel.mu.RLock()
-	defer channel.mu.RUnlock()
-	return *channel.topic
-}
+// func (channel *Channel) Topic() ChannelTopic {
+// 	channel.mu.RLock()
+// 	defer channel.mu.RUnlock()
+// 	return *channel.topic
+// }
 
-func (channel *Channel) AddClient(client *Client, password string) error {
-	channel.mu.Lock()
-	defer channel.mu.Unlock()
-
-	if password != "" && channel.password != password {
+func (ch *Channel) AddClient(client *Client, password string) error {
+	if password != "" && ch.password != password {
 		return errors.New("incorrect password")
 	}
 
-	channel.clients[client.id] = client
+	ch.clients.Store(client.id, client)
 
 	return nil
 }
 
-func (ch *Channel) RemoveClient(client *Client) error {
-	ch.mu.Lock()
-	defer ch.mu.Unlock()
-
-	_, ok := ch.clients[client.id]
-	if !ok {
-		return errors.New("not a channel member")
-	}
-
-	delete(ch.clients, client.id)
-	return nil
+func (ch *Channel) RemoveClient(client *Client) {
+	ch.clients.Delete(client.id)
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY
 func (ch *Channel) Names() string {
-	ch.mu.RLock()
-	defer ch.mu.RUnlock()
-
 	var names string
-	clients := ch.clients
-	for _, c := range clients {
-		// todo: add modes
-		names = names + fmt.Sprintf("%s ", c.nickname)
-	}
+
+	ch.clients.Range(func(key, value any) bool {
+		client := value.(*Client)
+		names = names + fmt.Sprintf("%s ", client.nickname)
+		return true
+	})
 
 	return names
 }
@@ -97,13 +82,14 @@ func (ch *Channel) Names() string {
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message
 func (ch *Channel) Broadcast(message string, sourceId string, skip bool) {
-	ch.mu.RLock()
-	defer ch.mu.RUnlock()
-
-	for id, c := range ch.clients {
-		if skip && id == sourceId {
-			continue
+	ch.clients.Range(func(key, value any) bool {
+		client := value.(*Client)
+		if sourceId != key {
+			client.send <- message
 		}
-		c.send <- message
-	}
+		if sourceId == key && !skip {
+			client.send <- message
+		}
+		return true
+	})
 }

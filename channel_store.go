@@ -10,61 +10,63 @@ type ChannelStoreable interface {
 }
 
 type ChannelStore struct {
-	mu       *sync.RWMutex
 	id       string
-	channels map[string]*Channel
+	channels sync.Map
 }
 
 func NewChannelStore(id string) *ChannelStore {
 	return &ChannelStore{
 		id:       id,
-		mu:       &sync.RWMutex{},
-		channels: make(map[string]*Channel),
+		channels: sync.Map{},
 	}
 }
 
 func (cs *ChannelStore) Size() int {
-	cs.mu.RLock()
-	defer cs.mu.RUnlock()
+	size := 0
 
-	size := len(cs.channels)
+	cs.channels.Range(func(key, value any) bool {
+		size++
+		return true
+	})
+
 	return size
 }
 
 // Adds channel to store
 func (cs *ChannelStore) Add(id string, channel *Channel) {
-	cs.mu.Lock()
-	defer cs.mu.Unlock()
-
-	cs.channels[id] = channel
+	cs.channels.Store(id, channel)
 }
 
 // Returns a pointer to the channel by name.
 // Boolean returns true if thee channel exists
 func (cs *ChannelStore) GetByName(channelName string) (*Channel, bool) {
-	cs.mu.RLock()
-	defer cs.mu.RUnlock()
+	var channel *Channel
 
-	channel, exists := cs.channels[channelName]
-	if !exists {
+	cs.channels.Range(func(key, value any) bool {
+		if value.(*Channel).name == channelName {
+			channel = value.(*Channel)
+			return false
+		}
+		return true
+	})
+
+	if channel == nil {
 		return nil, false
 	}
+
 	return channel, true
 }
 
 func (cs *ChannelStore) MemberOf(client *Client) []*Channel {
-	cs.mu.RLock()
-	defer cs.mu.RUnlock()
-
 	var memberOf []*Channel
 
-	for _, v := range cs.channels {
-		for _, c := range v.clients {
-			if c.id == client.id {
-				memberOf = append(memberOf, v)
-			}
+	cs.channels.Range(func(key, value any) bool {
+		_, exists := value.(*Channel).clients.Load(client.id)
+		if exists {
+			memberOf = append(memberOf, value.(*Channel))
 		}
-	}
+		return true
+	})
 
 	return memberOf
 }

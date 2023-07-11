@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
 
@@ -17,6 +18,8 @@ import (
 func main() {
 
 	if os.Getenv("PYROSCOPE_ENABLE") != "" {
+		log.Info().Msg("pyroscope is enabled")
+
 		runtime.SetMutexProfileFraction(5)
 		runtime.SetBlockProfileRate(5)
 
@@ -49,6 +52,7 @@ func main() {
 
 	server := ircd.NewServer(config)
 
+	log.Info().Msg("starting irc, listening on :6667")
 	listener, err := net.Listen("tcp", ":6667")
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to listen")
@@ -56,20 +60,18 @@ func main() {
 	}
 	defer listener.Close()
 
-	log.Info().Msg("starting http, listening on :2112")
 	go func() {
-
+		log.Info().Msg("starting http, listening on :2112")
 		if os.Getenv("PROMETHEUS_ENABLE") != "" {
+			log.Info().Msg("prometheus is enabled")
 			http.Handle("/metrics", promhttp.Handler())
 		}
-
-		http.HandleFunc("/debug", server.IndexHandler)
+		http.HandleFunc("/", server.IndexHandler)
 
 		http.ListenAndServe(":2112", nil)
 		select {}
 	}()
 
-	log.Info().Msg("starting irc, listening on :6667")
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
