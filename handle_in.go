@@ -86,8 +86,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂",
 					server.name, client.nickname)
 				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s on %s, running version -1",
-					server.name, os.Getenv("HOSTNAME"),
-					client.nickname, server.name)
+					server.name, client.nickname, server.name, os.Getenv("HOSTNAME"))
 				client.send <- fmt.Sprintf(":%s 376 %s :End of /MOTD command",
 					server.name, client.nickname)
 				client.handshake = true
