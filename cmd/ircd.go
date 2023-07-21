@@ -69,7 +69,6 @@ func main() {
 		http.HandleFunc("/", server.IndexHandler)
 
 		http.ListenAndServe(":2112", nil)
-		select {}
 	}()
 
 	for {
