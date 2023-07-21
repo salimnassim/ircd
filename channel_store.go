@@ -5,6 +5,7 @@ import "sync"
 type ChannelStoreable interface {
 	Size() int
 	Add(id string, channel *Channel)
+	IsMember(*Client, *Channel) bool
 	GetByName(string) (*Channel, bool)
 	MemberOf(*Client) []*Channel
 }
@@ -55,6 +56,11 @@ func (cs *ChannelStore) GetByName(channelName string) (*Channel, bool) {
 	}
 
 	return channel, true
+}
+
+func (cs *ChannelStore) IsMember(client *Client, channel *Channel) bool {
+	_, ok := channel.clients.Load(client.id)
+	return ok
 }
 
 func (cs *ChannelStore) MemberOf(client *Client) []*Channel {

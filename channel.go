@@ -4,18 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 )
 
 type Channel struct {
 	mu       *sync.RWMutex
 	name     string
-	topic    *ChannelTopic
+	topic    channelTopic
 	clients  sync.Map
 	owner    *Client
 	password string
 }
 
-type ChannelTopic struct {
+type channelTopic struct {
 	text      string
 	timestamp int
 	author    string
@@ -25,7 +26,7 @@ func NewChannel(channelName string, owner *Client) *Channel {
 	channel := &Channel{
 		mu:   &sync.RWMutex{},
 		name: channelName,
-		topic: &ChannelTopic{
+		topic: channelTopic{
 			text:      "",
 			timestamp: 0,
 			author:    "",
@@ -38,19 +39,19 @@ func NewChannel(channelName string, owner *Client) *Channel {
 	return channel
 }
 
-// func (channel *Channel) SetTopic(topic string, author string) {
-// 	channel.mu.Lock()
-// 	defer channel.mu.Unlock()
-// 	channel.topic.text = topic
-// 	channel.topic.timestamp = int(time.Now().Unix())
-// 	channel.topic.author = author
-// }
+func (channel *Channel) SetTopic(topic string, author string) {
+	channel.mu.Lock()
+	defer channel.mu.Unlock()
+	channel.topic.text = topic
+	channel.topic.timestamp = int(time.Now().Unix())
+	channel.topic.author = author
+}
 
-// func (channel *Channel) Topic() ChannelTopic {
-// 	channel.mu.RLock()
-// 	defer channel.mu.RUnlock()
-// 	return *channel.topic
-// }
+func (channel *Channel) Topic() channelTopic {
+	channel.mu.RLock()
+	defer channel.mu.RUnlock()
+	return channel.topic
+}
 
 func (ch *Channel) AddClient(client *Client, password string) error {
 	if password != "" && ch.password != password {
