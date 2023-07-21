@@ -23,8 +23,8 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 	server.clients.Add(client)
 
 	// starts goroutines for procesing incoming and outgoing messages
-	go HandleConnectionOut(client, server)
 	go HandleConnectionIn(client, server)
+	go HandleConnectionOut(client, server)
 
 	// read input from client
 	scanner := bufio.NewScanner(client.reader)

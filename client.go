@@ -51,8 +51,8 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 		conn:      connection,
 		reader:    connection,
 		writer:    connection,
-		recv:      make(chan string),
-		send:      make(chan string),
+		recv:      make(chan string, 1),
+		send:      make(chan string, 1),
 		stop:      make(chan interface{}),
 	}, nil
 }
