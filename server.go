@@ -3,7 +3,6 @@ package ircd
 import (
 	"net/http"
 	"regexp"
-	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog/log"
@@ -18,7 +17,6 @@ type ServerConfig struct {
 }
 
 type Server struct {
-	mu       *sync.RWMutex
 	name     string
 	clients  ClientStoreable
 	channels ChannelStoreable
@@ -37,7 +35,6 @@ func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func NewServer(config ServerConfig) *Server {
 	server := &Server{
-		mu:       &sync.RWMutex{},
 		name:     config.Name,
 		clients:  NewClientStore(),
 		channels: NewChannelStore("default"),
@@ -103,9 +100,6 @@ func (server *Server) Stats() (int, int) {
 
 // Removes client from channels and client map
 func (server *Server) RemoveClient(client *Client) error {
-	server.mu.Lock()
-	defer server.mu.Unlock()
-
 	memberOf := server.channels.MemberOf(client)
 	for _, ch := range memberOf {
 		ch.RemoveClient(client)
