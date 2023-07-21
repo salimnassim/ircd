@@ -22,6 +22,8 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 	// add client to store
 	server.clients.Add(client)
 
+	server.gauges["ircd_clients"].Inc()
+
 	// starts goroutines for procesing incoming and outgoing messages
 	go HandleConnectionIn(client, server)
 	go HandleConnectionOut(client, server)
