@@ -12,7 +12,7 @@ type Channel struct {
 	name     string
 	topic    channelTopic
 	clients  sync.Map
-	owner    *Client
+	owner    string
 	password string
 }
 
@@ -22,7 +22,7 @@ type channelTopic struct {
 	author    string
 }
 
-func NewChannel(channelName string, owner *Client) *Channel {
+func NewChannel(channelName string, owner string) *Channel {
 	channel := &Channel{
 		mu:   &sync.RWMutex{},
 		name: channelName,
@@ -32,7 +32,7 @@ func NewChannel(channelName string, owner *Client) *Channel {
 			author:    "",
 		},
 		clients:  sync.Map{},
-		owner:    owner,
+		owner:    "",
 		password: "",
 	}
 
