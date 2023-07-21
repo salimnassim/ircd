@@ -78,7 +78,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				}
 
 				prefix := 4
-				if strings.Count(client.ip, ":") >= 2 {
+				if strings.Count(client.ip, ":") > 1 {
 					prefix = 6
 				}
 

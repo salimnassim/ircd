@@ -1,6 +1,7 @@
 package ircd
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net"
@@ -23,7 +24,6 @@ type Client struct {
 
 	conn   net.Conn
 	reader io.Reader
-	writer io.Writer
 
 	recv chan string
 	send chan string
@@ -49,10 +49,9 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 		ping:      time.Now().Unix(),
 		handshake: false,
 		conn:      connection,
-		reader:    connection,
-		writer:    connection,
-		recv:      make(chan string),
-		send:      make(chan string),
+		reader:    bufio.NewReader(connection),
+		recv:      make(chan string, 1),
+		send:      make(chan string, 1),
 		stop:      make(chan interface{}),
 	}, nil
 }
@@ -98,4 +97,8 @@ func (client *Client) Prefix() string {
 	defer client.mu.RUnlock()
 
 	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.hostname)
+}
+
+func (client *Client) Write(message string) (int, error) {
+	return client.conn.Write([]byte(message))
 }
