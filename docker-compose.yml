@@ -22,7 +22,7 @@ services:
     ports:
       - '3000:3000'
   ircd:
-    image: ircd-race:latest
+    image: ircd:latest
     restart: on-failure
     build:
       context: .
@@ -32,7 +32,7 @@ services:
       - "2112:2112"
     environment:
       - SERVER_NAME=ircd
-      - PYROSCOPE_ENABLE=1
+      - PYROSCOPE_ENABLE=0
       - PYROSCOPE_ADDRESS=http://pyroscope:4040
       - PROMETHEUS_ENABLE=1
 volumes:
