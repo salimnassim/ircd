@@ -163,8 +163,12 @@ func HandleConnectionIn(client *Client, server *Server) {
 				channel, exists := server.channels.GetByName(target)
 				if !exists {
 					// create channel if it does not exist
-					channel = NewChannel(target, client)
+					channel = NewChannel(target, client.id)
+
+					// todo: use channel.id instead of target
 					server.channels.Add(target, channel)
+
+					server.gauges["ircd_channels"].Inc()
 				}
 
 				// add client to channel
@@ -182,10 +186,19 @@ func HandleConnectionIn(client *Client, server *Server) {
 				// broadcast to all clients on the channel
 				// that a client has joined
 				channel.Broadcast(
-					fmt.Sprintf(":%s JOIN %s", client.Prefix(), target),
+					fmt.Sprintf(":%s JOIN %s", client.Prefix(), channel.name),
 					client.id,
 					false,
 				)
+
+				// chanowner
+				if channel.owner == client.id {
+					channel.Broadcast(
+						fmt.Sprintf(":%s MODE %s +q %s", server.name, channel.name, client.nickname),
+						client.id,
+						false,
+					)
+				}
 
 				topic := channel.Topic()
 				if topic.text == "" {
@@ -256,6 +269,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 				channel.Broadcast(fmt.Sprintf(":%s PART %s",
 					client.Prefix(), target), client.id, false)
 			}
+
+			// todo: check if last user
 
 			continue
 		}
