@@ -187,31 +187,30 @@ func HandleConnectionIn(client *Client, server *Server) {
 					false,
 				)
 
-				// topic := channel.Topic()
-				// if topic.text == "" {
-				// 	// send no topic
-				// 	client.send <- fmt.Sprintf(":%s 331 %s %s :no topic set",
-				// 		server.name,
-				// 		client.nickname,
-				// 		channel.name,
-				// 	)
-				// } else {
-				// 	// send topic if not empty
-				// 	client.send <- fmt.Sprintf(":%s 332 %s %s :%s",
-				// 		server.name,
-				// 		client.nickname,
-				// 		channel.name,
-				// 		topic.text,
-				// 	)
-				// 	// send time and author
-				// 	client.send <- fmt.Sprintf(":%s 329 %s %s %s %s %d",
-				// 		server.name,
-				// 		client.nickname,
-				// 		channel.name,
-				// 		topic.text,
-				// 		topic.author,
-				// 		topic.timestamp)
-				// }
+				topic := channel.Topic()
+				if topic.text == "" {
+					// send no topic
+					client.send <- fmt.Sprintf(":%s 331 %s %s :No topic is set",
+						server.name,
+						client.nickname,
+						channel.name,
+					)
+				} else {
+					// send topic if not empty
+					client.send <- fmt.Sprintf(":%s 332 %s %s :%s",
+						server.name,
+						client.nickname,
+						channel.name,
+						topic.text,
+					)
+					// send time and author
+					client.send <- fmt.Sprintf(":%s 333 %s %s %s %d",
+						server.name,
+						client.nickname,
+						channel.name,
+						topic.author,
+						topic.timestamp)
+				}
 
 				// get channel names (user list)
 				names := channel.Names()
@@ -263,41 +262,46 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 		// TOPIC
 		// https://modern.ircdocs.horse/#topic-message
-		// if parsed.Command == "TOPIC" {
-		// 	if !client.handshake {
-		// 		client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
-		// 		continue
-		// 	}
+		if parsed.Command == "TOPIC" {
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
 
-		// 	target := parsed.Params[0]
-		// 	remainder := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
+			target := parsed.Params[0]
+			remainder := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
 
-		// 	// todo: check and validate
+			// channel name max length is 50, check for allowed channel prefixes
+			if len(target) > 50 || !(strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&")) {
+				client.send <- fmt.Sprintf(":%s 403 %s :No such channel (2).",
+					server.name, target)
+				continue
+			}
 
-		// 	// try to get channel
-		// 	channel, exists := server.channels.GetByName(target)
-		// 	if !exists {
-		// 		client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
-		// 		continue
-		// 	}
+			// try to get channel
+			channel, exists := server.channels.GetByName(target)
+			if !exists {
+				client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
+				continue
+			}
 
-		// 	// set topic
-		// 	channel.SetTopic(remainder, client.nickname)
+			// set topic
+			channel.SetTopic(remainder, client.nickname)
 
-		// 	// get topic
-		// 	topic := channel.Topic()
+			// get topic
+			topic := channel.Topic()
 
-		// 	// broadcast new topic to clients on channel
-		// 	channel.Broadcast(
-		// 		fmt.Sprintf(":%s 332 %s %s :%s",
-		// 			server.name,
-		// 			client.nickname,
-		// 			channel.name,
-		// 			topic.text),
-		// 		client.id, false)
+			// broadcast new topic to clients on channel
+			channel.Broadcast(
+				fmt.Sprintf(":%s 332 %s %s :%s",
+					server.name,
+					client.nickname,
+					channel.name,
+					topic.text),
+				client.id, false)
 
-		// 	continue
-		// }
+			continue
+		}
 
 		// PRIVMSG
 		// https://modern.ircdocs.horse/#privmsg-message
@@ -311,9 +315,6 @@ func HandleConnectionIn(client *Client, server *Server) {
 			message := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
 
 			for _, target := range targets {
-
-				// todo: check and validate target
-
 				// is channel
 				if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
 					channel, exists := server.channels.GetByName(target)
@@ -323,6 +324,15 @@ func HandleConnectionIn(client *Client, server *Server) {
 							client.nickname)
 						continue
 					}
+
+					// is user a member of the channel?
+					if !server.channels.IsMember(client, channel) {
+						client.send <- fmt.Sprintf(":%s 442 %s :You're not on that channel",
+							server.name,
+							client.nickname)
+						continue
+					}
+
 					// send message to channel
 					channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
 						client.Prefix(), channel.name, message), client.id, true)
