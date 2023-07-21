@@ -30,7 +30,7 @@ type Server struct {
 }
 
 func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusTeapot)
 }
 
 func NewServer(config ServerConfig) *Server {
