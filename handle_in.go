@@ -351,6 +351,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 					// send message to channel
 					channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
 						client.Prefix(), channel.name, message), client.id, true)
+					server.counters["ircd_channels_privmsg"].Inc()
 					continue
 				}
 				// is user
@@ -363,6 +364,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				}
 				dest.send <- fmt.Sprintf(":%s PRIVMSG %s :%s",
 					client.nickname, dest.nickname, message)
+				server.counters["ircd_clients_privmsg"].Inc()
 				continue
 			}
 

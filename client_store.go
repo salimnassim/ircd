@@ -21,12 +21,14 @@ type clientWhois struct {
 }
 
 type ClientStore struct {
+	id      string
 	clients sync.Map
 }
 
 // Creates a new client store
-func NewClientStore() *ClientStore {
+func NewClientStore(id string) *ClientStore {
 	return &ClientStore{
+		id:      id,
 		clients: sync.Map{},
 	}
 }

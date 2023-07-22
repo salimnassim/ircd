@@ -36,8 +36,8 @@ func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
 func NewServer(config ServerConfig) *Server {
 	server := &Server{
 		name:     config.Name,
-		clients:  NewClientStore(),
-		channels: NewChannelStore("default"),
+		clients:  NewClientStore("clients"),
+		channels: NewChannelStore("channels"),
 		regex:    make(map[string]*regexp.Regexp),
 		gauges:   make(map[string]prometheus.Gauge),
 		counters: make(map[string]prometheus.Counter),
