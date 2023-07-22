@@ -45,6 +45,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		if strings.HasPrefix(line, "PING") {
 			client.SetPing(time.Now().Unix())
 			client.send <- strings.Replace(line, "PING", "PONG", 1)
+			server.counters["ircd_ping"].Inc()
 			continue
 		}
 

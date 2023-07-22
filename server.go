@@ -72,6 +72,12 @@ func registerMetrics(server *Server) {
 			Help: "Number of channels",
 		})
 
+	server.counters["ircd_ping"] =
+		prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "ircd_ping",
+			Help: "Number of PING messages",
+		})
+
 	server.counters["ircd_channels_privmsg"] =
 		prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "ircd_channels_privmsg",
