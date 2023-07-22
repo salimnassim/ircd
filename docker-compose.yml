@@ -1,11 +1,4 @@
 services:
-  pyroscope:
-    image: "pyroscope/pyroscope:latest"
-    restart: unless-stopped
-    ports:
-      - "4040:4040"
-    command:
-      - "server"
   prometheus:
     image: "prom/prometheus"
     restart: unless-stopped
@@ -26,15 +19,13 @@ services:
     restart: on-failure
     build:
       context: .
-      dockerfile: Dockerfile.race
+      dockerfile: Dockerfile
     ports:
       - "0.0.0.0:6667:6667"
       - "2112:2112"
     environment:
       - SERVER_NAME=ircd
-      - PYROSCOPE_ENABLE=0
-      - PYROSCOPE_ADDRESS=http://pyroscope:4040
-      - PROMETHEUS_ENABLE=1
+      - PROMETHEUS_ENABLE=yes
 volumes:
   prometheus_data:
     external: false
