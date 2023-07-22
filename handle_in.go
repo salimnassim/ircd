@@ -33,7 +33,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 				continue
 			}
 
-			// nicks should be more than 1 character and less than 9
+			// nicks should be more than 2 characters and less than 9
 			if len(parsed.Params[0]) < 2 || len(parsed.Params[0]) > 9 {
 				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.",
 					server.name, parsed.Params[0])
@@ -89,7 +89,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂",
 					server.name, client.nickname)
-				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s on %s, running version -1",
+				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s (%s), running version -1",
 					server.name, client.nickname, server.name, os.Getenv("HOSTNAME"))
 				client.send <- fmt.Sprintf(":%s 376 %s :End of /MOTD command",
 					server.name, client.nickname)
