@@ -9,7 +9,7 @@ type ClientStoreable interface {
 	Add(*Client)
 	Remove(*Client)
 	GetByNickname(string) (*Client, bool)
-	Whois(string) (clientWhois, bool)
+	Whois(string, ChannelStoreable) (clientWhois, bool)
 }
 
 type clientWhois struct {
@@ -73,7 +73,7 @@ func (cs *ClientStore) GetByNickname(nickname string) (*Client, bool) {
 	return client, true
 }
 
-func (cs *ClientStore) Whois(nickname string) (clientWhois, bool) {
+func (cs *ClientStore) Whois(nickname string, channelStore ChannelStoreable) (clientWhois, bool) {
 	var who *Client
 
 	who, _ = cs.GetByNickname(nickname)
@@ -82,13 +82,18 @@ func (cs *ClientStore) Whois(nickname string) (clientWhois, bool) {
 		return clientWhois{}, false
 	}
 
+	var chans []string
+	for _, v := range channelStore.MemberOf(who) {
+		chans = append(chans, v.name)
+	}
+
 	who.mu.Lock()
 	whois := clientWhois{
 		nickname: who.nickname,
 		username: who.username,
 		realname: who.realname,
 		hostname: who.hostname,
-		channels: []string{},
+		channels: chans,
 	}
 	who.mu.Unlock()
 

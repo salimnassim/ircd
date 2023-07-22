@@ -379,7 +379,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 			}
 
 			target := parsed.Params[0]
-			whois, exists := server.clients.Whois(target)
+			whois, exists := server.clients.Whois(target, server.channels)
 			if !exists {
 				client.send <- fmt.Sprintf(
 					":%s 401 %s :no such nick",
