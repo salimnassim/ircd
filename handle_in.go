@@ -147,9 +147,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			// join can have multiple channels separated by a comma
 			targets := strings.Split(parsed.Params[0], ",")
-
 			for _, target := range targets {
-
 				if !strings.HasPrefix(target, "#") && !strings.HasPrefix(target, "&") || len(target) > 9 {
 					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
 					continue
@@ -234,9 +232,10 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.nickname,
 					"=",
 					channel.name,
-					names,
+					strings.Join(names, " "),
 				)
 
+				client.send <- fmt.Sprintf(":%s 366 %s :End of /NAMES list", server.name, client.nickname)
 			}
 
 			continue

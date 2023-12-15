@@ -68,12 +68,12 @@ func (ch *Channel) RemoveClient(client *Client) {
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY
-func (ch *Channel) Names() string {
-	var names string
+func (ch *Channel) Names() []string {
+	var names []string
 
 	ch.clients.Range(func(key, value any) bool {
 		client := value.(*Client)
-		names = names + fmt.Sprintf("%s ", client.nickname)
+		names = append(names, client.Nickname())
 		return true
 	})
 
