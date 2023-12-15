@@ -147,9 +147,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			// join can have multiple channels separated by a comma
 			targets := strings.Split(parsed.Params[0], ",")
-
 			for _, target := range targets {
-
 				if !strings.HasPrefix(target, "#") && !strings.HasPrefix(target, "&") || len(target) > 9 {
 					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
 					continue
@@ -234,9 +232,10 @@ func HandleConnectionIn(client *Client, server *Server) {
 					client.nickname,
 					"=",
 					channel.name,
-					names,
+					strings.Join(names, " "),
 				)
 
+				client.send <- fmt.Sprintf(":%s 366 %s :End of /NAMES list", server.name, client.nickname)
 			}
 
 			continue
@@ -410,6 +409,39 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 			continue
 		}
+
+		// https://modern.ircdocs.horse/#who-message
+		if parsed.Command == "WHO" {
+			if !client.handshake {
+				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
+				continue
+			}
+
+			if len(parsed.Params) == 0 {
+				client.send <- fmt.Sprintf(":%s 461 %s WHO :Not enough parameters",
+					server.name,
+					client.nickname)
+				continue
+			}
+
+			target := parsed.Params[0]
+			if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
+				channel, ok := server.channels.GetByName(target)
+				if !ok {
+					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
+					continue
+				}
+
+				who := channel.Who()
+				for _, v := range who {
+					client.send <- fmt.Sprintf(":%s 352 %s %s", server.name, client.Nickname(), v)
+				}
+				client.send <- fmt.Sprintf(":%s 315 %s :End of WHO list", server.name, target)
+				continue
+			}
+
+		}
+
 	}
 
 }

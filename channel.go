@@ -68,16 +68,29 @@ func (ch *Channel) RemoveClient(client *Client) {
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY
-func (ch *Channel) Names() string {
-	var names string
+func (ch *Channel) Names() []string {
+	var names []string
 
 	ch.clients.Range(func(key, value any) bool {
 		client := value.(*Client)
-		names = names + fmt.Sprintf("%s ", client.nickname)
+		names = append(names, client.Nickname())
 		return true
 	})
 
 	return names
+}
+
+func (ch *Channel) Who() []string {
+	var who []string
+
+	ch.clients.Range(func(key, value any) bool {
+		client := value.(*Client)
+		who = append(who, fmt.Sprintf("%s %s %s %s %s %s :%s %s",
+			ch.name, client.username, client.hostname, "ircd", client.Nickname(), "H", "0", client.realname))
+		return true
+	})
+
+	return who
 }
 
 // Send message to all clients on the channel.
