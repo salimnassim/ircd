@@ -22,7 +22,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 	// add client to store
 	server.clients.Add(client)
 
-	server.gauges["ircd_clients"].Inc()
+	promClients.Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
 	go HandleConnectionIn(client, server)
@@ -45,7 +45,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		if strings.HasPrefix(line, "PING") {
 			client.SetPing(time.Now().Unix())
 			client.send <- strings.Replace(line, "PING", "PONG", 1)
-			server.counters["ircd_ping"].Inc()
+			promPings.Inc()
 			continue
 		}
 

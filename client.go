@@ -2,10 +2,10 @@ package ircd
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
-	"strings"
 	"sync"
 	"time"
 )
@@ -36,12 +36,24 @@ func (client *Client) String() string {
 }
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
-	ip := strings.Split(connection.RemoteAddr().String(), ":")[0]
+
+	if connection == nil {
+		return nil, errors.New("connection is nil")
+	}
+
+	if connection.RemoteAddr() == nil {
+		return nil, errors.New("connection remote address is nil")
+	}
+
+	host, _, err := net.SplitHostPort(connection.RemoteAddr().String())
+	if err != nil {
+		return nil, err
+	}
 
 	return &Client{
 		mu:        &sync.RWMutex{},
 		id:        id,
-		ip:        ip,
+		ip:        host,
 		nickname:  "",
 		username:  "",
 		realname:  "",

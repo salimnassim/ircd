@@ -36,6 +36,11 @@ func Parse(line string) (Message, error) {
 
 		for _, tag := range rawTags {
 			pair := strings.SplitN(tag, "=", 2)
+
+			if len(pair) != 2 {
+				break
+			}
+
 			message.Tags[pair[0]] = pair[1]
 			if len(pair) == 1 {
 				message.Tags[pair[0]] = true
