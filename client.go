@@ -36,7 +36,6 @@ func (client *Client) String() string {
 }
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
-
 	if connection == nil {
 		return nil, errors.New("connection is nil")
 	}
