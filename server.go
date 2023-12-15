@@ -5,12 +5,37 @@ import (
 	"regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
 )
 
-type Messager interface {
-	message(string)
-}
+var (
+	// Number of connected clients
+	promClients = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "ircd_clients",
+		Help: "Number of connected clients",
+	})
+	// Number of existing channels
+	promChannels = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "ircd_channels",
+		Help: "Number of existing channels",
+	})
+	// Number of PING messages
+	promPings = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ircd_ping",
+		Help: "Number of PING messages",
+	})
+	// Number of PRIVMSG sent to channels
+	promPrivmsgChannel = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ircd_channels_privmsg",
+		Help: "Number of PRIVMSG sent to channels",
+	})
+	// Number of PRIVMSG sent to clients
+	promPrivmsgClient = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ircd_clients_privmsg",
+		Help: "Number of PRIVMSG sent to clients",
+	})
+)
 
 type ServerConfig struct {
 	Name string
@@ -23,10 +48,6 @@ type Server struct {
 
 	// regex cache
 	regex map[string]*regexp.Regexp
-
-	// metrics
-	gauges   map[string]prometheus.Gauge
-	counters map[string]prometheus.Counter
 }
 
 func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -39,12 +60,9 @@ func NewServer(config ServerConfig) *Server {
 		clients:  NewClientStore("clients"),
 		channels: NewChannelStore("channels"),
 		regex:    make(map[string]*regexp.Regexp),
-		gauges:   make(map[string]prometheus.Gauge),
-		counters: make(map[string]prometheus.Counter),
 	}
 
 	compileRegexp(server)
-	registerMetrics(server)
 
 	return server
 }
@@ -56,47 +74,6 @@ func compileRegexp(server *Server) {
 		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
 	}
 	server.regex["nick"] = rgxNick
-}
-
-// Register prometheus metrics
-func registerMetrics(server *Server) {
-	server.gauges["ircd_clients"] =
-		prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "ircd_clients",
-			Help: "Number of connected clients",
-		})
-
-	server.gauges["ircd_channels"] =
-		prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "ircd_channels",
-			Help: "Number of channels",
-		})
-
-	server.counters["ircd_ping"] =
-		prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "ircd_ping",
-			Help: "Number of PING messages",
-		})
-
-	server.counters["ircd_channels_privmsg"] =
-		prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "ircd_channels_privmsg",
-			Help: "Number of PRIVMSG sent to channels",
-		})
-
-	server.counters["ircd_clients_privmsg"] =
-		prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "ircd_clients_privmsg",
-			Help: "Number of PRIVMSG sent to clients",
-		})
-
-	for _, v := range server.gauges {
-		prometheus.MustRegister(v)
-	}
-
-	for _, v := range server.counters {
-		prometheus.MustRegister(v)
-	}
 }
 
 // Returns the number of connected clients, and channels
@@ -112,7 +89,7 @@ func (server *Server) RemoveClient(client *Client) error {
 	}
 
 	server.clients.Remove(client)
-	server.gauges["ircd_clients"].Dec()
+	promClients.Dec()
 
 	return nil
 }
