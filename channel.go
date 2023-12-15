@@ -80,6 +80,19 @@ func (ch *Channel) Names() string {
 	return names
 }
 
+func (ch *Channel) Who() []string {
+	var who []string
+
+	ch.clients.Range(func(key, value any) bool {
+		client := value.(*Client)
+		who = append(who, fmt.Sprintf("%s %s %s %s %s %s :%s %s",
+			ch.name, client.username, client.hostname, "ircd", client.Nickname(), "H", "0", client.realname))
+		return true
+	})
+
+	return who
+}
+
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message
 func (ch *Channel) Broadcast(message string, sourceId string, skip bool) {
