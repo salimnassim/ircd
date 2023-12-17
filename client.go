@@ -69,31 +69,27 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 
 func (client *Client) SetPing(ping int64) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.ping = ping
+	client.mu.Unlock()
 }
 
 func (client *Client) SetHostname(hostname string) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.hostname = hostname
+	client.mu.Unlock()
 }
 
 func (client *Client) SetNickname(nickname string) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.nickname = nickname
+	client.mu.Unlock()
 }
 
 func (client *Client) SetUsername(username string, realname string) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.username = username
 	client.realname = realname
+	client.mu.Unlock()
 }
 
 func (client *Client) Nickname() string {
