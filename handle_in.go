@@ -2,8 +2,6 @@ package ircd
 
 import (
 	"fmt"
-	"net"
-	"os"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -21,119 +19,26 @@ func HandleConnectionIn(client *Client, server *Server) {
 			continue
 		}
 
-		log.Debug().Msgf("%s: %s", client.Prefix(), parsed.Raw)
+		log.Debug().Msgf("%s", parsed.Raw)
 
 		// NICK
 		// https://modern.ircdocs.horse/#nick-message
 		if parsed.Command == "NICK" {
-			// has enough params?
-			if len(parsed.Params) != 1 {
-				client.send <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.",
-					server.name, parsed.Command)
-				continue
-			}
-
-			// nicks should be more than 2 characters and less than 9
-			if len(parsed.Params[0]) < 2 || len(parsed.Params[0]) > 9 {
-				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.",
-					server.name, parsed.Params[0])
-				continue
-			}
-
-			// validate nickname
-			ok := server.regex["nick"].MatchString(parsed.Params[0])
-			if !ok {
-				client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.",
-					server.name, parsed.Params[0])
-				continue
-			}
-
-			// check if nick is already in use
-			_, exists := server.clients.GetByNickname(parsed.Params[0])
-			if exists {
-				client.send <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.",
-					server.name, parsed.Params[0])
-				continue
-			}
-
-			client.SetNickname(parsed.Params[0])
-
-			// check for handshake
-			if !client.handshake {
-				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s",
-					client.nickname, client.id)
-				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your IP address is: %s",
-					client.nickname, client.ip)
-				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname...",
-					client.nickname)
-
-				// lookup address
-				// todo: resolver
-				addr, err := net.LookupAddr(client.ip)
-				if err != nil {
-					// if it cant be resolved use ip
-					client.SetHostname(client.ip)
-				} else {
-					client.SetHostname(addr[0])
-				}
-
-				prefix := 4
-				if strings.Count(client.ip, ":") > 1 {
-					prefix = 6
-				}
-
-				// cloak
-				client.SetHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, client.id))
-				client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your hostname has been cloaked to %s",
-					client.nickname, client.hostname)
-
-				client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂",
-					server.name, client.nickname)
-				client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s (%s), running version -1",
-					server.name, client.nickname, server.name, os.Getenv("HOSTNAME"))
-				client.send <- fmt.Sprintf(":%s 376 %s :End of /MOTD command",
-					server.name, client.nickname)
-				client.handshake = true
-				continue
-			}
+			handleNick(server, client, parsed)
 			continue
 		}
 
 		// USER
 		// https://modern.ircdocs.horse/#user-message
 		if parsed.Command == "USER" {
-			if !client.handshake {
-				client.send <- fmt.Sprintf(":%s 451 :You have not registered.",
-					server.name)
-				continue
-			}
-
-			if len(parsed.Params) < 4 {
-				client.send <- fmt.Sprintf(":%s 461 %s %s :Not enough parameters.",
-					server.name, client.nickname, strings.Join(parsed.Params, " "))
-				continue
-			}
-
-			if client.username != "" {
-				client.send <- fmt.Sprintf(":%s 462 %s :You may not reregister.",
-					server.name, client.nickname)
-				continue
-			}
-
-			// todo: validate
-			username := parsed.Params[0]
-			realname := parsed.Params[3]
-
-			client.SetUsername(username, realname)
+			handleUser(server, client, parsed)
 			continue
 		}
 
 		// LUSERS
 		// https://modern.ircdocs.horse/#lusers-message
 		if parsed.Command == "LUSERS" {
-			clientCount, channelCount := server.Stats()
-			client.send <- fmt.Sprintf(":%s 461 %s :There are %d active users on %d channels.",
-				server.name, client.nickname, clientCount, channelCount)
+			handleLusers(server, client, parsed)
 			continue
 		}
 
