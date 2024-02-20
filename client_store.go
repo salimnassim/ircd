@@ -5,11 +5,16 @@ import (
 )
 
 type ClientStoreable interface {
+	// Number of clients in store.
 	Size() int
-	Add(*Client)
-	Remove(*Client)
-	GetByNickname(string) (*Client, bool)
-	Whois(string, ChannelStoreable) (clientWhois, bool)
+	// Add client to store.
+	Add(client *Client)
+	// Remove client from store.
+	Remove(client *Client)
+	// Get client from store by nickname.
+	GetByNickname(nickname string) (client *Client, ok bool)
+	// Get whois from store by nickname and store.
+	Whois(nickname string, channel ChannelStoreable) (whois clientWhois, ok bool)
 }
 
 type clientWhois struct {
@@ -77,7 +82,6 @@ func (cs *ClientStore) Whois(nickname string, channelStore ChannelStoreable) (cl
 	var who *Client
 
 	who, _ = cs.GetByNickname(nickname)
-
 	if who == nil {
 		return clientWhois{}, false
 	}

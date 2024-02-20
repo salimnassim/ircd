@@ -3,11 +3,16 @@ package ircd
 import "sync"
 
 type ChannelStoreable interface {
+	// Number of channels in store.
 	Size() int
-	Add(id string, channel *Channel)
-	IsMember(*Client, *Channel) bool
-	GetByName(string) (*Channel, bool)
-	MemberOf(*Client) []*Channel
+	// Add channel to store. ID is most likely channel name.
+	Add(ID string, channel *Channel)
+	// Check if client is a member of channel.
+	IsMember(client *Client, channel *Channel) (ok bool)
+	// Get channel by name.
+	GetByName(name string) (channel *Channel, ok bool)
+	// Get which channels a client belongs to.
+	MemberOf(client *Client) (channels []*Channel)
 }
 
 type ChannelStore struct {
