@@ -32,7 +32,7 @@ func main() {
 
 	go func() {
 		log.Info().Msg("starting http, listening on :2112")
-		_, ok := os.LookupEnv("PROMETHEUS_ENABLE")
+		_, ok := os.LookupEnv("PROMETHEUS")
 		if ok {
 			http.Handle("/metrics", promhttp.Handler())
 		}

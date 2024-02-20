@@ -25,6 +25,7 @@ func TestParse(t *testing.T) {
 		{input: "JOIN #foo", want: ircd.Message{Command: "JOIN", Params: []string{"#foo"}}},
 		{input: ":salami1!salami@localhost JOIN #foo", want: ircd.Message{Command: "JOIN", Prefix: "salami1!salami@localhost", Params: []string{"#foo"}}},
 		{input: ":salami1!salami@localhost PART #foo", want: ircd.Message{Command: "PART", Prefix: "salami1!salami@localhost", Params: []string{"#foo"}}},
+		{input: ":salami1!salami@localhost PART #foo #baz", want: ircd.Message{Command: "PART", Prefix: "salami1!salami@localhost", Params: []string{"#foo", "#baz"}}},
 		{input: "PRIVMSG #test :hey", want: ircd.Message{Command: "PRIVMSG", Params: []string{"#test", "hey"}}},
 		{input: "lusers", want: ircd.Message{Command: "LUSERS"}},
 		{input: "PRIVMSG 123 :\u0001PING 1688102122 530516\u0001", want: ircd.Message{Command: "PRIVMSG"}},
@@ -36,7 +37,7 @@ func TestParse(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got, err := ircd.Parse(tc.input)
+		got, err := ircd.ParseMessage(tc.input)
 		if err != nil {
 			t.Error(err)
 		}

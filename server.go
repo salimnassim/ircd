@@ -77,7 +77,7 @@ func compileRegexp(server *Server) {
 }
 
 // Returns the number of connected clients, and channels
-func (server *Server) Stats() (int, int) {
+func (server *Server) Stats() (clients int, channels int) {
 	return server.clients.Size(), server.channels.Size()
 }
 

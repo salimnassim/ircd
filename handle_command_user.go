@@ -24,7 +24,6 @@ func handleUser(server *Server, client *Client, message Message) {
 		return
 	}
 
-	// todo: validate
 	username := message.Params[0]
 	realname := message.Params[3]
 

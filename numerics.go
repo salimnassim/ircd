@@ -1,5 +1,8 @@
 package ircd
 
+// https://github.com/ergochat/ergo
+// https://github.com/ergochat/ergo/blob/master/irc/numerics.go
+
 const (
 	RPL_WELCOME                   = "001"
 	RPL_YOURHOST                  = "002"

@@ -13,7 +13,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 	}()
 
 	for message := range client.recv {
-		parsed, err := Parse(message)
+		parsed, err := ParseMessage(message)
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)
 			continue
