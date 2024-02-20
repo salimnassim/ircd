@@ -8,32 +8,41 @@ import (
 )
 
 func handleNick(server *Server, client *Client, message Message) {
+	// nick params should be 1
 	if len(message.Params) != 1 {
-		client.send <- fmt.Sprintf(":%s 461 * %s :Not enough parameters.",
-			server.name, message.Command)
+		client.sendRPL(server.name, rplNeedMoreParams{
+			client:  client.Nickname(),
+			command: message.Command,
+		})
 		return
 	}
 
-	// nicks should be more than 2 characters and less than 9
-	if len(message.Params[0]) < 2 || len(message.Params[0]) > 9 {
-		client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.",
-			server.name, message.Params[0])
+	// nicks should be more than 2 characters and less than 16
+	if len(message.Params[0]) < 2 || len(message.Params[0]) > 16 {
+		client.sendRPL(server.name, rplErroneusNickname{
+			client: client.Nickname(),
+			nick:   message.Params[0],
+		})
 		return
 	}
 
 	// validate nickname
 	ok := server.regex["nick"].MatchString(message.Params[0])
 	if !ok {
-		client.send <- fmt.Sprintf(":%s 432 * %s :Erroneus nickname.",
-			server.name, message.Params[0])
+		client.sendRPL(server.name, rplErroneusNickname{
+			client: client.Nickname(),
+			nick:   message.Params[0],
+		})
 		return
 	}
 
 	// check if nick is already in use
 	_, exists := server.clients.GetByNickname(message.Params[0])
 	if exists {
-		client.send <- fmt.Sprintf(":%s 433 * %s :Nickname is already in use.",
-			server.name, message.Params[0])
+		client.sendRPL(server.name, rplNicknameInUse{
+			client: client.Nickname(),
+			nick:   message.Params[0],
+		})
 		return
 	}
 
