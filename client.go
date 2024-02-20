@@ -2,7 +2,6 @@ package ircd
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -45,11 +44,11 @@ func (client *Client) String() string {
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
 	if connection == nil {
-		return nil, errors.New("connection is nil")
+		return nil, errorConnectionNil
 	}
 
 	if connection.RemoteAddr() == nil {
-		return nil, errors.New("connection remote address is nil")
+		return nil, errorConnectionRemoteAddressNil
 	}
 
 	host, _, err := net.SplitHostPort(connection.RemoteAddr().String())
@@ -73,6 +72,10 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 		send:      make(chan string, 1),
 		stop:      make(chan interface{}),
 	}, nil
+}
+
+func (client *Client) sendRPL(server string, rpl rpl) {
+	client.send <- fmt.Sprintf(":%s %s", server, rpl.format())
 }
 
 func (client *Client) SetPing(ping int64) {
