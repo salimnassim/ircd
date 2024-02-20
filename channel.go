@@ -32,7 +32,7 @@ func NewChannel(channelName string, owner string) *Channel {
 			author:    "",
 		},
 		clients:  sync.Map{},
-		owner:    "",
+		owner:    owner,
 		password: "",
 	}
 
@@ -73,7 +73,11 @@ func (ch *Channel) Names() []string {
 
 	ch.clients.Range(func(key, value any) bool {
 		client := value.(*Client)
-		names = append(names, client.Nickname())
+		if ch.owner == client.id {
+			names = append(names, fmt.Sprintf("~%s", client.Nickname()))
+		} else {
+			names = append(names, client.Nickname())
+		}
 		return true
 	})
 
