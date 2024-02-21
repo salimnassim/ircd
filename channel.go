@@ -9,13 +9,13 @@ import (
 type Channel struct {
 	mu       *sync.RWMutex
 	name     string
-	topic    channelTopic
+	topic    *topic
 	clients  ChannelClientStorer
 	owner    ClientID
 	password string
 }
 
-type channelTopic struct {
+type topic struct {
 	text      string
 	timestamp int
 	author    string
@@ -25,7 +25,7 @@ func NewChannel(channelName string, owner ClientID) *Channel {
 	channel := &Channel{
 		mu:   &sync.RWMutex{},
 		name: channelName,
-		topic: channelTopic{
+		topic: &topic{
 			text:      "",
 			timestamp: 0,
 			author:    "",
@@ -39,16 +39,16 @@ func NewChannel(channelName string, owner ClientID) *Channel {
 }
 
 // Sets channel topic.
-func (channel *Channel) SetTopic(topic string, author string) {
+func (channel *Channel) SetTopic(text string, author string) {
 	channel.mu.Lock()
-	channel.topic.text = topic
+	channel.topic.text = text
 	channel.topic.timestamp = int(time.Now().Unix())
 	channel.topic.author = author
 	channel.mu.Unlock()
 }
 
 // Returns current topic.
-func (channel *Channel) Topic() channelTopic {
+func (channel *Channel) Topic() *topic {
 	channel.mu.RLock()
 	defer channel.mu.RUnlock()
 	return channel.topic
@@ -97,11 +97,20 @@ func (ch *Channel) Who() []string {
 
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message.
-func (ch *Channel) Broadcast(message string, sourceId ClientID, skip bool) {
+func (ch *Channel) Broadcast(message string, sourceID ClientID, skip bool) {
 	for _, c := range ch.clients.All() {
-		if c.id == sourceId && skip {
+		if c.id == sourceID && skip {
 			continue
 		}
 		c.send <- message
+	}
+}
+
+func (ch *Channel) BroadcastRPL(rpl rpl, sourceID ClientID, skip bool) {
+	for _, c := range ch.clients.All() {
+		if c.id == sourceID && skip {
+			continue
+		}
+		c.send <- rpl.format()
 	}
 }
