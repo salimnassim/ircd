@@ -78,6 +78,10 @@ func (client *Client) sendRPL(server string, rpl rpl) {
 	client.send <- fmt.Sprintf(":%s %s", server, rpl.format())
 }
 
+func (client *Client) sendNotice(n notice) {
+	client.send <- n.format()
+}
+
 func (client *Client) SetPing(ping int64) {
 	client.mu.Lock()
 	client.ping = ping
