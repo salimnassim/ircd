@@ -106,7 +106,7 @@ func (server *Server) RemoveClient(client *Client) error {
 }
 
 func (server *Server) MOTD() []string {
-	motd := []string{}
+	var motd []string
 	server.mu.RLock()
 	motd = *server.motd
 	server.mu.RUnlock()
