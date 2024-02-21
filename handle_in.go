@@ -1,9 +1,6 @@
 package ircd
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/rs/zerolog/log"
 )
 
@@ -79,34 +76,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 		// https://modern.ircdocs.horse/#who-message
 		if parsed.Command == "WHO" {
-			if !client.handshake {
-				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
-				continue
-			}
-
-			if len(parsed.Params) == 0 {
-				client.send <- fmt.Sprintf(":%s 461 %s WHO :Not enough parameters",
-					server.name,
-					client.nickname)
-				continue
-			}
-
-			target := parsed.Params[0]
-			if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
-				channel, ok := server.channels.Get(target)
-				if !ok {
-					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
-					continue
-				}
-
-				who := channel.Who()
-				for _, v := range who {
-					client.send <- fmt.Sprintf(":%s 352 %s %s", server.name, client.Nickname(), v)
-				}
-				client.send <- fmt.Sprintf(":%s 315 %s :End of WHO list", server.name, target)
-				continue
-			}
-
+			handleWho(server, client, parsed)
 		}
 
 	}

@@ -105,6 +105,20 @@ func (r rplWhoisUser) format() string {
 	)
 }
 
+// 315 RPL_ENDOFWHO
+// https://modern.ircdocs.horse/#rplendofwho-315
+type rplEndOfWho struct {
+	client string
+	mask   string
+}
+
+func (r rplEndOfWho) format() string {
+	return fmt.Sprintf(
+		"315 %s %s :End of WHO list.",
+		r.client, r.mask,
+	)
+}
+
 // 319 RPL_WHOISCHANNELS
 // https://modern.ircdocs.horse/#rplwhoischannels-319
 type rplWhoisChannels struct {
@@ -163,6 +177,27 @@ func (r rplTopicWhoTime) format() string {
 	return fmt.Sprintf(
 		"333 %s %s %s %d",
 		r.client, r.channel, r.nick, r.setat,
+	)
+}
+
+// 352 RPL_WHOREPLY
+// https://modern.ircdocs.horse/#rplwhoreply-352
+type rplWhoReply struct {
+	client   string
+	channel  string
+	username string
+	host     string
+	server   string
+	nick     string
+	flags    string
+	hopcount int
+	realname string
+}
+
+func (r rplWhoReply) format() string {
+	return fmt.Sprintf(
+		"352 %s %s %s %s %s %s %s :%d %s",
+		r.client, r.channel, r.username, r.host, r.server, r.nick, r.flags, r.hopcount, r.realname,
 	)
 }
 
