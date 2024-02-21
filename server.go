@@ -3,6 +3,7 @@ package ircd
 import (
 	"net/http"
 	"regexp"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -42,9 +43,11 @@ type ServerConfig struct {
 }
 
 type Server struct {
+	mu       *sync.RWMutex
 	name     string
 	clients  ClientStorer
 	channels ChannelStorer
+	motd     *[]string
 
 	// regex cache
 	regex map[string]*regexp.Regexp
@@ -56,10 +59,12 @@ func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func NewServer(config ServerConfig) *Server {
 	server := &Server{
+		mu:       &sync.RWMutex{},
 		name:     config.Name,
 		clients:  NewClientStore("clients"),
 		channels: NewChannelStore("channels"),
 		regex:    make(map[string]*regexp.Regexp),
+		motd:     &[]string{"This is the message of the day.", "It contains multiple lines because the lines could be long.", "🍩🍫🍡🍦🍬🍮"},
 	}
 
 	compileRegexp(server)
@@ -98,4 +103,12 @@ func (server *Server) RemoveClient(client *Client) error {
 	promClients.Dec()
 
 	return nil
+}
+
+func (server *Server) MOTD() []string {
+	motd := []string{}
+	server.mu.RLock()
+	motd = *server.motd
+	server.mu.RUnlock()
+	return motd
 }

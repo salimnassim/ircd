@@ -39,19 +39,6 @@ func (r rplYourHost) format() string {
 	)
 }
 
-type rplEndOfMotd struct {
-	client string
-}
-
-// 376 RPL_ENDOFMOTD
-// https://modern.ircdocs.horse/#rplendofmotd-376
-func (r rplEndOfMotd) format() string {
-	return fmt.Sprintf(
-		"376 %s :End of /MOTD command.",
-		r.client,
-	)
-}
-
 // 251 RPL_LUSERCLIENT.
 // https://modern.ircdocs.horse/#rplluserclient-251
 type rplLuserClient struct {
@@ -209,6 +196,48 @@ func (r rplEndOfNames) format() string {
 	return fmt.Sprintf(
 		"366 %s %s :End of /NAMES list.",
 		r.client, r.channel,
+	)
+}
+
+// 372 RPL_MOTD
+// https://modern.ircdocs.horse/#rplmotd-372
+type rplMotd struct {
+	client string
+	text   string
+}
+
+func (r rplMotd) format() string {
+	return fmt.Sprintf(
+		"372 %s :%s",
+		r.client, r.text,
+	)
+}
+
+// 375 RPL_MOTDSTART
+// https://modern.ircdocs.horse/#rplmotdstart-375
+type rplMotdStart struct {
+	client string
+	server string
+	text   string
+}
+
+func (r rplMotdStart) format() string {
+	return fmt.Sprintf(
+		"375 %s :- %s %s",
+		r.client, r.server, r.text,
+	)
+}
+
+// 376 RPL_ENDOFMOTD
+// https://modern.ircdocs.horse/#rplendofmotd-376
+type rplEndOfMotd struct {
+	client string
+}
+
+func (r rplEndOfMotd) format() string {
+	return fmt.Sprintf(
+		"376 %s :End of /MOTD command.",
+		r.client,
 	)
 }
 

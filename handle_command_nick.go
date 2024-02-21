@@ -95,15 +95,28 @@ func handleNick(server *Server, client *Client, message Message) {
 			version:    os.Getenv("SERVER_VERSION"),
 		})
 
-		client.sendRPL(server.name, rplEndOfMotd{
-			client: client.Nickname(),
-		})
-
 		// cloak
 		client.SetHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, client.id))
 		client.sendNotice(noticeAuth{
 			client:  client.Nickname(),
 			message: fmt.Sprintf("Your hostname has been cloaked to %s", client.hostname),
+		})
+
+		client.sendRPL(server.name, rplMotdStart{
+			client: client.Nickname(),
+			server: server.name,
+			text:   "MOTD -",
+		})
+
+		for _, line := range server.MOTD() {
+			client.sendRPL(server.name, rplMotd{
+				client: client.Nickname(),
+				text:   line,
+			})
+		}
+
+		client.sendRPL(server.name, rplEndOfMotd{
+			client: client.Nickname(),
 		})
 
 		client.handshake = true
