@@ -52,33 +52,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// PART
 		// https://modern.ircdocs.horse/#part-message
 		if parsed.Command == "PART" {
-			if !client.handshake {
-				client.send <- fmt.Sprintf(":%s 451 :You have not registered.",
-					server.name)
-				continue
-			}
-
-			targets := strings.Split(parsed.Params[0], ",")
-
-			for _, target := range targets {
-				// try to get channel
-				channel, exists := server.channels.Get(target)
-				if !exists {
-					client.send <- fmt.Sprintf(":%s 403 %s :No such channel.",
-						server.name, target)
-					continue
-				}
-
-				// remove client
-				channel.RemoveClient(client)
-
-				// broadcast that user has left the channel
-				channel.Broadcast(fmt.Sprintf(":%s PART %s",
-					client.Prefix(), target), client.id, false)
-			}
-
-			// todo: check if last user
-
+			handlePart(server, client, parsed)
 			continue
 		}
 
@@ -128,53 +102,8 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// PRIVMSG
 		// https://modern.ircdocs.horse/#privmsg-message
 		if parsed.Command == "PRIVMSG" {
-			if !client.handshake {
-				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
-				continue
-			}
-
-			targets := strings.Split(parsed.Params[0], ",")
-			message := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
-
-			for _, target := range targets {
-				// is channel
-				if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
-					channel, exists := server.channels.Get(target)
-					if !exists {
-						client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
-							server.name,
-							client.nickname)
-						continue
-					}
-
-					// is user a member of the channel?
-					if !server.channels.IsMember(client, channel) {
-						client.send <- fmt.Sprintf(":%s 442 %s :You're not on that channel",
-							server.name,
-							client.nickname)
-						continue
-					}
-
-					// send message to channel
-					channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
-						client.Prefix(), channel.name, message), client.id, true)
-					promPrivmsgChannel.Inc()
-					continue
-				}
-				// is user
-				dest, exists := server.clients.Get(target)
-				if !exists {
-					client.send <- fmt.Sprintf(":%s 401 %s :no such nick/channel",
-						server.name,
-						client.nickname)
-					continue
-				}
-				dest.send <- fmt.Sprintf(":%s PRIVMSG %s :%s",
-					client.nickname, dest.nickname, message)
-				promPrivmsgClient.Inc()
-				continue
-			}
-
+			handlePrivmsg(server, client, parsed)
+			continue
 		}
 
 		// WHOIS

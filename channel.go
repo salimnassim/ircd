@@ -96,7 +96,7 @@ func (ch *Channel) Who() []string {
 }
 
 // Send message to all clients on the channel.
-// If skip is true, the client in source will not receive the message
+// If skip is true, the client in source will not receive the message.
 func (ch *Channel) Broadcast(message string, sourceId ClientID, skip bool) {
 	for _, c := range ch.clients.All() {
 		if c.id == sourceId && skip {

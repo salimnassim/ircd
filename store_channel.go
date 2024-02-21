@@ -7,6 +7,7 @@ type ChannelStorer interface {
 	Count() int
 	// Add channel to store. ID is most likely channel name.
 	Add(name string, channel *Channel)
+	Delete(name string)
 	// Check if client is a member of channel.
 	IsMember(client *Client, channel *Channel) (ok bool)
 	// Get channel by name.
@@ -54,8 +55,14 @@ func (s *ChannelStore) Add(name string, channel *Channel) {
 	s.mu.Unlock()
 }
 
+func (s *ChannelStore) Delete(name string) {
+	s.mu.Lock()
+	delete(s.channels, name)
+	s.mu.Unlock()
+}
+
 func (s *ChannelStore) IsMember(client *Client, channel *Channel) bool {
-	return true
+	return channel.clients.IsMember(client.id)
 }
 
 func (s *ChannelStore) MemberOf(client *Client) []*Channel {

@@ -221,6 +221,20 @@ func (r errNicknameInUse) format() string {
 	)
 }
 
+// 442 ERR_NOTONCHANNEL
+// https://modern.ircdocs.horse/#errnotonchannel-442
+type errNotOnChannel struct {
+	client  string
+	channel string
+}
+
+func (r errNotOnChannel) format() string {
+	return fmt.Sprintf(
+		"442 %s %s :You are not on that channel.",
+		r.client, r.channel,
+	)
+}
+
 // 451 ERR_NOTREGISTERED
 // https://modern.ircdocs.horse/#errnotregistered-451
 type errNotRegistered struct {

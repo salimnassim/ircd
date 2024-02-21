@@ -1,8 +1,11 @@
 package ircd
 
-import "sync"
+import (
+	"sync"
+)
 
 type ChannelClientStorer interface {
+	Count() int
 	Add(ID ClientID, client *Client)
 	Delete(ID ClientID)
 	All() []*Client
@@ -19,6 +22,14 @@ func NewChannelClientStore() *ChannelClientStore {
 		mu:      &sync.RWMutex{},
 		clients: make(map[ClientID]*Client),
 	}
+}
+
+func (s *ChannelClientStore) Count() int {
+	clients := 0
+	s.mu.RLock()
+	clients = len(s.clients)
+	s.mu.RUnlock()
+	return clients
 }
 
 func (s *ChannelClientStore) Add(ID ClientID, client *Client) {
