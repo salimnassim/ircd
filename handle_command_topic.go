@@ -6,7 +6,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handleTopic(s *server, c *client, m Message) {
+func handleTopic(s *server, c *client, m message) {
 	if !c.handshake {
 		c.sendRPL(s.name, errNotRegistered{
 			client: c.nickname(),
@@ -26,7 +26,7 @@ func handleTopic(s *server, c *client, m Message) {
 	}
 
 	// try to get channel
-	channel, exists := s.channels.Get(target)
+	channel, exists := s.channels.get(target)
 	if !exists {
 		c.sendRPL(s.name, errNoSuchChannel{
 			client:  c.nickname(),

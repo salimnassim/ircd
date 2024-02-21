@@ -35,7 +35,7 @@ func (c *client) String() string {
 		c.id, c.nick, c.user, c.real, c.host, c.handshake)
 }
 
-func NewClient(connection net.Conn, id string) (*client, error) {
+func newClient(connection net.Conn, id string) (*client, error) {
 	if connection == nil {
 		return nil, errorConnectionNil
 	}

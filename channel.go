@@ -23,7 +23,7 @@ type topic struct {
 	author    string
 }
 
-func NewChannel(channelName string, owner clientID) *channel {
+func newChannel(channelName string, owner clientID) *channel {
 	channel := &channel{
 		mu:   &sync.RWMutex{},
 		name: channelName,
@@ -32,7 +32,7 @@ func NewChannel(channelName string, owner clientID) *channel {
 			timestamp: 0,
 			author:    "",
 		},
-		clients:  NewChannelClientStore(),
+		clients:  newChannelClientStore(),
 		modes:    0,
 		owner:    owner,
 		password: "",
@@ -64,21 +64,21 @@ func (ch *channel) addClient(c *client, password string) error {
 		return errorBadChannelKey
 	}
 
-	ch.clients.Add(clientID(c.id), c)
+	ch.clients.add(clientID(c.id), c)
 
 	return nil
 }
 
 // Remove client from channel.
 func (ch *channel) removeClient(c *client) {
-	ch.clients.Delete(clientID(c.id))
+	ch.clients.delete(clientID(c.id))
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY.
 func (ch *channel) names() []string {
 	var names []string
 
-	for _, c := range ch.clients.All() {
+	for _, c := range ch.clients.all() {
 		if ch.owner == c.id {
 			names = append(names, fmt.Sprintf("@%s", c.nickname()))
 		} else {
@@ -92,7 +92,7 @@ func (ch *channel) names() []string {
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcast(m string, sourceID clientID, skip bool) {
-	for _, c := range ch.clients.All() {
+	for _, c := range ch.clients.all() {
 		if c.id == sourceID && skip {
 			continue
 		}
@@ -101,7 +101,7 @@ func (ch *channel) broadcast(m string, sourceID clientID, skip bool) {
 }
 
 func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
-	for _, c := range ch.clients.All() {
+	for _, c := range ch.clients.all() {
 		if c.id == sourceID && skip {
 			continue
 		}

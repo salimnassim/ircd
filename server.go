@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"net/http"
 	"regexp"
 	"sync"
 
@@ -9,11 +8,11 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-type regexKey string
+type regexKey int
 
 const (
-	regexKeyNick    = regexKey("nick")
-	regexKeyChannel = regexKey("channel")
+	regexKeyNick    = regexKey(0)
+	regexKeyChannel = regexKey(1)
 )
 
 type ServerConfig struct {
@@ -32,16 +31,12 @@ type server struct {
 	regex map[regexKey]*regexp.Regexp
 }
 
-func (s *server) IndexHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusTeapot)
-}
-
 func NewServer(config ServerConfig) *server {
 	server := &server{
 		mu:       &sync.RWMutex{},
 		name:     config.Name,
-		clients:  NewClientStore("clients"),
-		channels: NewChannelStore("channels"),
+		clients:  newClientStore("clients"),
+		channels: newChannelStore("channels"),
 		regex:    make(map[regexKey]*regexp.Regexp),
 		message:  &config.MOTD,
 	}
@@ -68,17 +63,17 @@ func compileRegexp(s *server) {
 
 // Returns the number of connected clients and open channels.
 func (s *server) stats() (c int, channels int) {
-	return s.clients.Count(), s.channels.Count()
+	return s.clients.count(), s.channels.count()
 }
 
 // Removes client from channels and client map.
 func (s *server) removeClient(c *client) error {
-	memberOf := s.channels.MemberOf(c)
+	memberOf := s.channels.memberOf(c)
 	for _, ch := range memberOf {
 		ch.removeClient(c)
 	}
 
-	s.clients.Delete(clientID(c.id))
+	s.clients.delete(clientID(c.id))
 	metrics.Clients.Dec()
 
 	return nil

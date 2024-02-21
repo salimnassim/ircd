@@ -2,7 +2,7 @@ package ircd
 
 import "github.com/salimnassim/ircd/metrics"
 
-func handleLusers(s *server, c *client, m Message) {
+func handleLusers(s *server, c *client, m message) {
 	clients, channels := s.stats()
 
 	c.sendRPL(s.name, rplLuserClient{

@@ -7,7 +7,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handleJoin(s *server, c *client, m Message) {
+func handleJoin(s *server, c *client, m message) {
 	if !c.handshake {
 		c.sendRPL(s.name, errNotRegistered{
 			client: c.nickname(),
@@ -28,7 +28,7 @@ func handleJoin(s *server, c *client, m Message) {
 		}
 
 		// validate channel name
-		ok := s.regex["channel"].MatchString(target)
+		ok := s.regex[regexKeyChannel].MatchString(target)
 		if !ok {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
@@ -40,13 +40,13 @@ func handleJoin(s *server, c *client, m Message) {
 		// ptr to existing channel or channel that will be created
 		var channel *channel
 
-		channel, exists := s.channels.Get(target)
+		channel, exists := s.channels.get(target)
 		if !exists {
 			// create channel if it does not exist
-			channel = NewChannel(target, c.id)
+			channel = newChannel(target, c.id)
 
 			// todo: use channel.id instead of target
-			s.channels.Add(target, channel)
+			s.channels.add(target, channel)
 
 			metrics.Channels.Inc()
 		}

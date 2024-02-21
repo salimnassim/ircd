@@ -5,16 +5,16 @@ import (
 	"strings"
 )
 
-func ParseMessage(line string) (Message, error) {
+func parseMessage(line string) (message, error) {
 	if len(line) == 0 {
-		return Message{}, nil
+		return message{}, nil
 	}
 
 	if len(line) > 512 {
-		return Message{}, errors.New("message too long")
+		return message{}, errors.New("message too long")
 	}
 
-	message := Message{
+	message := message{
 		Raw:     line,
 		Tags:    make(map[string]interface{}),
 		Prefix:  "",

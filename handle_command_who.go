@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func handleWho(s *server, c *client, m Message) {
+func handleWho(s *server, c *client, m message) {
 	if !c.handshake {
 		c.sendRPL(s.name, errNotRegistered{
 			client: c.nickname(),
@@ -22,7 +22,7 @@ func handleWho(s *server, c *client, m Message) {
 
 	target := m.Params[0]
 	if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
-		channel, ok := s.channels.Get(target)
+		channel, ok := s.channels.get(target)
 		if !ok {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
@@ -31,7 +31,7 @@ func handleWho(s *server, c *client, m Message) {
 			return
 		}
 
-		for _, cl := range channel.clients.All() {
+		for _, cl := range channel.clients.all() {
 			c.sendRPL(s.name, rplWhoReply{
 				client:   c.nickname(),
 				channel:  channel.name,

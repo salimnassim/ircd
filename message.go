@@ -1,8 +1,8 @@
 package ircd
 
-type Message struct {
+type message struct {
 	Raw     string
-	Tags    map[string]interface{}
+	Tags    map[string]any
 	Prefix  string
 	Command string
 	Params  []string

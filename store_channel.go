@@ -4,33 +4,33 @@ import "sync"
 
 type ChannelStorer interface {
 	// Number of channels in store.
-	Count() int
-	// Add channel to store. ID is most likely channel name.
-	Add(name string, ch *channel)
-	Delete(name string)
+	count() int
+	// add channel to store. ID is most likely channel name.
+	add(name string, ch *channel)
+	delete(name string)
 	// Check if client is a member of channel.
-	IsMember(c *client, ch *channel) (ok bool)
-	// Get channel by name.
-	Get(name string) (ch *channel, ok bool)
+	isMember(c *client, ch *channel) (ok bool)
+	// get channel by name.
+	get(name string) (ch *channel, ok bool)
 	// Get which channels a client belongs to.
-	MemberOf(c *client) (chs []*channel)
+	memberOf(c *client) (chs []*channel)
 }
 
-type ChannelStore struct {
+type channelStore struct {
 	mu       *sync.RWMutex
 	id       string
 	channels map[string]*channel
 }
 
-func NewChannelStore(id string) *ChannelStore {
-	return &ChannelStore{
+func newChannelStore(id string) *channelStore {
+	return &channelStore{
 		mu:       &sync.RWMutex{},
 		id:       id,
 		channels: make(map[string]*channel),
 	}
 }
 
-func (s *ChannelStore) Count() int {
+func (s *channelStore) count() int {
 	channels := 0
 	s.mu.RLock()
 	channels = len(s.channels)
@@ -39,7 +39,7 @@ func (s *ChannelStore) Count() int {
 	return channels
 }
 
-func (s *ChannelStore) Get(name string) (*channel, bool) {
+func (s *channelStore) get(name string) (*channel, bool) {
 	s.mu.RLock()
 	channel, ok := s.channels[name]
 	s.mu.RUnlock()
@@ -49,28 +49,28 @@ func (s *ChannelStore) Get(name string) (*channel, bool) {
 	return channel, true
 }
 
-func (s *ChannelStore) Add(name string, ch *channel) {
+func (s *channelStore) add(name string, ch *channel) {
 	s.mu.Lock()
 	s.channels[name] = ch
 	s.mu.Unlock()
 }
 
-func (s *ChannelStore) Delete(name string) {
+func (s *channelStore) delete(name string) {
 	s.mu.Lock()
 	delete(s.channels, name)
 	s.mu.Unlock()
 }
 
-func (s *ChannelStore) IsMember(c *client, ch *channel) bool {
-	return ch.clients.IsMember(c.id)
+func (s *channelStore) isMember(c *client, ch *channel) bool {
+	return ch.clients.isMember(c.id)
 }
 
-func (s *ChannelStore) MemberOf(c *client) []*channel {
+func (s *channelStore) memberOf(c *client) []*channel {
 	channels := []*channel{}
 
 	s.mu.RLock()
 	for _, ch := range s.channels {
-		if ch.clients.IsMember(clientID(c.id)) {
+		if ch.clients.isMember(clientID(c.id)) {
 			channels = append(channels, ch)
 		}
 	}

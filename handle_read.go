@@ -13,7 +13,7 @@ import (
 
 func HandleConnection(conn net.Conn, s *server) {
 	id := uuid.Must(uuid.NewRandom()).String()
-	client, err := NewClient(conn, id)
+	c, err := newClient(conn, id)
 	if err != nil {
 		conn.Close()
 		log.Error().Err(err).Msg("unable to create client")
@@ -21,19 +21,19 @@ func HandleConnection(conn net.Conn, s *server) {
 	}
 
 	// add client to store
-	s.clients.Add(clientID(id), client)
+	s.clients.add(clientID(id), c)
 	metrics.Clients.Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
-	go handleConnectionIn(client, s)
-	go handleConnectionOut(client, s)
+	go handleConnectionIn(c, s)
+	go handleConnectionOut(c, s)
 
 	// read input from client
-	scanner := bufio.NewScanner(client.reader)
+	scanner := bufio.NewScanner(c.reader)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if err != nil {
-			log.Error().Err(err).Msgf("unable to read from client (%s)", client.ip)
+			log.Error().Err(err).Msgf("unable to read from client (%s)", c.ip)
 			break
 		}
 
@@ -43,14 +43,14 @@ func HandleConnection(conn net.Conn, s *server) {
 		// https://modern.ircdocs.horse/#ping-message
 		// https://modern.ircdocs.horse/#pong-message
 		if strings.HasPrefix(line, "PING") {
-			client.setPing(time.Now().Unix())
-			client.send <- strings.Replace(line, "PING", "PONG", 1)
+			c.setPing(time.Now().Unix())
+			c.send <- strings.Replace(line, "PING", "PONG", 1)
 			metrics.Pings.Inc()
 			continue
 		}
 
 		// send to receive channel
-		client.recv <- line
+		c.recv <- line
 	}
 
 	// cleanup
@@ -58,7 +58,7 @@ func HandleConnection(conn net.Conn, s *server) {
 	if err != nil {
 		log.Error().Err(err).Msg("unable to close client on write handler")
 	}
-	err = s.removeClient(client)
+	err = s.removeClient(c)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to remove client on write handler")
 	}

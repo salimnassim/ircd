@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func handleNick(s *server, c *client, m Message) {
+func handleNick(s *server, c *client, m message) {
 	// nick params should be 1
 	if len(m.Params) != 1 {
 		c.sendRPL(s.name, errNeedMoreParams{
@@ -27,7 +27,7 @@ func handleNick(s *server, c *client, m Message) {
 	}
 
 	// validate nickname
-	ok := s.regex["nick"].MatchString(m.Params[0])
+	ok := s.regex[regexKeyNick].MatchString(m.Params[0])
 	if !ok {
 		c.sendRPL(s.name, errErroneusNickname{
 			client: c.nickname(),
@@ -37,7 +37,7 @@ func handleNick(s *server, c *client, m Message) {
 	}
 
 	// check if nick is already in use
-	_, ok = s.clients.Get(m.Params[0])
+	_, ok = s.clients.get(m.Params[0])
 	if ok {
 		c.sendRPL(s.name, errNicknameInUse{
 			client: c.nickname(),

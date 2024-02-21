@@ -1,6 +1,6 @@
 package ircd
 
-func handleUser(s *server, c *client, m Message) {
+func handleUser(s *server, c *client, m message) {
 	if !c.handshake {
 		c.sendRPL(s.name, errNotRegistered{
 			client: c.nickname(),

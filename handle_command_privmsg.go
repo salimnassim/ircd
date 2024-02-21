@@ -7,7 +7,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handlePrivmsg(s *server, c *client, m Message) {
+func handlePrivmsg(s *server, c *client, m message) {
 	if !c.handshake {
 		c.sendRPL(s.name, errNotRegistered{
 			client: c.nickname(),
@@ -21,7 +21,7 @@ func handlePrivmsg(s *server, c *client, m Message) {
 	for _, target := range targets {
 		// is channel
 		if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
-			channel, exists := s.channels.Get(target)
+			channel, exists := s.channels.get(target)
 			if !exists {
 				c.sendRPL(s.name, errNoSuchChannel{
 					client:  c.nickname(),
@@ -31,7 +31,7 @@ func handlePrivmsg(s *server, c *client, m Message) {
 			}
 
 			// is user a member of the channel?
-			if !s.channels.IsMember(c, channel) {
+			if !s.channels.isMember(c, channel) {
 				c.sendRPL(s.name, errNotOnChannel{
 					client:  c.nickname(),
 					channel: channel.name,
@@ -46,7 +46,7 @@ func handlePrivmsg(s *server, c *client, m Message) {
 			continue
 		}
 		// is user
-		dest, exists := s.clients.Get(target)
+		dest, exists := s.clients.get(target)
 		if dest == nil || !exists {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
