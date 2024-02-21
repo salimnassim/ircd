@@ -38,20 +38,23 @@ func NewChannel(channelName string, owner string) *Channel {
 	return channel
 }
 
+// Sets channel topic.
 func (channel *Channel) SetTopic(topic string, author string) {
 	channel.mu.Lock()
-	defer channel.mu.Unlock()
 	channel.topic.text = topic
 	channel.topic.timestamp = int(time.Now().Unix())
 	channel.topic.author = author
+	channel.mu.Unlock()
 }
 
+// Returns current topic.
 func (channel *Channel) Topic() channelTopic {
 	channel.mu.RLock()
 	defer channel.mu.RUnlock()
 	return channel.topic
 }
 
+// Adds client to channel. If password does not match, an error is returned.
 func (ch *Channel) AddClient(client *Client, password string) error {
 	if password != "" && ch.password != password {
 		return errorBadChannelKey
@@ -62,18 +65,19 @@ func (ch *Channel) AddClient(client *Client, password string) error {
 	return nil
 }
 
+// Remove client from channel.
 func (ch *Channel) RemoveClient(client *Client) {
 	ch.clients.Delete(client.id)
 }
 
-// Returns channel users delimited by a space for RPL_NAMREPLY
+// Returns channel users delimited by a space for RPL_NAMREPLY.
 func (ch *Channel) Names() []string {
 	var names []string
 
 	ch.clients.Range(func(key, value any) bool {
 		client := value.(*Client)
 		if ch.owner == client.id {
-			names = append(names, fmt.Sprintf("~%s", client.Nickname()))
+			names = append(names, fmt.Sprintf("@%s", client.Nickname()))
 		} else {
 			names = append(names, client.Nickname())
 		}
