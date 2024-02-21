@@ -2,21 +2,21 @@ package ircd
 
 import "github.com/salimnassim/ircd/metrics"
 
-func handleLusers(server *Server, client *Client, message Message) {
-	clients, channels := server.Stats()
+func handleLusers(s *server, c *client, m Message) {
+	clients, channels := s.stats()
 
-	client.sendRPL(server.name, rplLuserClient{
-		client:    client.Nickname(),
+	c.sendRPL(s.name, rplLuserClient{
+		client:    c.nickname(),
 		users:     clients,
 		invisible: 0,
 		servers:   1,
 	})
-	client.sendRPL(server.name, rplLuserOp{
-		client: client.Nickname(),
+	c.sendRPL(s.name, rplLuserOp{
+		client: c.nickname(),
 		ops:    0,
 	})
-	client.sendRPL(server.name, rplLuserChannels{
-		client:   client.Nickname(),
+	c.sendRPL(s.name, rplLuserChannels{
+		client:   c.nickname(),
 		channels: channels,
 	})
 

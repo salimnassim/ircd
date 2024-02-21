@@ -4,16 +4,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func HandleConnectionOut(client *Client, server *Server) {
+func handleConnectionOut(c *client, s *server) {
 	defer func() {
-		client.stop <- true
+		c.stop <- true
 	}()
 
-	for message := range client.send {
+	for message := range c.send {
 		log.Debug().Msgf("%s", message)
-		_, err := client.Write(message + "\r\n")
+		_, err := c.write(message + "\r\n")
 		if err != nil {
-			log.Error().Err(err).Msgf("unable to write message to client (%s)", client.ip)
+			log.Error().Err(err).Msgf("unable to write message to client (%s)", c.ip)
 			break
 		}
 	}

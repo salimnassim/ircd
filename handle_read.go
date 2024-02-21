@@ -11,22 +11,22 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func HandleConnectionRead(connection net.Conn, server *Server) {
+func HandleConnection(conn net.Conn, s *server) {
 	id := uuid.Must(uuid.NewRandom()).String()
-	client, err := NewClient(connection, id)
+	client, err := NewClient(conn, id)
 	if err != nil {
-		connection.Close()
+		conn.Close()
 		log.Error().Err(err).Msg("unable to create client")
 		return
 	}
 
 	// add client to store
-	server.clients.Add(ClientID(id), client)
+	s.clients.Add(clientID(id), client)
 	metrics.Clients.Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
-	go HandleConnectionIn(client, server)
-	go HandleConnectionOut(client, server)
+	go handleConnectionIn(client, s)
+	go handleConnectionOut(client, s)
 
 	// read input from client
 	scanner := bufio.NewScanner(client.reader)
@@ -43,7 +43,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		// https://modern.ircdocs.horse/#ping-message
 		// https://modern.ircdocs.horse/#pong-message
 		if strings.HasPrefix(line, "PING") {
-			client.SetPing(time.Now().Unix())
+			client.setPing(time.Now().Unix())
 			client.send <- strings.Replace(line, "PING", "PONG", 1)
 			metrics.Pings.Inc()
 			continue
@@ -54,11 +54,11 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 	}
 
 	// cleanup
-	err = connection.Close()
+	err = conn.Close()
 	if err != nil {
 		log.Error().Err(err).Msg("unable to close client on write handler")
 	}
-	err = server.RemoveClient(client)
+	err = s.removeClient(client)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to remove client on write handler")
 	}

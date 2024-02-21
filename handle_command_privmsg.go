@@ -7,56 +7,56 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handlePrivmsg(server *Server, client *Client, message Message) {
-	if !client.handshake {
-		client.sendRPL(server.name, errNotRegistered{
-			client: client.Nickname(),
+func handlePrivmsg(s *server, c *client, m Message) {
+	if !c.handshake {
+		c.sendRPL(s.name, errNotRegistered{
+			client: c.nickname(),
 		})
 		return
 	}
 
-	targets := strings.Split(message.Params[0], ",")
-	text := strings.Join(message.Params[1:len(message.Params)], " ")
+	targets := strings.Split(m.Params[0], ",")
+	text := strings.Join(m.Params[1:len(m.Params)], " ")
 
 	for _, target := range targets {
 		// is channel
 		if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
-			channel, exists := server.channels.Get(target)
+			channel, exists := s.channels.Get(target)
 			if !exists {
-				client.sendRPL(server.name, errNoSuchChannel{
-					client:  client.Nickname(),
+				c.sendRPL(s.name, errNoSuchChannel{
+					client:  c.nickname(),
 					channel: target,
 				})
 				continue
 			}
 
 			// is user a member of the channel?
-			if !server.channels.IsMember(client, channel) {
-				client.sendRPL(server.name, errNotOnChannel{
-					client:  client.Nickname(),
+			if !s.channels.IsMember(c, channel) {
+				c.sendRPL(s.name, errNotOnChannel{
+					client:  c.nickname(),
 					channel: channel.name,
 				})
 				continue
 			}
 
 			// send message to channel
-			channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
-				client.Prefix(), channel.name, text), client.id, true)
+			channel.broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
+				c.prefix(), channel.name, text), c.id, true)
 			metrics.PrivmsgChannel.Inc()
 			continue
 		}
 		// is user
-		dest, exists := server.clients.Get(target)
+		dest, exists := s.clients.Get(target)
 		if dest == nil || !exists {
-			client.sendRPL(server.name, errNoSuchChannel{
-				client:  client.Nickname(),
+			c.sendRPL(s.name, errNoSuchChannel{
+				client:  c.nickname(),
 				channel: target,
 			})
 			continue
 		}
 
 		dest.send <- fmt.Sprintf(":%s PRIVMSG %s :%s",
-			client.nickname, dest.nickname, text)
+			c.nick, dest.nick, text)
 		metrics.PrivmsgClient.Inc()
 		continue
 	}

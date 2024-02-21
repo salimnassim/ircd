@@ -2,30 +2,30 @@ package ircd
 
 import "sync"
 
-type ClientID string
+type clientID string
 
 type ClientStorer interface {
 	// Number of clients in store.
 	Count() int
 	// Add client to store.
-	Add(id ClientID, client *Client)
+	Add(id clientID, c *client)
 	// Remove client from store.
-	Delete(id ClientID)
+	Delete(id clientID)
 	// Get client from store by nickname.
-	Get(nickname string) (client *Client, ok bool)
+	Get(nickname string) (c *client, ok bool)
 }
 
 type ClientStore struct {
 	mu      *sync.RWMutex
 	id      string
-	clients map[ClientID]*Client
+	clients map[clientID]*client
 }
 
 func NewClientStore(id string) *ClientStore {
 	return &ClientStore{
 		mu:      &sync.RWMutex{},
 		id:      id,
-		clients: make(map[ClientID]*Client),
+		clients: make(map[clientID]*client),
 	}
 }
 
@@ -41,12 +41,12 @@ func (s *ClientStore) Count() int {
 }
 
 // Get client from store by nickname.
-func (s *ClientStore) Get(nickname string) (*Client, bool) {
-	var client *Client
+func (s *ClientStore) Get(nickname string) (*client, bool) {
+	var client *client
 
 	s.mu.RLock()
 	for _, c := range s.clients {
-		if c.nickname == nickname {
+		if c.nick == nickname {
 			client = c
 			break
 		}
@@ -61,14 +61,14 @@ func (s *ClientStore) Get(nickname string) (*Client, bool) {
 }
 
 // Add client to store.
-func (s *ClientStore) Add(id ClientID, client *Client) {
+func (s *ClientStore) Add(id clientID, c *client) {
 	s.mu.Lock()
-	s.clients[id] = client
+	s.clients[id] = c
 	s.mu.Unlock()
 }
 
 // Delete client from store.
-func (s *ClientStore) Delete(id ClientID) {
+func (s *ClientStore) Delete(id clientID) {
 	s.mu.Lock()
 	delete(s.clients, id)
 	s.mu.Unlock()

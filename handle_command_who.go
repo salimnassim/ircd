@@ -4,49 +4,49 @@ import (
 	"strings"
 )
 
-func handleWho(server *Server, client *Client, message Message) {
-	if !client.handshake {
-		client.sendRPL(server.name, errNotRegistered{
-			client: client.Nickname(),
+func handleWho(s *server, c *client, m Message) {
+	if !c.handshake {
+		c.sendRPL(s.name, errNotRegistered{
+			client: c.nickname(),
 		})
 		return
 	}
 
-	if len(message.Params) == 0 {
-		client.sendRPL(server.name, errNeedMoreParams{
-			client:  client.Nickname(),
-			command: message.Command,
+	if len(m.Params) == 0 {
+		c.sendRPL(s.name, errNeedMoreParams{
+			client:  c.nickname(),
+			command: m.Command,
 		})
 		return
 	}
 
-	target := message.Params[0]
+	target := m.Params[0]
 	if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
-		channel, ok := server.channels.Get(target)
+		channel, ok := s.channels.Get(target)
 		if !ok {
-			client.sendRPL(server.name, errNoSuchChannel{
-				client:  client.Nickname(),
+			c.sendRPL(s.name, errNoSuchChannel{
+				client:  c.nickname(),
 				channel: target,
 			})
 			return
 		}
 
-		for _, c := range channel.clients.All() {
-			client.sendRPL(server.name, rplWhoReply{
-				client:   client.Nickname(),
+		for _, cl := range channel.clients.All() {
+			c.sendRPL(s.name, rplWhoReply{
+				client:   c.nickname(),
 				channel:  channel.name,
-				username: c.Username(),
-				host:     c.Hostname(),
-				server:   server.name,
-				nick:     c.Nickname(),
+				username: cl.username(),
+				host:     cl.hostname(),
+				server:   s.name,
+				nick:     cl.nickname(),
 				flags:    "",
 				hopcount: 0,
-				realname: c.Realname(),
+				realname: cl.realname(),
 			})
 		}
 
-		client.sendRPL(server.name, rplEndOfWho{
-			client: client.Nickname(),
+		c.sendRPL(s.name, rplEndOfWho{
+			client: c.nickname(),
 			mask:   "",
 		})
 		return

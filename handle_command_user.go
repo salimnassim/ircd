@@ -1,29 +1,29 @@
 package ircd
 
-func handleUser(server *Server, client *Client, message Message) {
-	if !client.handshake {
-		client.sendRPL(server.name, errNotRegistered{
-			client: client.Nickname(),
+func handleUser(s *server, c *client, m Message) {
+	if !c.handshake {
+		c.sendRPL(s.name, errNotRegistered{
+			client: c.nickname(),
 		})
 		return
 	}
 
-	if len(message.Params) < 4 {
-		client.sendRPL(server.name, errNeedMoreParams{
-			client: client.nickname,
+	if len(m.Params) < 4 {
+		c.sendRPL(s.name, errNeedMoreParams{
+			client: c.nick,
 		})
 		return
 	}
 
-	if client.username != "" {
-		client.sendRPL(server.name, errAlreadyRegistered{
-			client: client.Nickname(),
+	if c.user != "" {
+		c.sendRPL(s.name, errAlreadyRegistered{
+			client: c.nickname(),
 		})
 		return
 	}
 
-	username := message.Params[0]
-	realname := message.Params[3]
+	username := m.Params[0]
+	realname := m.Params[3]
 
-	client.SetUsername(username, realname)
+	c.setUsername(username, realname)
 }
