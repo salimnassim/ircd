@@ -3,6 +3,8 @@ package ircd
 import (
 	"fmt"
 	"strings"
+
+	"github.com/salimnassim/ircd/metrics"
 )
 
 func handlePart(server *Server, client *Client, message Message) {
@@ -35,6 +37,7 @@ func handlePart(server *Server, client *Client, message Message) {
 
 		if channel.clients.Count() == 0 {
 			server.channels.Delete(channel.name)
+			metrics.Channels.Dec()
 		}
 	}
 }

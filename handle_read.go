@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"github.com/salimnassim/ircd/metrics"
 )
 
 func HandleConnectionRead(connection net.Conn, server *Server) {
@@ -21,8 +22,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 
 	// add client to store
 	server.clients.Add(ClientID(id), client)
-
-	promClients.Inc()
+	metrics.Clients.Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
 	go HandleConnectionIn(client, server)
@@ -45,7 +45,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 		if strings.HasPrefix(line, "PING") {
 			client.SetPing(time.Now().Unix())
 			client.send <- strings.Replace(line, "PING", "PONG", 1)
-			promPings.Inc()
+			metrics.Pings.Inc()
 			continue
 		}
 

@@ -2,6 +2,8 @@ package ircd
 
 import (
 	"strings"
+
+	"github.com/salimnassim/ircd/metrics"
 )
 
 func handleTopic(server *Server, client *Client, message Message) {
@@ -36,6 +38,7 @@ func handleTopic(server *Server, client *Client, message Message) {
 	// set topic
 	remainder := strings.Join(message.Params[1:len(message.Params)], " ")
 	channel.SetTopic(remainder, client.nickname)
+	metrics.Topic.Inc()
 
 	// get topic
 	topic := channel.Topic()

@@ -18,6 +18,11 @@ func main() {
 
 	config := ircd.ServerConfig{
 		Name: "ircd",
+		MOTD: []string{
+			"This is the message of the day.",
+			"It contains multiple lines because the lines could be long.",
+			"🍩🍫🍡🍦🍬🍮",
+		},
 	}
 
 	server := ircd.NewServer(config)

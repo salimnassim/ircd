@@ -9,14 +9,6 @@ import (
 	"time"
 )
 
-type Clienter interface {
-	SetNickname(nickname string)
-	SetUsername(username string, realname string)
-	SetHostname(hostname string)
-	Nickname() string
-	Prefix() string
-}
-
 type Client struct {
 	mu       *sync.RWMutex
 	id       ClientID

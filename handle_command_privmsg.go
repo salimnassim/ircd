@@ -3,6 +3,8 @@ package ircd
 import (
 	"fmt"
 	"strings"
+
+	"github.com/salimnassim/ircd/metrics"
 )
 
 func handlePrivmsg(server *Server, client *Client, message Message) {
@@ -40,7 +42,7 @@ func handlePrivmsg(server *Server, client *Client, message Message) {
 			// send message to channel
 			channel.Broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
 				client.Prefix(), channel.name, text), client.id, true)
-			promPrivmsgChannel.Inc()
+			metrics.PrivmsgChannel.Inc()
 			continue
 		}
 		// is user
@@ -52,9 +54,10 @@ func handlePrivmsg(server *Server, client *Client, message Message) {
 			})
 			continue
 		}
+
 		dest.send <- fmt.Sprintf(":%s PRIVMSG %s :%s",
 			client.nickname, dest.nickname, text)
-		promPrivmsgClient.Inc()
+		metrics.PrivmsgClient.Inc()
 		continue
 	}
 }
