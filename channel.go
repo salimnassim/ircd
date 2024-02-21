@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -55,7 +54,7 @@ func (channel *Channel) Topic() channelTopic {
 
 func (ch *Channel) AddClient(client *Client, password string) error {
 	if password != "" && ch.password != password {
-		return errors.New("incorrect password")
+		return errorBadChannelKey
 	}
 
 	ch.clients.Store(client.id, client)
