@@ -25,6 +25,7 @@ services:
       - "2112:2112"
     environment:
       - SERVER_NAME=ircd.network.fqdn
+      - SERVER_VERSION=0.1
       - PROMETHEUS=yes
 volumes:
   prometheus_data:
