@@ -10,7 +10,7 @@ import (
 func handleNick(server *Server, client *Client, message Message) {
 	// nick params should be 1
 	if len(message.Params) != 1 {
-		client.sendRPL(server.name, rplNeedMoreParams{
+		client.sendRPL(server.name, errNeedMoreParams{
 			client:  client.Nickname(),
 			command: message.Command,
 		})
@@ -39,7 +39,7 @@ func handleNick(server *Server, client *Client, message Message) {
 	// check if nick is already in use
 	_, exists := server.clients.GetByNickname(message.Params[0])
 	if exists {
-		client.sendRPL(server.name, rplNicknameInUse{
+		client.sendRPL(server.name, errNicknameInUse{
 			client: client.Nickname(),
 			nick:   message.Params[0],
 		})
@@ -50,12 +50,22 @@ func handleNick(server *Server, client *Client, message Message) {
 
 	// check for handshake
 	if !client.handshake {
-		client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your ID is: %s",
-			client.nickname, client.id)
-		client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your IP address is: %s",
-			client.nickname, client.ip)
-		client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Looking up your hostname...",
-			client.nickname)
+
+		// send handshake preamble
+		client.sendNotice(noticeAuth{
+			client:  client.Nickname(),
+			message: fmt.Sprintf("Your ID is: %s", client.id),
+		})
+
+		client.sendNotice(noticeAuth{
+			client:  client.Nickname(),
+			message: fmt.Sprintf("Your IP address is: %s", client.ip),
+		})
+
+		client.sendNotice(noticeAuth{
+			client:  client.Nickname(),
+			message: "Looking up your hostname...",
+		})
 
 		// lookup address
 		// todo: resolver
@@ -67,21 +77,35 @@ func handleNick(server *Server, client *Client, message Message) {
 			client.SetHostname(addr[0])
 		}
 
+		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
 		if strings.Count(client.ip, ":") > 1 {
 			prefix = 6
 		}
 
+		client.sendRPL(server.name, rplWelcome{
+			client:   client.Nickname(),
+			network:  "hello",
+			hostname: client.Prefix(),
+		})
+
+		client.sendRPL(server.name, rplYourHost{
+			client:     client.Nickname(),
+			serverName: os.Getenv("SERVER_NAME"),
+			version:    "0.1",
+		})
+
+		client.sendRPL(server.name, rplEndOfMotd{
+			client: client.Nickname(),
+		})
+
 		// cloak
 		client.SetHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, client.id))
-		client.send <- fmt.Sprintf("NOTICE %s :AUTH :*** Your hostname has been cloaked to %s",
-			client.nickname, client.hostname)
-		client.send <- fmt.Sprintf(":%s 001 %s :Welcome to the IRC network! 🎂",
-			server.name, client.nickname)
-		client.send <- fmt.Sprintf(":%s 002 %s :Your host is %s (%s), running version -1",
-			server.name, client.nickname, server.name, os.Getenv("HOSTNAME"))
-		client.send <- fmt.Sprintf(":%s 376 %s :End of /MOTD command",
-			server.name, client.nickname)
+		client.sendNotice(noticeAuth{
+			client:  client.Nickname(),
+			message: fmt.Sprintf("Your hostname has been cloaked to %s", client.hostname),
+		})
+
 		client.handshake = true
 	}
 }

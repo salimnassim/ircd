@@ -9,7 +9,50 @@ type rpl interface {
 	format() string
 }
 
-// RPL_LUSERCLIENT 251.
+// 001 RPL_WELCOME
+// https://modern.ircdocs.horse/#rplwelcome-001
+type rplWelcome struct {
+	client   string
+	network  string
+	hostname string
+}
+
+func (r rplWelcome) format() string {
+	return fmt.Sprintf(
+		"001 %s :Welcome to the %s Network, %s",
+		r.client, r.network, r.hostname,
+	)
+}
+
+// 002 RPL_YOURHOST
+// https://modern.ircdocs.horse/#rplyourhost-002
+type rplYourHost struct {
+	client     string
+	serverName string
+	version    string
+}
+
+func (r rplYourHost) format() string {
+	return fmt.Sprintf(
+		"002 %s :Your host is %s, running version %s",
+		r.client, r.serverName, r.version,
+	)
+}
+
+type rplEndOfMotd struct {
+	client string
+}
+
+// 376 RPL_ENDOFMOTD
+// https://modern.ircdocs.horse/#rplendofmotd-376
+func (r rplEndOfMotd) format() string {
+	return fmt.Sprintf(
+		"376 %s :End of /MOTD command.",
+		r.client,
+	)
+}
+
+// 251 RPL_LUSERCLIENT.
 // https://modern.ircdocs.horse/#rplluserclient-251
 type rplLuserClient struct {
 	client string
@@ -92,28 +135,56 @@ func (r rplErroneusNickname) format() string {
 	)
 }
 
-type rplNicknameInUse struct {
+// 433 ERR_NICKNAMEINUSE
+// https://modern.ircdocs.horse/#errnicknameinuse-433
+type errNicknameInUse struct {
 	client string
 	nick   string
 }
 
-func (r rplNicknameInUse) format() string {
+func (r errNicknameInUse) format() string {
 	return fmt.Sprintf(
 		"433 %s %s :Nickname is already in use.",
 		r.client, r.nick,
 	)
 }
 
+// 451 ERR_NOTREGISTERED
+// https://modern.ircdocs.horse/#errnotregistered-451
+type errNotRegistered struct {
+	client string
+}
+
+func (r errNotRegistered) format() string {
+	return fmt.Sprintf(
+		"451 %s :You have not registered.",
+		r.client,
+	)
+}
+
 // 461 ERR_NEEDMOREPARAMS
 // https://modern.ircdocs.horse/#errneedmoreparams-461
-type rplNeedMoreParams struct {
+type errNeedMoreParams struct {
 	client  string
 	command string
 }
 
-func (r rplNeedMoreParams) format() string {
+func (r errNeedMoreParams) format() string {
 	return fmt.Sprintf(
 		"461 %s %s :Not enough parameters.",
 		r.client, r.command,
+	)
+}
+
+// 462 ERR_ALREADYREGISTERED
+// https://modern.ircdocs.horse/#erralreadyregistered-462
+type errAlreadyRegistered struct {
+	client string
+}
+
+func (r errAlreadyRegistered) format() string {
+	return fmt.Sprintf(
+		"462 %s :You may not reregister.",
+		r.client,
 	)
 }

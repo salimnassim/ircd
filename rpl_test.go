@@ -10,6 +10,22 @@ func TestRPLNamreply(t *testing.T) {
 
 	tcs := []tc{
 		{
+			want: "001 client :Welcome to the testing Network, client@hostname",
+			input: rplWelcome{
+				client:   "client",
+				network:  "testing",
+				hostname: "client@hostname",
+			},
+		},
+		{
+			want: "002 client :Your host is name, running version 1",
+			input: rplYourHost{
+				client:     "client",
+				serverName: "name",
+				version:    "1",
+			},
+		},
+		{
 			want: "251 client :There are 1 users and 2 invisible on 3 servers",
 			input: rplLuserClient{
 				client:    "client",
@@ -44,6 +60,12 @@ func TestRPLNamreply(t *testing.T) {
 			},
 		},
 		{
+			want: "376 client :End of /MOTD command.",
+			input: rplEndOfMotd{
+				client: "client",
+			},
+		},
+		{
 			want: "432 client nickname :Erroneus nickname.",
 			input: rplErroneusNickname{
 				client: "client",
@@ -52,16 +74,28 @@ func TestRPLNamreply(t *testing.T) {
 		},
 		{
 			want: "433 client nickname :Nickname is already in use.",
-			input: rplNicknameInUse{
+			input: errNicknameInUse{
 				client: "client",
 				nick:   "nickname",
 			},
 		},
 		{
+			want: "451 client :You have not registered.",
+			input: errNotRegistered{
+				client: "client",
+			},
+		},
+		{
 			want: "461 client WHO :Not enough parameters.",
-			input: rplNeedMoreParams{
+			input: errNeedMoreParams{
 				client:  "client",
 				command: "WHO",
+			},
+		},
+		{
+			want: "462 client :You may not reregister.",
+			input: errAlreadyRegistered{
+				client: "client",
 			},
 		},
 	}
