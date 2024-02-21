@@ -24,8 +24,9 @@ services:
       - "0.0.0.0:6667:6667"
       - "2112:2112"
     environment:
-      - SERVER_NAME=ircd
-      - PROMETHEUS_ENABLE=yes
+      - SERVER_NAME=ircd.network.fqdn
+      - SERVER_VERSION=0.1
+      - PROMETHEUS=yes
 volumes:
   prometheus_data:
     external: false

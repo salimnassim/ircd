@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -10,72 +9,80 @@ import (
 type Channel struct {
 	mu       *sync.RWMutex
 	name     string
-	topic    channelTopic
-	clients  sync.Map
-	owner    string
+	topic    *topic
+	clients  ChannelClientStorer
+	owner    ClientID
 	password string
+	secret   bool
 }
 
-type channelTopic struct {
+type topic struct {
 	text      string
 	timestamp int
 	author    string
 }
 
-func NewChannel(channelName string, owner string) *Channel {
+func NewChannel(channelName string, owner ClientID) *Channel {
 	channel := &Channel{
 		mu:   &sync.RWMutex{},
 		name: channelName,
-		topic: channelTopic{
+		topic: &topic{
 			text:      "",
 			timestamp: 0,
 			author:    "",
 		},
-		clients:  sync.Map{},
-		owner:    "",
+		clients:  NewChannelClientStore(),
+		owner:    owner,
 		password: "",
+		secret:   false,
 	}
 
 	return channel
 }
 
-func (channel *Channel) SetTopic(topic string, author string) {
+// Sets channel topic.
+func (channel *Channel) SetTopic(text string, author string) {
 	channel.mu.Lock()
-	defer channel.mu.Unlock()
-	channel.topic.text = topic
+	channel.topic.text = text
 	channel.topic.timestamp = int(time.Now().Unix())
 	channel.topic.author = author
+	channel.mu.Unlock()
 }
 
-func (channel *Channel) Topic() channelTopic {
+// Returns current topic.
+func (channel *Channel) Topic() *topic {
 	channel.mu.RLock()
 	defer channel.mu.RUnlock()
 	return channel.topic
 }
 
+// Adds client to channel. If password does not match, an error is returned.
 func (ch *Channel) AddClient(client *Client, password string) error {
 	if password != "" && ch.password != password {
-		return errors.New("incorrect password")
+		return errorBadChannelKey
 	}
 
-	ch.clients.Store(client.id, client)
+	ch.clients.Add(ClientID(client.id), client)
 
 	return nil
 }
 
+// Remove client from channel.
 func (ch *Channel) RemoveClient(client *Client) {
-	ch.clients.Delete(client.id)
+	ch.clients.Delete(ClientID(client.id))
 }
 
-// Returns channel users delimited by a space for RPL_NAMREPLY
+// Returns channel users delimited by a space for RPL_NAMREPLY.
 func (ch *Channel) Names() []string {
 	var names []string
 
-	ch.clients.Range(func(key, value any) bool {
-		client := value.(*Client)
-		names = append(names, client.Nickname())
-		return true
-	})
+	for _, c := range ch.clients.All() {
+		if ch.owner == c.id {
+			names = append(names, fmt.Sprintf("@%s", c.Nickname()))
+		} else {
+			names = append(names, c.Nickname())
+		}
+	}
 
 	return names
 }
@@ -83,27 +90,29 @@ func (ch *Channel) Names() []string {
 func (ch *Channel) Who() []string {
 	var who []string
 
-	ch.clients.Range(func(key, value any) bool {
-		client := value.(*Client)
+	for _, c := range ch.clients.All() {
 		who = append(who, fmt.Sprintf("%s %s %s %s %s %s :%s %s",
-			ch.name, client.username, client.hostname, "ircd", client.Nickname(), "H", "0", client.realname))
-		return true
-	})
-
+			ch.name, c.username, c.hostname, "ircd", c.Nickname(), "H", "0", c.realname))
+	}
 	return who
 }
 
 // Send message to all clients on the channel.
-// If skip is true, the client in source will not receive the message
-func (ch *Channel) Broadcast(message string, sourceId string, skip bool) {
-	ch.clients.Range(func(key, value any) bool {
-		client := value.(*Client)
-		if sourceId != key {
-			client.send <- message
+// If skip is true, the client in source will not receive the message.
+func (ch *Channel) Broadcast(message string, sourceID ClientID, skip bool) {
+	for _, c := range ch.clients.All() {
+		if c.id == sourceID && skip {
+			continue
 		}
-		if sourceId == key && !skip {
-			client.send <- message
+		c.send <- message
+	}
+}
+
+func (ch *Channel) BroadcastRPL(rpl rpl, sourceID ClientID, skip bool) {
+	for _, c := range ch.clients.All() {
+		if c.id == sourceID && skip {
+			continue
 		}
-		return true
-	})
+		c.send <- rpl.format()
+	}
 }

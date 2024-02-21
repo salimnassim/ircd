@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func Parse(line string) (Message, error) {
+func ParseMessage(line string) (Message, error) {
 	if len(line) == 0 {
 		return Message{}, nil
 	}

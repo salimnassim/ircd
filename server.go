@@ -3,6 +3,7 @@ package ircd
 import (
 	"net/http"
 	"regexp"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -42,9 +43,11 @@ type ServerConfig struct {
 }
 
 type Server struct {
+	mu       *sync.RWMutex
 	name     string
-	clients  ClientStoreable
-	channels ChannelStoreable
+	clients  ClientStorer
+	channels ChannelStorer
+	motd     *[]string
 
 	// regex cache
 	regex map[string]*regexp.Regexp
@@ -56,10 +59,12 @@ func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
 
 func NewServer(config ServerConfig) *Server {
 	server := &Server{
+		mu:       &sync.RWMutex{},
 		name:     config.Name,
 		clients:  NewClientStore("clients"),
 		channels: NewChannelStore("channels"),
 		regex:    make(map[string]*regexp.Regexp),
+		motd:     &[]string{"This is the message of the day.", "It contains multiple lines because the lines could be long.", "🍩🍫🍡🍦🍬🍮"},
 	}
 
 	compileRegexp(server)
@@ -74,11 +79,17 @@ func compileRegexp(server *Server) {
 		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
 	}
 	server.regex["nick"] = rgxNick
+
+	rgxChannel, err := regexp.Compile(`[#!&][^\x00\x07\x0a\x0d\x20\x2C\x3A]{1,50}`)
+	if err != nil {
+		log.Panic().Err(err).Msg("unable to compile channel validation regex")
+	}
+	server.regex["channel"] = rgxChannel
 }
 
 // Returns the number of connected clients, and channels
-func (server *Server) Stats() (int, int) {
-	return server.clients.Size(), server.channels.Size()
+func (server *Server) Stats() (clients int, channels int) {
+	return server.clients.Count(), server.channels.Count()
 }
 
 // Removes client from channels and client map
@@ -88,8 +99,16 @@ func (server *Server) RemoveClient(client *Client) error {
 		ch.RemoveClient(client)
 	}
 
-	server.clients.Remove(client)
+	server.clients.Delete(ClientID(client.id))
 	promClients.Dec()
 
 	return nil
+}
+
+func (server *Server) MOTD() []string {
+	var motd []string
+	server.mu.RLock()
+	motd = *server.motd
+	server.mu.RUnlock()
+	return motd
 }

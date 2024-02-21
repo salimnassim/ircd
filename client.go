@@ -2,7 +2,6 @@ package ircd
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -10,9 +9,17 @@ import (
 	"time"
 )
 
+type Clienter interface {
+	SetNickname(nickname string)
+	SetUsername(username string, realname string)
+	SetHostname(hostname string)
+	Nickname() string
+	Prefix() string
+}
+
 type Client struct {
 	mu       *sync.RWMutex
-	id       string
+	id       ClientID
 	ip       string
 	nickname string
 	username string
@@ -37,11 +44,11 @@ func (client *Client) String() string {
 
 func NewClient(connection net.Conn, id string) (*Client, error) {
 	if connection == nil {
-		return nil, errors.New("connection is nil")
+		return nil, errorConnectionNil
 	}
 
 	if connection.RemoteAddr() == nil {
-		return nil, errors.New("connection remote address is nil")
+		return nil, errorConnectionRemoteAddressNil
 	}
 
 	host, _, err := net.SplitHostPort(connection.RemoteAddr().String())
@@ -51,7 +58,7 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 
 	return &Client{
 		mu:        &sync.RWMutex{},
-		id:        id,
+		id:        ClientID(id),
 		ip:        host,
 		nickname:  "",
 		username:  "",
@@ -67,33 +74,37 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 	}, nil
 }
 
+func (client *Client) sendRPL(server string, rpl rpl) {
+	client.send <- fmt.Sprintf(":%s %s", server, rpl.format())
+}
+
+func (client *Client) sendNotice(n notice) {
+	client.send <- n.format()
+}
+
 func (client *Client) SetPing(ping int64) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.ping = ping
+	client.mu.Unlock()
 }
 
 func (client *Client) SetHostname(hostname string) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.hostname = hostname
+	client.mu.Unlock()
 }
 
 func (client *Client) SetNickname(nickname string) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.nickname = nickname
+	client.mu.Unlock()
 }
 
 func (client *Client) SetUsername(username string, realname string) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
-
 	client.username = username
 	client.realname = realname
+	client.mu.Unlock()
 }
 
 func (client *Client) Nickname() string {
@@ -101,6 +112,27 @@ func (client *Client) Nickname() string {
 	defer client.mu.RUnlock()
 
 	return client.nickname
+}
+
+func (client *Client) Username() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
+	return client.username
+}
+
+func (client *Client) Realname() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
+	return client.realname
+}
+
+func (client *Client) Hostname() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
+	return client.hostname
 }
 
 func (client *Client) Prefix() string {
