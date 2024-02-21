@@ -59,43 +59,7 @@ func HandleConnectionIn(client *Client, server *Server) {
 		// TOPIC
 		// https://modern.ircdocs.horse/#topic-message
 		if parsed.Command == "TOPIC" {
-			if !client.handshake {
-				client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
-				continue
-			}
-
-			target := parsed.Params[0]
-			remainder := strings.Join(parsed.Params[1:len(parsed.Params)], " ")
-
-			// channel name max length is 50, check for allowed channel prefixes
-			if len(target) > 50 || !(strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&")) {
-				client.send <- fmt.Sprintf(":%s 403 %s :No such channel (2).",
-					server.name, target)
-				continue
-			}
-
-			// try to get channel
-			channel, exists := server.channels.Get(target)
-			if !exists {
-				client.send <- fmt.Sprintf(":%s 403 %s :No such channel.", server.name, target)
-				continue
-			}
-
-			// set topic
-			channel.SetTopic(remainder, client.nickname)
-
-			// get topic
-			topic := channel.Topic()
-
-			// broadcast new topic to clients on channel
-			channel.Broadcast(
-				fmt.Sprintf(":%s 332 %s %s :%s",
-					server.name,
-					client.nickname,
-					channel.name,
-					topic.text),
-				client.id, false)
-
+			handleTopic(server, client, parsed)
 			continue
 		}
 
