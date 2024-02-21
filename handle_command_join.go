@@ -3,6 +3,8 @@ package ircd
 import (
 	"fmt"
 	"strings"
+
+	"github.com/salimnassim/ircd/metrics"
 )
 
 func handleJoin(server *Server, client *Client, message Message) {
@@ -46,7 +48,7 @@ func handleJoin(server *Server, client *Client, message Message) {
 			// todo: use channel.id instead of target
 			server.channels.Add(target, channel)
 
-			promChannels.Inc()
+			metrics.Channels.Inc()
 		}
 
 		// add client to channel

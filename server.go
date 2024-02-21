@@ -5,41 +5,20 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
+	"github.com/salimnassim/ircd/metrics"
 )
 
-var (
-	// Number of connected clients
-	promClients = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ircd_clients",
-		Help: "Number of connected clients",
-	})
-	// Number of existing channels
-	promChannels = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ircd_channels",
-		Help: "Number of existing channels",
-	})
-	// Number of PING messages
-	promPings = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "ircd_ping",
-		Help: "Number of PING messages",
-	})
-	// Number of PRIVMSG sent to channels
-	promPrivmsgChannel = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "ircd_channels_privmsg",
-		Help: "Number of PRIVMSG sent to channels",
-	})
-	// Number of PRIVMSG sent to clients
-	promPrivmsgClient = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "ircd_clients_privmsg",
-		Help: "Number of PRIVMSG sent to clients",
-	})
+type regexKey string
+
+const (
+	regexKeyNick    = regexKey("nick")
+	regexKeyChannel = regexKey("channel")
 )
 
 type ServerConfig struct {
 	Name string
+	MOTD []string
 }
 
 type Server struct {
@@ -50,7 +29,7 @@ type Server struct {
 	motd     *[]string
 
 	// regex cache
-	regex map[string]*regexp.Regexp
+	regex map[regexKey]*regexp.Regexp
 }
 
 func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
@@ -63,8 +42,8 @@ func NewServer(config ServerConfig) *Server {
 		name:     config.Name,
 		clients:  NewClientStore("clients"),
 		channels: NewChannelStore("channels"),
-		regex:    make(map[string]*regexp.Regexp),
-		motd:     &[]string{"This is the message of the day.", "It contains multiple lines because the lines could be long.", "🍩🍫🍡🍦🍬🍮"},
+		regex:    make(map[regexKey]*regexp.Regexp),
+		motd:     &config.MOTD,
 	}
 
 	compileRegexp(server)
@@ -72,27 +51,27 @@ func NewServer(config ServerConfig) *Server {
 	return server
 }
 
-// Compiles expressions and caches them to a map
+// Compiles expressions and caches them to a map.
 func compileRegexp(server *Server) {
 	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,9})`)
 	if err != nil {
 		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
 	}
-	server.regex["nick"] = rgxNick
+	server.regex[regexKeyNick] = rgxNick
 
 	rgxChannel, err := regexp.Compile(`[#!&][^\x00\x07\x0a\x0d\x20\x2C\x3A]{1,50}`)
 	if err != nil {
 		log.Panic().Err(err).Msg("unable to compile channel validation regex")
 	}
-	server.regex["channel"] = rgxChannel
+	server.regex[regexKeyChannel] = rgxChannel
 }
 
-// Returns the number of connected clients, and channels
+// Returns the number of connected clients and open channels.
 func (server *Server) Stats() (clients int, channels int) {
 	return server.clients.Count(), server.channels.Count()
 }
 
-// Removes client from channels and client map
+// Removes client from channels and client map.
 func (server *Server) RemoveClient(client *Client) error {
 	memberOf := server.channels.MemberOf(client)
 	for _, ch := range memberOf {
@@ -100,7 +79,7 @@ func (server *Server) RemoveClient(client *Client) error {
 	}
 
 	server.clients.Delete(ClientID(client.id))
-	promClients.Dec()
+	metrics.Clients.Dec()
 
 	return nil
 }
