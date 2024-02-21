@@ -36,4 +36,14 @@ var (
 		Name:      "privmsg_client",
 		Help:      "Number of PRIVMSG sent to clients",
 	})
+	Topic = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "ircd",
+		Name:      "topic",
+		Help:      "Number of TOPIC messages",
+	})
+	Lusers = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "ircd",
+		Name:      "lusers",
+		Help:      "Number of LUSERS messages",
+	})
 )

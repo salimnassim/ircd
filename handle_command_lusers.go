@@ -1,5 +1,7 @@
 package ircd
 
+import "github.com/salimnassim/ircd/metrics"
+
 func handleLusers(server *Server, client *Client, message Message) {
 	clients, channels := server.Stats()
 
@@ -17,4 +19,6 @@ func handleLusers(server *Server, client *Client, message Message) {
 		client:   client.Nickname(),
 		channels: channels,
 	})
+
+	metrics.Lusers.Inc()
 }
