@@ -74,6 +74,12 @@ func compileRegexp(server *Server) {
 		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
 	}
 	server.regex["nick"] = rgxNick
+
+	rgxChannel, err := regexp.Compile(`[#!&][^\x00\x07\x0a\x0d\x20\x2C\x3A]{1,50}`)
+	if err != nil {
+		log.Panic().Err(err).Msg("unable to compile channel validation regex")
+	}
+	server.regex["channel"] = rgxChannel
 }
 
 // Returns the number of connected clients, and channels

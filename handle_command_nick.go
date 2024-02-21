@@ -19,7 +19,7 @@ func handleNick(server *Server, client *Client, message Message) {
 
 	// nicks should be more than 2 characters and less than 16
 	if len(message.Params[0]) < 2 || len(message.Params[0]) > 16 {
-		client.sendRPL(server.name, rplErroneusNickname{
+		client.sendRPL(server.name, errErroneusNickname{
 			client: client.Nickname(),
 			nick:   message.Params[0],
 		})
@@ -29,7 +29,7 @@ func handleNick(server *Server, client *Client, message Message) {
 	// validate nickname
 	ok := server.regex["nick"].MatchString(message.Params[0])
 	if !ok {
-		client.sendRPL(server.name, rplErroneusNickname{
+		client.sendRPL(server.name, errErroneusNickname{
 			client: client.Nickname(),
 			nick:   message.Params[0],
 		})
@@ -92,7 +92,7 @@ func handleNick(server *Server, client *Client, message Message) {
 		client.sendRPL(server.name, rplYourHost{
 			client:     client.Nickname(),
 			serverName: os.Getenv("SERVER_NAME"),
-			version:    "0.1",
+			version:    os.Getenv("SERVER_VERSION"),
 		})
 
 		client.sendRPL(server.name, rplEndOfMotd{

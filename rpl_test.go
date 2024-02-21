@@ -2,7 +2,7 @@ package ircd
 
 import "testing"
 
-func TestRPLNamreply(t *testing.T) {
+func TestRPL(t *testing.T) {
 	type tc struct {
 		want  string
 		input rpl
@@ -49,6 +49,30 @@ func TestRPLNamreply(t *testing.T) {
 			},
 		},
 		{
+			want: "331 client #channel :No topic is set.",
+			input: rplNoTopic{
+				client:  "client",
+				channel: "#channel",
+			},
+		},
+		{
+			want: "332 client #channel :foo bar baz",
+			input: rplTopic{
+				client:  "client",
+				channel: "#channel",
+				topic:   "foo bar baz",
+			},
+		},
+		{
+			want: "333 client #channel bob 12345",
+			input: rplTopicWhoTime{
+				client:  "client",
+				channel: "#channel",
+				nick:    "bob",
+				setat:   12345,
+			},
+		},
+		{
 			want: "353 client = testing :~foo @baz qax",
 			input: rplNamReply{
 				client:  "client",
@@ -60,14 +84,28 @@ func TestRPLNamreply(t *testing.T) {
 			},
 		},
 		{
+			want: "366 client #channel :End of /NAMES list.",
+			input: rplEndOfNames{
+				client:  "client",
+				channel: "#channel",
+			},
+		},
+		{
 			want: "376 client :End of /MOTD command.",
 			input: rplEndOfMotd{
 				client: "client",
 			},
 		},
 		{
+			want: "403 client #channel :No such channel.",
+			input: errNoSuchChannel{
+				client:  "client",
+				channel: "#channel",
+			},
+		},
+		{
 			want: "432 client nickname :Erroneus nickname.",
-			input: rplErroneusNickname{
+			input: errErroneusNickname{
 				client: "client",
 				nick:   "nickname",
 			},
@@ -96,6 +134,13 @@ func TestRPLNamreply(t *testing.T) {
 			want: "462 client :You may not reregister.",
 			input: errAlreadyRegistered{
 				client: "client",
+			},
+		},
+		{
+			want: "475 client #channel :Bad channel key (+k).",
+			input: errBadChannelKey{
+				client:  "client",
+				channel: "#channel",
 			},
 		},
 	}

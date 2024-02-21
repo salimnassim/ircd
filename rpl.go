@@ -101,6 +101,51 @@ func (r rplLuserChannels) format() string {
 	)
 }
 
+// 331 RPL_NOTOPIC
+// https://modern.ircdocs.horse/#rplnotopic-331
+type rplNoTopic struct {
+	client  string
+	channel string
+}
+
+func (r rplNoTopic) format() string {
+	return fmt.Sprintf(
+		"331 %s %s :No topic is set.",
+		r.client, r.channel,
+	)
+}
+
+// 331 RPL_TOPIC
+// https://modern.ircdocs.horse/#rpltopic-332
+type rplTopic struct {
+	client  string
+	channel string
+	topic   string
+}
+
+func (r rplTopic) format() string {
+	return fmt.Sprintf(
+		"332 %s %s :%s",
+		r.client, r.channel, r.topic,
+	)
+}
+
+// 333 RPL_TOPICWHOTIME
+// https://modern.ircdocs.horse/#rpltopicwhotime-333
+type rplTopicWhoTime struct {
+	client  string
+	channel string
+	nick    string
+	setat   int
+}
+
+func (r rplTopicWhoTime) format() string {
+	return fmt.Sprintf(
+		"333 %s %s %s %d",
+		r.client, r.channel, r.nick, r.setat,
+	)
+}
+
 // 353 RPL_NAMREPLY.
 // https://modern.ircdocs.horse/#rplnamreply-353
 type rplNamReply struct {
@@ -121,14 +166,41 @@ func (r rplNamReply) format() string {
 	)
 }
 
+// 366 RPL_ENDOFNAMES
+type rplEndOfNames struct {
+	client  string
+	channel string
+}
+
+func (r rplEndOfNames) format() string {
+	return fmt.Sprintf(
+		"366 %s %s :End of /NAMES list.",
+		r.client, r.channel,
+	)
+}
+
+// 403 ERR_NOSUCHCHANNEL
+// https://modern.ircdocs.horse/#errnosuchchannel-403
+type errNoSuchChannel struct {
+	client  string
+	channel string
+}
+
+func (r errNoSuchChannel) format() string {
+	return fmt.Sprintf(
+		"403 %s %s :No such channel.",
+		r.client, r.channel,
+	)
+}
+
 // 432 ERR_ERRONEUSNICKNAME
 // https://modern.ircdocs.horse/#errerroneusnickname-432
-type rplErroneusNickname struct {
+type errErroneusNickname struct {
 	client string
 	nick   string
 }
 
-func (r rplErroneusNickname) format() string {
+func (r errErroneusNickname) format() string {
 	return fmt.Sprintf(
 		"432 %s %s :Erroneus nickname.",
 		r.client, r.nick,
@@ -186,5 +258,19 @@ func (r errAlreadyRegistered) format() string {
 	return fmt.Sprintf(
 		"462 %s :You may not reregister.",
 		r.client,
+	)
+}
+
+// 475 ERR_BADCHANNELKEY
+// https://modern.ircdocs.horse/#errbadchannelkey-475
+type errBadChannelKey struct {
+	client  string
+	channel string
+}
+
+func (r errBadChannelKey) format() string {
+	return fmt.Sprintf(
+		"475 %s %s :Bad channel key (+k).",
+		r.client, r.channel,
 	)
 }
