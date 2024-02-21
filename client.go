@@ -114,6 +114,27 @@ func (client *Client) Nickname() string {
 	return client.nickname
 }
 
+func (client *Client) Username() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
+	return client.username
+}
+
+func (client *Client) Realname() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
+	return client.realname
+}
+
+func (client *Client) Hostname() string {
+	client.mu.RLock()
+	defer client.mu.RUnlock()
+
+	return client.hostname
+}
+
 func (client *Client) Prefix() string {
 	client.mu.RLock()
 	defer client.mu.RUnlock()

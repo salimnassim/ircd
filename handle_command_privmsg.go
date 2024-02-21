@@ -45,7 +45,7 @@ func handlePrivmsg(server *Server, client *Client, message Message) {
 		}
 		// is user
 		dest, exists := server.clients.Get(target)
-		if !exists {
+		if dest == nil || !exists {
 			client.sendRPL(server.name, errNoSuchChannel{
 				client:  client.Nickname(),
 				channel: target,

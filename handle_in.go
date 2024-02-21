@@ -72,44 +72,10 @@ func HandleConnectionIn(client *Client, server *Server) {
 
 		// WHOIS
 		// https://modern.ircdocs.horse/#whois-message
-		// if parsed.Command == "WHOIS" {
-		// 	if !client.handshake {
-		// 		client.send <- fmt.Sprintf(":%s 451 :You have not registered.", server.name)
-		// 		continue
-		// 	}
-
-		// 	target := parsed.Params[0]
-		// 	whois, exists := server.clients.Whois(target, server.channels)
-		// 	if !exists {
-		// 		client.send <- fmt.Sprintf(
-		// 			":%s 401 %s :no such nick",
-		// 			server.name,
-		// 			client.nickname)
-		// 		continue
-		// 	}
-
-		// 	// https://modern.ircdocs.horse/#rplwhoisuser-311
-		// 	client.send <- fmt.Sprintf(
-		// 		":%s 311 %s %s %s %s * :%s",
-		// 		server.name,
-		// 		client.nickname,
-		// 		whois.nickname,
-		// 		whois.username,
-		// 		whois.hostname,
-		// 		whois.realname,
-		// 	)
-
-		// 	// https://modern.ircdocs.horse/#rplwhoischannels-319
-		// 	client.send <- fmt.Sprintf(
-		// 		":%s 319 %s %s :%s",
-		// 		server.name,
-		// 		client.nickname,
-		// 		whois.nickname,
-		// 		strings.Join(whois.channels, " "),
-		// 	)
-
-		// 	continue
-		// }
+		if parsed.Command == "WHOIS" {
+			handleWhois(server, client, parsed)
+			continue
+		}
 
 		// https://modern.ircdocs.horse/#who-message
 		if parsed.Command == "WHO" {

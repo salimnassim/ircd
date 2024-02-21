@@ -49,6 +49,14 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
+			want: "319 client nick :#foo #baz",
+			input: rplWhoisChannels{
+				client:   "client",
+				nick:     "nick",
+				channels: []string{"#foo", "#baz"},
+			},
+		},
+		{
 			want: "331 client #channel :No topic is set.",
 			input: rplNoTopic{
 				client:  "client",

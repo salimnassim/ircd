@@ -101,6 +101,39 @@ func (r rplLuserChannels) format() string {
 	)
 }
 
+// 311 RPL_WHOISUSER
+// https://modern.ircdocs.horse/#rplwhoisuser-311
+type rplWhoisUser struct {
+	client   string
+	nick     string
+	username string
+	host     string
+	realname string
+}
+
+func (r rplWhoisUser) format() string {
+	return fmt.Sprintf(
+		"311 %s %s %s %s * :%s",
+		r.client, r.nick, r.username, r.host, r.realname,
+	)
+}
+
+// 319 RPL_WHOISCHANNELS
+// https://modern.ircdocs.horse/#rplwhoischannels-319
+type rplWhoisChannels struct {
+	client   string
+	nick     string
+	channels []string
+}
+
+func (r rplWhoisChannels) format() string {
+	channels := strings.Join(r.channels, " ")
+	return fmt.Sprintf(
+		"319 %s %s :%s",
+		r.client, r.nick, channels,
+	)
+}
+
 // 331 RPL_NOTOPIC
 // https://modern.ircdocs.horse/#rplnotopic-331
 type rplNoTopic struct {
@@ -176,6 +209,20 @@ func (r rplEndOfNames) format() string {
 	return fmt.Sprintf(
 		"366 %s %s :End of /NAMES list.",
 		r.client, r.channel,
+	)
+}
+
+// 401 ERR_NOSUCHNICK
+// https://modern.ircdocs.horse/#errnosuchnick-401
+type errNoSuchNick struct {
+	client string
+	nick   string
+}
+
+func (r errNoSuchNick) format() string {
+	return fmt.Sprintf(
+		"401 %s %s :No such nickname.",
+		r.client, r.nick,
 	)
 }
 

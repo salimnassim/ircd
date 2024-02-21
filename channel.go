@@ -13,6 +13,7 @@ type Channel struct {
 	clients  ChannelClientStorer
 	owner    ClientID
 	password string
+	secret   bool
 }
 
 type topic struct {
@@ -33,6 +34,7 @@ func NewChannel(channelName string, owner ClientID) *Channel {
 		clients:  NewChannelClientStore(),
 		owner:    owner,
 		password: "",
+		secret:   false,
 	}
 
 	return channel
