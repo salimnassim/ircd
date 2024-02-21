@@ -38,7 +38,7 @@ func handleJoin(server *Server, client *Client, message Message) {
 		// ptr to existing channel or channel that will be created
 		var channel *Channel
 
-		channel, exists := server.channels.GetByName(target)
+		channel, exists := server.channels.Get(target)
 		if !exists {
 			// create channel if it does not exist
 			channel = NewChannel(target, client.id)

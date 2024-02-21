@@ -37,8 +37,8 @@ func handleNick(server *Server, client *Client, message Message) {
 	}
 
 	// check if nick is already in use
-	_, exists := server.clients.GetByNickname(message.Params[0])
-	if exists {
+	_, ok = server.clients.Get(message.Params[0])
+	if ok {
 		client.sendRPL(server.name, errNicknameInUse{
 			client: client.Nickname(),
 			nick:   message.Params[0],

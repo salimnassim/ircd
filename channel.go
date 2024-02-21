@@ -10,8 +10,8 @@ type Channel struct {
 	mu       *sync.RWMutex
 	name     string
 	topic    channelTopic
-	clients  sync.Map
-	owner    string
+	clients  ChannelClientStorer
+	owner    ClientID
 	password string
 }
 
@@ -21,7 +21,7 @@ type channelTopic struct {
 	author    string
 }
 
-func NewChannel(channelName string, owner string) *Channel {
+func NewChannel(channelName string, owner ClientID) *Channel {
 	channel := &Channel{
 		mu:   &sync.RWMutex{},
 		name: channelName,
@@ -30,7 +30,7 @@ func NewChannel(channelName string, owner string) *Channel {
 			timestamp: 0,
 			author:    "",
 		},
-		clients:  sync.Map{},
+		clients:  NewChannelClientStore(),
 		owner:    owner,
 		password: "",
 	}
@@ -60,29 +60,27 @@ func (ch *Channel) AddClient(client *Client, password string) error {
 		return errorBadChannelKey
 	}
 
-	ch.clients.Store(client.id, client)
+	ch.clients.Add(ClientID(client.id), client)
 
 	return nil
 }
 
 // Remove client from channel.
 func (ch *Channel) RemoveClient(client *Client) {
-	ch.clients.Delete(client.id)
+	ch.clients.Delete(ClientID(client.id))
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY.
 func (ch *Channel) Names() []string {
 	var names []string
 
-	ch.clients.Range(func(key, value any) bool {
-		client := value.(*Client)
-		if ch.owner == client.id {
-			names = append(names, fmt.Sprintf("@%s", client.Nickname()))
+	for _, c := range ch.clients.All() {
+		if ch.owner == c.id {
+			names = append(names, fmt.Sprintf("@%s", c.Nickname()))
 		} else {
-			names = append(names, client.Nickname())
+			names = append(names, c.Nickname())
 		}
-		return true
-	})
+	}
 
 	return names
 }
@@ -90,27 +88,20 @@ func (ch *Channel) Names() []string {
 func (ch *Channel) Who() []string {
 	var who []string
 
-	ch.clients.Range(func(key, value any) bool {
-		client := value.(*Client)
+	for _, c := range ch.clients.All() {
 		who = append(who, fmt.Sprintf("%s %s %s %s %s %s :%s %s",
-			ch.name, client.username, client.hostname, "ircd", client.Nickname(), "H", "0", client.realname))
-		return true
-	})
-
+			ch.name, c.username, c.hostname, "ircd", c.Nickname(), "H", "0", c.realname))
+	}
 	return who
 }
 
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message
-func (ch *Channel) Broadcast(message string, sourceId string, skip bool) {
-	ch.clients.Range(func(key, value any) bool {
-		client := value.(*Client)
-		if sourceId != key {
-			client.send <- message
+func (ch *Channel) Broadcast(message string, sourceId ClientID, skip bool) {
+	for _, c := range ch.clients.All() {
+		if c.id == sourceId && skip {
+			continue
 		}
-		if sourceId == key && !skip {
-			client.send <- message
-		}
-		return true
-	})
+		c.send <- message
+	}
 }

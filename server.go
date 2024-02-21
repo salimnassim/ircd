@@ -43,8 +43,8 @@ type ServerConfig struct {
 
 type Server struct {
 	name     string
-	clients  ClientStoreable
-	channels ChannelStoreable
+	clients  ClientStorer
+	channels ChannelStorer
 
 	// regex cache
 	regex map[string]*regexp.Regexp
@@ -84,7 +84,7 @@ func compileRegexp(server *Server) {
 
 // Returns the number of connected clients, and channels
 func (server *Server) Stats() (clients int, channels int) {
-	return server.clients.Size(), server.channels.Size()
+	return server.clients.Count(), server.channels.Count()
 }
 
 // Removes client from channels and client map
@@ -94,7 +94,7 @@ func (server *Server) RemoveClient(client *Client) error {
 		ch.RemoveClient(client)
 	}
 
-	server.clients.Remove(client)
+	server.clients.Delete(ClientID(client.id))
 	promClients.Dec()
 
 	return nil

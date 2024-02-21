@@ -20,7 +20,7 @@ func HandleConnectionRead(connection net.Conn, server *Server) {
 	}
 
 	// add client to store
-	server.clients.Add(client)
+	server.clients.Add(ClientID(id), client)
 
 	promClients.Inc()
 

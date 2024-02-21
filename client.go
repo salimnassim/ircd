@@ -19,7 +19,7 @@ type Clienter interface {
 
 type Client struct {
 	mu       *sync.RWMutex
-	id       string
+	id       ClientID
 	ip       string
 	nickname string
 	username string
@@ -58,7 +58,7 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 
 	return &Client{
 		mu:        &sync.RWMutex{},
-		id:        id,
+		id:        ClientID(id),
 		ip:        host,
 		nickname:  "",
 		username:  "",
