@@ -120,21 +120,27 @@ func (ch *channel) modestring() string {
 }
 
 func (ch *channel) addMode(mode channelMode) {
+	if ch.hasMode(mode) {
+		return
+	}
+
 	ch.mu.Lock()
 	ch.modes |= mode
 	ch.mu.Unlock()
 }
 
 func (ch *channel) removeMode(mode channelMode) {
+	if !ch.hasMode(mode) {
+		return
+	}
+
 	ch.mu.Lock()
 	ch.modes &= ^mode
 	ch.mu.Unlock()
 }
 
 func (ch *channel) hasMode(mode channelMode) bool {
-	has := false
 	ch.mu.RLock()
-	has = ch.modes&mode != 0
-	ch.mu.RUnlock()
-	return has
+	defer ch.mu.RUnlock()
+	return ch.modes&mode != 0
 }
