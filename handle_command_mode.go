@@ -1,9 +1,5 @@
 package ircd
 
-import (
-	"github.com/rs/zerolog/log"
-)
-
 func handleMode(s *server, c *client, m message) {
 	// command needs target
 	if len(m.params) < 1 {
@@ -46,7 +42,18 @@ func handleMode(s *server, c *client, m message) {
 		}
 
 		add, del := parseModestring[channelMode](modestring, channelModeMap)
-		log.Debug().Msgf("add: %v, del: %v", add, del)
+		for _, a := range add {
+			switch a {
+			case modeChannelModerated:
+				ch.addMode(a)
+			}
+		}
+		for _, d := range del {
+			switch d {
+			case modeChannelModerated:
+				ch.removeMode(d)
+			}
+		}
 		return
 	}
 
@@ -69,6 +76,21 @@ func handleMode(s *server, c *client, m message) {
 		return
 	}
 
-	add, del := parseModestring[channelMode](modestring, channelModeMap)
-	log.Debug().Msgf("add: %v, del: %v", add, del)
+	add, del := parseModestring[clientMode](modestring, clientModeMap)
+	for _, a := range add {
+		switch a {
+		case modeClientInvisible:
+			c.addMode(a)
+		case modeClientWallops:
+			c.addMode(a)
+		}
+	}
+	for _, d := range del {
+		switch d {
+		case modeClientInvisible:
+			c.removeMode(d)
+		case modeClientWallops:
+			c.removeMode(d)
+		}
+	}
 }
