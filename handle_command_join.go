@@ -48,6 +48,9 @@ func handleJoin(s *server, c *client, m message) {
 			// todo: use channel.id instead of target
 			s.channels.add(target, channel)
 
+			// set default channel modes
+			channel.addMode(modeChannelNoExternal)
+
 			metrics.Channels.Inc()
 		}
 
