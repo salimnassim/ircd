@@ -9,6 +9,7 @@ var clientModeMap = map[rune]clientMode{
 	'r': modeClientRegistered,
 	'w': modeClientWallops,
 	't': modeClientVhost,
+	'z': modeClientTLS,
 }
 
 const (
@@ -17,6 +18,7 @@ const (
 	modeClientRegistered
 	modeClientWallops
 	modeClientVhost
+	modeClientTLS
 )
 
 // channel modes
