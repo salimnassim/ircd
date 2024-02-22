@@ -334,6 +334,19 @@ func (r errNoSuchChannel) format() string {
 	)
 }
 
+// 431 ERR_NONICKNAMEGIVEN
+// https://modern.ircdocs.horse/#errnonicknamegiven-431
+type errNoNicknameGiven struct {
+	client string
+}
+
+func (r errNoNicknameGiven) format() string {
+	return fmt.Sprintf(
+		"431 %s :No nickname given.",
+		r.client,
+	)
+}
+
 // 432 ERR_ERRONEUSNICKNAME
 // https://modern.ircdocs.horse/#errerroneusnickname-432
 type errErroneusNickname struct {
