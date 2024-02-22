@@ -123,12 +123,11 @@ func handleNick(s *server, c *client, m message) {
 		c.addMode(modeClientInvisible)
 		c.addMode(modeClientVhost)
 
-		c.send <- fmt.Sprintf("MODE %s %s", c.nickname(), c.modestring())
+		if s.tls {
+			c.addMode(modeClientTLS)
+		}
 
-		// c.sendRPL(s.name, rplUModeIs{
-		// 	client:     c.nickname(),
-		// 	modestring: c.modestring(),
-		// })
+		c.send <- fmt.Sprintf("MODE %s %s", c.nickname(), c.modestring())
 
 		c.handshake = true
 	}
