@@ -55,5 +55,4 @@ func main() {
 		log.Info().Msgf("accepted connection from %s", connection.RemoteAddr())
 		go ircd.HandleConnection(connection, server)
 	}
-
 }
