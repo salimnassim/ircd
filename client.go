@@ -143,27 +143,31 @@ func (c *client) modestring() string {
 			modes = append(modes, m)
 		}
 	}
-	return string(modes)
+	return fmt.Sprintf("+%s", string(modes))
 }
 
 func (c *client) addMode(mode clientMode) {
+	if c.hasMode(mode) {
+		return
+	}
 	c.mu.Lock()
 	c.modes |= mode
 	c.mu.Unlock()
 }
 
 func (c *client) removeMode(mode clientMode) {
+	if !c.hasMode(mode) {
+		return
+	}
 	c.mu.Lock()
 	c.modes &= ^mode
 	c.mu.Unlock()
 }
 
 func (c *client) hasMode(mode clientMode) bool {
-	has := false
 	c.mu.RLock()
-	has = c.modes&mode != 0
-	c.mu.RUnlock()
-	return has
+	defer c.mu.RUnlock()
+	return c.modes&mode != 0
 }
 
 func (c *client) write(message string) (int, error) {
