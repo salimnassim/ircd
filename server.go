@@ -12,8 +12,8 @@ import (
 type regexKey int
 
 const (
-	regexKeyNick    = regexKey(0)
-	regexKeyChannel = regexKey(1)
+	regexNick    = regexKey(0)
+	regexChannel = regexKey(1)
 )
 
 type ServerConfig struct {
@@ -39,7 +39,6 @@ type server struct {
 	clients  ClientStorer
 	channels ChannelStorer
 	message  *[]string
-	tls      bool
 
 	// regex cache
 	regex map[regexKey]*regexp.Regexp
@@ -55,7 +54,6 @@ func NewServer(config ServerConfig) *server {
 		channels: NewChannelStore("channels"),
 		regex:    make(map[regexKey]*regexp.Regexp),
 		message:  &config.MOTD,
-		tls:      config.TLS,
 	}
 
 	compileRegexp(server)
@@ -77,17 +75,17 @@ func (s *server) Run(listener net.Listener, isTLS bool) {
 
 // Compiles expressions and caches them to a map.
 func compileRegexp(s *server) {
-	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,9})`)
+	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\{\}\\\|]{2,16})`)
 	if err != nil {
 		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
 	}
-	s.regex[regexKeyNick] = rgxNick
+	s.regex[regexNick] = rgxNick
 
 	rgxChannel, err := regexp.Compile(`[#!&][^\x00\x07\x0a\x0d\x20\x2C\x3A]{1,50}`)
 	if err != nil {
 		log.Panic().Err(err).Msg("unable to compile channel validation regex")
 	}
-	s.regex[regexKeyChannel] = rgxChannel
+	s.regex[regexChannel] = rgxChannel
 }
 
 // Returns the number of connected clients and open channels.

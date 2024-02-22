@@ -28,7 +28,7 @@ func handleJoin(s *server, c *client, m message) {
 		}
 
 		// validate channel name
-		ok := s.regex[regexKeyChannel].MatchString(target)
+		ok := s.regex[regexChannel].MatchString(target)
 		if !ok {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
