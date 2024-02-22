@@ -29,7 +29,7 @@ type client struct {
 
 	recv chan string
 	send chan string
-	stop chan interface{}
+	stop chan bool
 }
 
 func (c *client) String() string {
@@ -72,7 +72,7 @@ func newClient(connection net.Conn, id string) (*client, error) {
 		reader:    bufio.NewReader(connection),
 		recv:      make(chan string, 1),
 		send:      make(chan string, 1),
-		stop:      make(chan interface{}),
+		stop:      make(chan bool),
 	}
 
 	if port == os.Getenv("PORT_TLS") {
