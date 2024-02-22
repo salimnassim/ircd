@@ -1,6 +1,7 @@
 package ircd
 
 import (
+	"net"
 	"regexp"
 	"sync"
 
@@ -18,6 +19,14 @@ const (
 type ServerConfig struct {
 	Name string
 	MOTD []string
+
+	TLS             bool
+	CertificateFile string
+	CertificateKey  string
+}
+
+type Server interface {
+	Run(listener net.Listener)
 }
 
 type server struct {
@@ -26,6 +35,7 @@ type server struct {
 	clients  ClientStorer
 	channels ChannelStorer
 	message  *[]string
+	tls      bool
 
 	// regex cache
 	regex map[regexKey]*regexp.Regexp
@@ -39,11 +49,24 @@ func NewServer(config ServerConfig) *server {
 		channels: newChannelStore("channels"),
 		regex:    make(map[regexKey]*regexp.Regexp),
 		message:  &config.MOTD,
+		tls:      config.TLS,
 	}
 
 	compileRegexp(server)
 
 	return server
+}
+
+func (s *server) Run(listener net.Listener) {
+	for {
+		connection, err := listener.Accept()
+		if err != nil {
+			log.Error().Err(err).Msg("unable to accept connection")
+			continue
+		}
+		log.Info().Msgf("accepted connection from %s", connection.RemoteAddr())
+		go HandleConnection(connection, s)
+	}
 }
 
 // Compiles expressions and caches them to a map.
