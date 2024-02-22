@@ -24,7 +24,7 @@ By default the server will run on port `6667` and prometheus metrics are exposed
 - [ ] INVITE
 - [ ] VERSION
 - [ ] ADMIN
-- [ ] MODE
+- [X] MODE (partial)
 - [ ] AWAY
 
 ## Installation

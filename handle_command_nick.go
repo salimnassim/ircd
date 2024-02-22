@@ -7,118 +7,129 @@ import (
 	"strings"
 )
 
-func handleNick(server *Server, client *Client, message Message) {
+func handleNick(s *server, c *client, m message) {
 	// nick params should be 1
-	if len(message.Params) != 1 {
-		client.sendRPL(server.name, errNeedMoreParams{
-			client:  client.Nickname(),
-			command: message.Command,
+	if len(m.params) != 1 {
+		c.sendRPL(s.name, errNeedMoreParams{
+			client:  c.nickname(),
+			command: m.command,
 		})
 		return
 	}
 
 	// nicks should be more than 2 characters and less than 16
-	if len(message.Params[0]) < 2 || len(message.Params[0]) > 16 {
-		client.sendRPL(server.name, errErroneusNickname{
-			client: client.Nickname(),
-			nick:   message.Params[0],
+	if len(m.params[0]) < 2 || len(m.params[0]) > 16 {
+		c.sendRPL(s.name, errErroneusNickname{
+			client: c.nickname(),
+			nick:   m.params[0],
 		})
 		return
 	}
 
 	// validate nickname
-	ok := server.regex["nick"].MatchString(message.Params[0])
+	ok := s.regex[regexKeyNick].MatchString(m.params[0])
 	if !ok {
-		client.sendRPL(server.name, errErroneusNickname{
-			client: client.Nickname(),
-			nick:   message.Params[0],
+		c.sendRPL(s.name, errErroneusNickname{
+			client: c.nickname(),
+			nick:   m.params[0],
 		})
 		return
 	}
 
 	// check if nick is already in use
-	_, ok = server.clients.Get(message.Params[0])
+	_, ok = s.clients.get(m.params[0])
 	if ok {
-		client.sendRPL(server.name, errNicknameInUse{
-			client: client.Nickname(),
-			nick:   message.Params[0],
+		c.sendRPL(s.name, errNicknameInUse{
+			client: c.nickname(),
+			nick:   m.params[0],
 		})
 		return
 	}
 
-	client.SetNickname(message.Params[0])
+	c.setNickname(m.params[0])
 
 	// check for handshake
-	if !client.handshake {
+	if !c.handshake {
 
 		// send handshake preamble
-		client.sendNotice(noticeAuth{
-			client:  client.Nickname(),
-			message: fmt.Sprintf("Your ID is: %s", client.id),
+		c.sendNotice(noticeAuth{
+			client:  c.nickname(),
+			message: fmt.Sprintf("Your ID is: %s", c.id),
 		})
 
-		client.sendNotice(noticeAuth{
-			client:  client.Nickname(),
-			message: fmt.Sprintf("Your IP address is: %s", client.ip),
+		c.sendNotice(noticeAuth{
+			client:  c.nickname(),
+			message: fmt.Sprintf("Your IP address is: %s", c.ip),
 		})
 
-		client.sendNotice(noticeAuth{
-			client:  client.Nickname(),
+		c.sendNotice(noticeAuth{
+			client:  c.nickname(),
 			message: "Looking up your hostname...",
 		})
 
 		// lookup address
 		// todo: resolver
-		addr, err := net.LookupAddr(client.ip)
+		addr, err := net.LookupAddr(c.ip)
 		if err != nil {
 			// if it cant be resolved use ip
-			client.SetHostname(client.ip)
+			c.setHostname(c.ip)
 		} else {
-			client.SetHostname(addr[0])
+			c.setHostname(addr[0])
 		}
 
 		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
-		if strings.Count(client.ip, ":") > 1 {
+		if strings.Count(c.ip, ":") > 1 {
 			prefix = 6
 		}
 
-		client.sendRPL(server.name, rplWelcome{
-			client:   client.Nickname(),
+		c.sendRPL(s.name, rplWelcome{
+			client:   c.nickname(),
 			network:  "hello",
-			hostname: client.Prefix(),
+			hostname: c.prefix(),
 		})
 
-		client.sendRPL(server.name, rplYourHost{
-			client:     client.Nickname(),
+		c.sendRPL(s.name, rplYourHost{
+			client:     c.nickname(),
 			serverName: os.Getenv("SERVER_NAME"),
 			version:    os.Getenv("SERVER_VERSION"),
 		})
 
 		// cloak
-		client.SetHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, client.id))
-		client.sendNotice(noticeAuth{
-			client:  client.Nickname(),
-			message: fmt.Sprintf("Your hostname has been cloaked to %s", client.hostname),
+		c.setHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, c.id))
+		c.sendNotice(noticeAuth{
+			client:  c.nickname(),
+			message: fmt.Sprintf("Your hostname has been cloaked to %s", c.host),
 		})
 
-		client.sendRPL(server.name, rplMotdStart{
-			client: client.Nickname(),
-			server: server.name,
+		c.sendRPL(s.name, rplMotdStart{
+			client: c.nickname(),
+			server: s.name,
 			text:   "MOTD -",
 		})
 
-		for _, line := range server.MOTD() {
-			client.sendRPL(server.name, rplMotd{
-				client: client.Nickname(),
+		for _, line := range s.motd() {
+			c.sendRPL(s.name, rplMotd{
+				client: c.nickname(),
 				text:   line,
 			})
 		}
 
-		client.sendRPL(server.name, rplEndOfMotd{
-			client: client.Nickname(),
+		c.sendRPL(s.name, rplEndOfMotd{
+			client: c.nickname(),
 		})
 
-		client.handshake = true
+		// set default modes
+		c.addMode(modeClientInvisible)
+		c.addMode(modeClientVhost)
+
+		c.send <- fmt.Sprintf("MODE %s %s", c.nickname(), c.modestring())
+
+		// c.sendRPL(s.name, rplUModeIs{
+		// 	client:     c.nickname(),
+		// 	modestring: c.modestring(),
+		// })
+
+		c.handshake = true
 	}
 }

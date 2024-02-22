@@ -2,35 +2,35 @@ package ircd
 
 import "sync"
 
-type ClientID string
+type clientID string
 
 type ClientStorer interface {
 	// Number of clients in store.
-	Count() int
-	// Add client to store.
-	Add(id ClientID, client *Client)
+	count() int
+	// add client to store.
+	add(id clientID, c *client)
 	// Remove client from store.
-	Delete(id ClientID)
-	// Get client from store by nickname.
-	Get(nickname string) (client *Client, ok bool)
+	delete(id clientID)
+	// get client from store by nickname.
+	get(nickname string) (c *client, ok bool)
 }
 
-type ClientStore struct {
+type clientStore struct {
 	mu      *sync.RWMutex
 	id      string
-	clients map[ClientID]*Client
+	clients map[clientID]*client
 }
 
-func NewClientStore(id string) *ClientStore {
-	return &ClientStore{
+func newClientStore(id string) *clientStore {
+	return &clientStore{
 		mu:      &sync.RWMutex{},
 		id:      id,
-		clients: make(map[ClientID]*Client),
+		clients: make(map[clientID]*client),
 	}
 }
 
 // Get number of clients in store.
-func (s *ClientStore) Count() int {
+func (s *clientStore) count() int {
 	clients := 0
 
 	s.mu.RLock()
@@ -40,13 +40,13 @@ func (s *ClientStore) Count() int {
 	return clients
 }
 
-// Get client from store by nickname.
-func (s *ClientStore) Get(nickname string) (*Client, bool) {
-	var client *Client
+// get client from store by nickname.
+func (s *clientStore) get(nickname string) (*client, bool) {
+	var client *client
 
 	s.mu.RLock()
 	for _, c := range s.clients {
-		if c.nickname == nickname {
+		if c.nick == nickname {
 			client = c
 			break
 		}
@@ -60,15 +60,15 @@ func (s *ClientStore) Get(nickname string) (*Client, bool) {
 	return client, true
 }
 
-// Add client to store.
-func (s *ClientStore) Add(id ClientID, client *Client) {
+// add client to store.
+func (s *clientStore) add(id clientID, c *client) {
 	s.mu.Lock()
-	s.clients[id] = client
+	s.clients[id] = c
 	s.mu.Unlock()
 }
 
-// Delete client from store.
-func (s *ClientStore) Delete(id ClientID) {
+// delete client from store.
+func (s *clientStore) delete(id clientID) {
 	s.mu.Lock()
 	delete(s.clients, id)
 	s.mu.Unlock()

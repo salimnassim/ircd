@@ -7,36 +7,36 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handlePart(server *Server, client *Client, message Message) {
-	if !client.handshake {
-		client.sendRPL(server.name, errNotRegistered{
-			client: client.Nickname(),
+func handlePart(s *server, c *client, m message) {
+	if !c.handshake {
+		c.sendRPL(s.name, errNotRegistered{
+			client: c.nickname(),
 		})
 		return
 	}
 
-	targets := strings.Split(message.Params[0], ",")
+	targets := strings.Split(m.params[0], ",")
 
 	for _, target := range targets {
 		// try to get channel
-		channel, exists := server.channels.Get(target)
+		channel, exists := s.channels.get(target)
 		if !exists {
-			client.sendRPL(server.name, errNoSuchChannel{
-				client:  client.Nickname(),
+			c.sendRPL(s.name, errNoSuchChannel{
+				client:  c.nickname(),
 				channel: target,
 			})
 			continue
 		}
 
 		// remove client
-		channel.RemoveClient(client)
+		channel.removeClient(c)
 
 		// broadcast that user has left the channel
-		channel.Broadcast(fmt.Sprintf(":%s PART %s :<no reason given>",
-			client.Prefix(), target), client.id, false)
+		channel.broadcast(fmt.Sprintf(":%s PART %s :<no reason given>",
+			c.prefix(), target), c.id, false)
 
-		if channel.clients.Count() == 0 {
-			server.channels.Delete(channel.name)
+		if channel.clients.count() == 0 {
+			s.channels.delete(channel.name)
 			metrics.Channels.Dec()
 		}
 	}

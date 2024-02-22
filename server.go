@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"net/http"
 	"regexp"
 	"sync"
 
@@ -9,11 +8,11 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-type regexKey string
+type regexKey int
 
 const (
-	regexKeyNick    = regexKey("nick")
-	regexKeyChannel = regexKey("channel")
+	regexKeyNick    = regexKey(0)
+	regexKeyChannel = regexKey(1)
 )
 
 type ServerConfig struct {
@@ -21,29 +20,25 @@ type ServerConfig struct {
 	MOTD []string
 }
 
-type Server struct {
+type server struct {
 	mu       *sync.RWMutex
 	name     string
 	clients  ClientStorer
 	channels ChannelStorer
-	motd     *[]string
+	message  *[]string
 
 	// regex cache
 	regex map[regexKey]*regexp.Regexp
 }
 
-func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusTeapot)
-}
-
-func NewServer(config ServerConfig) *Server {
-	server := &Server{
+func NewServer(config ServerConfig) *server {
+	server := &server{
 		mu:       &sync.RWMutex{},
 		name:     config.Name,
-		clients:  NewClientStore("clients"),
-		channels: NewChannelStore("channels"),
+		clients:  newClientStore("clients"),
+		channels: newChannelStore("channels"),
 		regex:    make(map[regexKey]*regexp.Regexp),
-		motd:     &config.MOTD,
+		message:  &config.MOTD,
 	}
 
 	compileRegexp(server)
@@ -52,42 +47,42 @@ func NewServer(config ServerConfig) *Server {
 }
 
 // Compiles expressions and caches them to a map.
-func compileRegexp(server *Server) {
+func compileRegexp(s *server) {
 	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\|]{2,9})`)
 	if err != nil {
 		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
 	}
-	server.regex[regexKeyNick] = rgxNick
+	s.regex[regexKeyNick] = rgxNick
 
 	rgxChannel, err := regexp.Compile(`[#!&][^\x00\x07\x0a\x0d\x20\x2C\x3A]{1,50}`)
 	if err != nil {
 		log.Panic().Err(err).Msg("unable to compile channel validation regex")
 	}
-	server.regex[regexKeyChannel] = rgxChannel
+	s.regex[regexKeyChannel] = rgxChannel
 }
 
 // Returns the number of connected clients and open channels.
-func (server *Server) Stats() (clients int, channels int) {
-	return server.clients.Count(), server.channels.Count()
+func (s *server) stats() (c int, channels int) {
+	return s.clients.count(), s.channels.count()
 }
 
 // Removes client from channels and client map.
-func (server *Server) RemoveClient(client *Client) error {
-	memberOf := server.channels.MemberOf(client)
+func (s *server) removeClient(c *client) error {
+	memberOf := s.channels.memberOf(c)
 	for _, ch := range memberOf {
-		ch.RemoveClient(client)
+		ch.removeClient(c)
 	}
 
-	server.clients.Delete(ClientID(client.id))
+	s.clients.delete(clientID(c.id))
 	metrics.Clients.Dec()
 
 	return nil
 }
 
-func (server *Server) MOTD() []string {
+func (s *server) motd() []string {
 	var motd []string
-	server.mu.RLock()
-	motd = *server.motd
-	server.mu.RUnlock()
+	s.mu.RLock()
+	motd = *s.message
+	s.mu.RUnlock()
 	return motd
 }

@@ -4,81 +4,86 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func HandleConnectionIn(client *Client, server *Server) {
+func handleConnectionIn(c *client, s *server) {
 	defer func() {
-		client.stop <- true
+		c.stop <- true
 	}()
 
-	for message := range client.recv {
-		parsed, err := ParseMessage(message)
+	for message := range c.recv {
+		parsed, err := parseMessage(message)
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)
 			continue
 		}
 
-		log.Debug().Msgf("%s", parsed.Raw)
+		log.Debug().Str("nick", c.nickname()).Msgf("%s", parsed.raw)
 
 		// NICK
 		// https://modern.ircdocs.horse/#nick-message
-		if parsed.Command == "NICK" {
-			handleNick(server, client, parsed)
+		if parsed.command == "NICK" {
+			handleNick(s, c, parsed)
 			continue
 		}
 
 		// USER
 		// https://modern.ircdocs.horse/#user-message
-		if parsed.Command == "USER" {
-			handleUser(server, client, parsed)
+		if parsed.command == "USER" {
+			handleUser(s, c, parsed)
 			continue
 		}
 
 		// LUSERS
 		// https://modern.ircdocs.horse/#lusers-message
-		if parsed.Command == "LUSERS" {
-			handleLusers(server, client, parsed)
+		if parsed.command == "LUSERS" {
+			handleLusers(s, c, parsed)
 			continue
 		}
 
 		// JOIN
 		// https://modern.ircdocs.horse/#join-message
-		if parsed.Command == "JOIN" {
-			handleJoin(server, client, parsed)
+		if parsed.command == "JOIN" {
+			handleJoin(s, c, parsed)
 			continue
 		}
 
 		// PART
 		// https://modern.ircdocs.horse/#part-message
-		if parsed.Command == "PART" {
-			handlePart(server, client, parsed)
+		if parsed.command == "PART" {
+			handlePart(s, c, parsed)
 			continue
 		}
 
 		// TOPIC
 		// https://modern.ircdocs.horse/#topic-message
-		if parsed.Command == "TOPIC" {
-			handleTopic(server, client, parsed)
+		if parsed.command == "TOPIC" {
+			handleTopic(s, c, parsed)
 			continue
 		}
 
 		// PRIVMSG
 		// https://modern.ircdocs.horse/#privmsg-message
-		if parsed.Command == "PRIVMSG" {
-			handlePrivmsg(server, client, parsed)
+		if parsed.command == "PRIVMSG" {
+			handlePrivmsg(s, c, parsed)
 			continue
 		}
 
 		// WHOIS
 		// https://modern.ircdocs.horse/#whois-message
-		if parsed.Command == "WHOIS" {
-			handleWhois(server, client, parsed)
+		if parsed.command == "WHOIS" {
+			handleWhois(s, c, parsed)
 			continue
 		}
 
 		// https://modern.ircdocs.horse/#who-message
-		if parsed.Command == "WHO" {
-			handleWho(server, client, parsed)
+		if parsed.command == "WHO" {
+			handleWho(s, c, parsed)
+			continue
 		}
 
+		// https://modern.ircdocs.horse/#mode-message
+		if parsed.command == "MODE" {
+			handleMode(s, c, parsed)
+			continue
+		}
 	}
-
 }

@@ -39,6 +39,20 @@ func (r rplYourHost) format() string {
 	)
 }
 
+// 221 RPL_UMODEIS
+// https://modern.ircdocs.horse/#rplumodeis-221
+type rplUModeIs struct {
+	client     string
+	modestring string
+}
+
+func (r rplUModeIs) format() string {
+	return fmt.Sprintf(
+		"221 %s %s",
+		r.client, r.modestring,
+	)
+}
+
 // 251 RPL_LUSERCLIENT.
 // https://modern.ircdocs.horse/#rplluserclient-251
 type rplLuserClient struct {
@@ -132,6 +146,22 @@ func (r rplWhoisChannels) format() string {
 	return fmt.Sprintf(
 		"319 %s %s :%s",
 		r.client, r.nick, channels,
+	)
+}
+
+// 324 RPL_CHANNELMODEIS
+// https://modern.ircdocs.horse/#rplchannelmodeis-324
+type rplChannelModeIs struct {
+	client     string
+	channel    string
+	modestring string
+	modeargs   string
+}
+
+func (r rplChannelModeIs) format() string {
+	return fmt.Sprintf(
+		"324 %s %s %s %s",
+		r.client, r.channel, r.modestring, r.modeargs,
 	)
 }
 
@@ -397,5 +427,18 @@ func (r errBadChannelKey) format() string {
 	return fmt.Sprintf(
 		"475 %s %s :Bad channel key (+k).",
 		r.client, r.channel,
+	)
+}
+
+// 502 ERR_USERSDONTMATCH
+// https://modern.ircdocs.horse/#errusersdontmatch-502
+type errUsersDontMatch struct {
+	client string
+}
+
+func (r errUsersDontMatch) format() string {
+	return fmt.Sprintf(
+		"502 %s: Can't change mode for other users.",
+		r.client,
 	)
 }

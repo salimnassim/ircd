@@ -9,14 +9,15 @@ import (
 	"time"
 )
 
-type Client struct {
-	mu       *sync.RWMutex
-	id       ClientID
-	ip       string
-	nickname string
-	username string
-	realname string
-	hostname string
+type client struct {
+	mu    *sync.RWMutex
+	id    clientID
+	ip    string
+	nick  string
+	user  string
+	real  string
+	host  string
+	modes clientMode
 
 	handshake bool
 	ping      int64
@@ -29,12 +30,12 @@ type Client struct {
 	stop chan interface{}
 }
 
-func (client *Client) String() string {
+func (c *client) String() string {
 	return fmt.Sprintf("id: %s, nickname: %s, username: %s, realname: %s, hostname: %s, handshake: %t",
-		client.id, client.nickname, client.username, client.realname, client.hostname, client.handshake)
+		c.id, c.nick, c.user, c.real, c.host, c.handshake)
 }
 
-func NewClient(connection net.Conn, id string) (*Client, error) {
+func newClient(connection net.Conn, id string) (*client, error) {
 	if connection == nil {
 		return nil, errorConnectionNil
 	}
@@ -48,14 +49,15 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
+	return &client{
 		mu:        &sync.RWMutex{},
-		id:        ClientID(id),
+		id:        clientID(id),
 		ip:        host,
-		nickname:  "",
-		username:  "",
-		realname:  "",
-		hostname:  "",
+		nick:      "",
+		user:      "",
+		real:      "",
+		host:      "",
+		modes:     0,
 		ping:      time.Now().Unix(),
 		handshake: false,
 		conn:      connection,
@@ -66,74 +68,108 @@ func NewClient(connection net.Conn, id string) (*Client, error) {
 	}, nil
 }
 
-func (client *Client) sendRPL(server string, rpl rpl) {
-	client.send <- fmt.Sprintf(":%s %s", server, rpl.format())
+func (c *client) sendRPL(server string, rpl rpl) {
+	c.send <- fmt.Sprintf(":%s %s", server, rpl.format())
 }
 
-func (client *Client) sendNotice(n notice) {
-	client.send <- n.format()
+func (c *client) sendNotice(n notice) {
+	c.send <- n.format()
 }
 
-func (client *Client) SetPing(ping int64) {
-	client.mu.Lock()
-	client.ping = ping
-	client.mu.Unlock()
+func (c *client) setPing(ping int64) {
+	c.mu.Lock()
+	c.ping = ping
+	c.mu.Unlock()
 }
 
-func (client *Client) SetHostname(hostname string) {
-	client.mu.Lock()
-	client.hostname = hostname
-	client.mu.Unlock()
+func (c *client) setHostname(hostname string) {
+	c.mu.Lock()
+	c.host = hostname
+	c.mu.Unlock()
 }
 
-func (client *Client) SetNickname(nickname string) {
-	client.mu.Lock()
-	client.nickname = nickname
-	client.mu.Unlock()
+func (c *client) setNickname(nickname string) {
+	c.mu.Lock()
+	c.nick = nickname
+	c.mu.Unlock()
 }
 
-func (client *Client) SetUsername(username string, realname string) {
-	client.mu.Lock()
-	client.username = username
-	client.realname = realname
-	client.mu.Unlock()
+func (c *client) setUsername(username string, realname string) {
+	c.mu.Lock()
+	c.user = username
+	c.real = realname
+	c.mu.Unlock()
 }
 
-func (client *Client) Nickname() string {
-	client.mu.RLock()
-	defer client.mu.RUnlock()
+func (c *client) nickname() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	return client.nickname
+	return c.nick
 }
 
-func (client *Client) Username() string {
-	client.mu.RLock()
-	defer client.mu.RUnlock()
+func (c *client) username() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	return client.username
+	return c.user
 }
 
-func (client *Client) Realname() string {
-	client.mu.RLock()
-	defer client.mu.RUnlock()
+func (c *client) realname() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	return client.realname
+	return c.real
 }
 
-func (client *Client) Hostname() string {
-	client.mu.RLock()
-	defer client.mu.RUnlock()
+func (c *client) hostname() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	return client.hostname
+	return c.host
 }
 
-func (client *Client) Prefix() string {
-	client.mu.RLock()
-	defer client.mu.RUnlock()
+func (c *client) prefix() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-	return fmt.Sprintf("%s!%s@%s", client.nickname, client.username, client.hostname)
+	return fmt.Sprintf("%s!%s@%s", c.nick, c.user, c.host)
 }
 
-func (client *Client) Write(message string) (int, error) {
-	return client.conn.Write([]byte(message))
+func (c *client) modestring() string {
+	modes := []rune{}
+	for m, r := range clientModeMap {
+		if c.hasMode(r) {
+			modes = append(modes, m)
+		}
+	}
+	return fmt.Sprintf("+%s", string(modes))
+}
+
+func (c *client) addMode(mode clientMode) {
+	if c.hasMode(mode) {
+		return
+	}
+	c.mu.Lock()
+	c.modes |= mode
+	c.mu.Unlock()
+}
+
+func (c *client) removeMode(mode clientMode) {
+	if !c.hasMode(mode) {
+		return
+	}
+	c.mu.Lock()
+	c.modes &= ^mode
+	c.mu.Unlock()
+}
+
+func (c *client) hasMode(mode clientMode) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.modes&mode != 0
+}
+
+func (c *client) write(message string) (int, error) {
+	return c.conn.Write([]byte(message))
 }

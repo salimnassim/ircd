@@ -5,26 +5,26 @@ import (
 )
 
 type ChannelClientStorer interface {
-	Count() int
-	Add(ID ClientID, client *Client)
-	Delete(ID ClientID)
-	All() []*Client
-	IsMember(ID ClientID) bool
+	count() int
+	add(ID clientID, c *client)
+	delete(ID clientID)
+	all() []*client
+	isMember(ID clientID) bool
 }
 
-type ChannelClientStore struct {
+type channelClientStore struct {
 	mu      *sync.RWMutex
-	clients map[ClientID]*Client
+	clients map[clientID]*client
 }
 
-func NewChannelClientStore() *ChannelClientStore {
-	return &ChannelClientStore{
+func newChannelClientStore() *channelClientStore {
+	return &channelClientStore{
 		mu:      &sync.RWMutex{},
-		clients: make(map[ClientID]*Client),
+		clients: make(map[clientID]*client),
 	}
 }
 
-func (s *ChannelClientStore) Count() int {
+func (s *channelClientStore) count() int {
 	clients := 0
 	s.mu.RLock()
 	clients = len(s.clients)
@@ -32,20 +32,20 @@ func (s *ChannelClientStore) Count() int {
 	return clients
 }
 
-func (s *ChannelClientStore) Add(ID ClientID, client *Client) {
+func (s *channelClientStore) add(ID clientID, c *client) {
 	s.mu.Lock()
-	s.clients[ID] = client
+	s.clients[ID] = c
 	s.mu.Unlock()
 }
 
-func (s *ChannelClientStore) Delete(ID ClientID) {
+func (s *channelClientStore) delete(ID clientID) {
 	s.mu.Lock()
 	delete(s.clients, ID)
 	s.mu.Unlock()
 }
 
-func (s *ChannelClientStore) All() []*Client {
-	clients := []*Client{}
+func (s *channelClientStore) all() []*client {
+	clients := []*client{}
 
 	s.mu.RLock()
 	for _, c := range s.clients {
@@ -56,7 +56,7 @@ func (s *ChannelClientStore) All() []*Client {
 	return clients
 }
 
-func (s *ChannelClientStore) IsMember(ID ClientID) bool {
+func (s *channelClientStore) isMember(ID clientID) bool {
 	s.mu.RLock()
 	_, ok := s.clients[ID]
 	s.mu.RUnlock()

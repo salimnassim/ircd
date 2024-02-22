@@ -6,12 +6,13 @@ import (
 	"time"
 )
 
-type Channel struct {
+type channel struct {
 	mu       *sync.RWMutex
 	name     string
-	topic    *topic
+	t        *topic
 	clients  ChannelClientStorer
-	owner    ClientID
+	modes    channelMode
+	owner    clientID
 	password string
 	secret   bool
 }
@@ -22,16 +23,17 @@ type topic struct {
 	author    string
 }
 
-func NewChannel(channelName string, owner ClientID) *Channel {
-	channel := &Channel{
+func newChannel(channelName string, owner clientID) *channel {
+	channel := &channel{
 		mu:   &sync.RWMutex{},
 		name: channelName,
-		topic: &topic{
+		t: &topic{
 			text:      "",
 			timestamp: 0,
 			author:    "",
 		},
-		clients:  NewChannelClientStore(),
+		clients:  newChannelClientStore(),
+		modes:    0,
 		owner:    owner,
 		password: "",
 		secret:   false,
@@ -41,78 +43,104 @@ func NewChannel(channelName string, owner ClientID) *Channel {
 }
 
 // Sets channel topic.
-func (channel *Channel) SetTopic(text string, author string) {
-	channel.mu.Lock()
-	channel.topic.text = text
-	channel.topic.timestamp = int(time.Now().Unix())
-	channel.topic.author = author
-	channel.mu.Unlock()
+func (ch *channel) setTopic(text string, author string) {
+	ch.mu.Lock()
+	ch.t.text = text
+	ch.t.timestamp = int(time.Now().Unix())
+	ch.t.author = author
+	ch.mu.Unlock()
 }
 
 // Returns current topic.
-func (channel *Channel) Topic() *topic {
-	channel.mu.RLock()
-	defer channel.mu.RUnlock()
-	return channel.topic
+func (ch *channel) topic() *topic {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.t
 }
 
 // Adds client to channel. If password does not match, an error is returned.
-func (ch *Channel) AddClient(client *Client, password string) error {
+func (ch *channel) addClient(c *client, password string) error {
 	if password != "" && ch.password != password {
 		return errorBadChannelKey
 	}
 
-	ch.clients.Add(ClientID(client.id), client)
+	ch.clients.add(clientID(c.id), c)
 
 	return nil
 }
 
 // Remove client from channel.
-func (ch *Channel) RemoveClient(client *Client) {
-	ch.clients.Delete(ClientID(client.id))
+func (ch *channel) removeClient(c *client) {
+	ch.clients.delete(clientID(c.id))
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY.
-func (ch *Channel) Names() []string {
+func (ch *channel) names() []string {
 	var names []string
 
-	for _, c := range ch.clients.All() {
+	for _, c := range ch.clients.all() {
 		if ch.owner == c.id {
-			names = append(names, fmt.Sprintf("@%s", c.Nickname()))
+			names = append(names, fmt.Sprintf("@%s", c.nickname()))
 		} else {
-			names = append(names, c.Nickname())
+			names = append(names, c.nickname())
 		}
 	}
 
 	return names
 }
 
-func (ch *Channel) Who() []string {
-	var who []string
-
-	for _, c := range ch.clients.All() {
-		who = append(who, fmt.Sprintf("%s %s %s %s %s %s :%s %s",
-			ch.name, c.username, c.hostname, "ircd", c.Nickname(), "H", "0", c.realname))
-	}
-	return who
-}
-
 // Send message to all clients on the channel.
 // If skip is true, the client in source will not receive the message.
-func (ch *Channel) Broadcast(message string, sourceID ClientID, skip bool) {
-	for _, c := range ch.clients.All() {
+func (ch *channel) broadcast(m string, sourceID clientID, skip bool) {
+	for _, c := range ch.clients.all() {
 		if c.id == sourceID && skip {
 			continue
 		}
-		c.send <- message
+		c.send <- m
 	}
 }
 
-func (ch *Channel) BroadcastRPL(rpl rpl, sourceID ClientID, skip bool) {
-	for _, c := range ch.clients.All() {
+func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
+	for _, c := range ch.clients.all() {
 		if c.id == sourceID && skip {
 			continue
 		}
 		c.send <- rpl.format()
 	}
+}
+
+func (ch *channel) modestring() string {
+	modes := []rune{}
+	for m, r := range channelModeMap {
+		if ch.hasMode(r) {
+			modes = append(modes, m)
+		}
+	}
+	return string(modes)
+}
+
+func (ch *channel) addMode(mode channelMode) {
+	if ch.hasMode(mode) {
+		return
+	}
+
+	ch.mu.Lock()
+	ch.modes |= mode
+	ch.mu.Unlock()
+}
+
+func (ch *channel) removeMode(mode channelMode) {
+	if !ch.hasMode(mode) {
+		return
+	}
+
+	ch.mu.Lock()
+	ch.modes &= ^mode
+	ch.mu.Unlock()
+}
+
+func (ch *channel) hasMode(mode channelMode) bool {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.modes&mode != 0
 }

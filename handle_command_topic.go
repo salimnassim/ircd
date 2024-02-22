@@ -6,51 +6,51 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handleTopic(server *Server, client *Client, message Message) {
-	if !client.handshake {
-		client.sendRPL(server.name, errNotRegistered{
-			client: client.Nickname(),
+func handleTopic(s *server, c *client, m message) {
+	if !c.handshake {
+		c.sendRPL(s.name, errNotRegistered{
+			client: c.nickname(),
 		})
 		return
 	}
 
-	target := message.Params[0]
+	target := m.params[0]
 
 	// channel name max length is 50, check for allowed channel prefixes
 	if !(strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&")) {
-		client.sendRPL(server.name, errNoSuchChannel{
-			client:  client.Nickname(),
+		c.sendRPL(s.name, errNoSuchChannel{
+			client:  c.nickname(),
 			channel: target,
 		})
 		return
 	}
 
 	// try to get channel
-	channel, exists := server.channels.Get(target)
+	channel, exists := s.channels.get(target)
 	if !exists {
-		client.sendRPL(server.name, errNoSuchChannel{
-			client:  client.Nickname(),
+		c.sendRPL(s.name, errNoSuchChannel{
+			client:  c.nickname(),
 			channel: target,
 		})
 		return
 	}
 
 	// set topic
-	remainder := strings.Join(message.Params[1:len(message.Params)], " ")
-	channel.SetTopic(remainder, client.nickname)
+	remainder := strings.Join(m.params[1:len(m.params)], " ")
+	channel.setTopic(remainder, c.nick)
 	metrics.Topic.Inc()
 
 	// get topic
-	topic := channel.Topic()
+	topic := channel.topic()
 
 	// broadcast new topic to clients on channel
-	channel.BroadcastRPL(
+	channel.broadcastRPL(
 		rplTopic{
-			client:  client.Nickname(),
+			client:  c.nickname(),
 			channel: channel.name,
 			topic:   topic.text,
 		},
-		client.id,
+		c.id,
 		false,
 	)
 }
