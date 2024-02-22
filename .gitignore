@@ -24,4 +24,9 @@ cmd/__debug*
 ircd
 dist/
 *pem
+*txt
+*crt
+*key
+*srl
 .vscode/
+
