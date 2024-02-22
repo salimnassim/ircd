@@ -119,6 +119,17 @@ func handleNick(s *server, c *client, m message) {
 			client: c.nickname(),
 		})
 
+		// set default modes
+		c.addMode(modeClientInvisible)
+		c.addMode(modeClientVhost)
+
+		c.send <- fmt.Sprintf("MODE %s %s", c.nickname(), c.modestring())
+
+		// c.sendRPL(s.name, rplUModeIs{
+		// 	client:     c.nickname(),
+		// 	modestring: c.modestring(),
+		// })
+
 		c.handshake = true
 	}
 }
