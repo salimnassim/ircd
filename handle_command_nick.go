@@ -8,25 +8,15 @@ import (
 
 func handleNick(s *server, c *client, m message) {
 	// nick params should be 1
-	if len(m.params) != 1 {
-		c.sendRPL(s.name, errNeedMoreParams{
-			client:  c.nickname(),
-			command: m.command,
-		})
-		return
-	}
-
-	// nicks should be more than 2 characters and less than 16
-	if len(m.params[0]) < 2 || len(m.params[0]) > 16 {
-		c.sendRPL(s.name, errErroneusNickname{
+	if len(m.params) < 1 {
+		c.sendRPL(s.name, errNoNicknameGiven{
 			client: c.nickname(),
-			nick:   m.params[0],
 		})
 		return
 	}
 
 	// validate nickname
-	ok := s.regex[regexKeyNick].MatchString(m.params[0])
+	ok := s.regex[regexNick].MatchString(m.params[0])
 	if !ok {
 		c.sendRPL(s.name, errErroneusNickname{
 			client: c.nickname(),
@@ -39,7 +29,7 @@ func handleNick(s *server, c *client, m message) {
 	_, ok = s.clients.get(m.params[0])
 	if ok {
 		c.sendRPL(s.name, errNicknameInUse{
-			client: c.nickname(),
+			client: m.params[0],
 			nick:   m.params[0],
 		})
 		return
@@ -49,7 +39,6 @@ func handleNick(s *server, c *client, m message) {
 
 	// check for handshake
 	if !c.handshake {
-
 		// send handshake preamble
 		c.sendNotice(noticeAuth{
 			client:  c.nickname(),
@@ -100,7 +89,7 @@ func handleNick(s *server, c *client, m message) {
 		}
 
 		// cloak
-		c.setHostname(fmt.Sprintf("ipv-%s-ipv%d-%s.vhost", tls, prefix, c.id))
+		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.id))
 		c.sendNotice(noticeAuth{
 			client:  c.nickname(),
 			message: fmt.Sprintf("Your hostname has been cloaked to %s", c.host),
