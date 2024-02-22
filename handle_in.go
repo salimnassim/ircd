@@ -80,6 +80,7 @@ func handleConnectionIn(c *client, s *server) {
 			continue
 		}
 
+		// https://modern.ircdocs.horse/#mode-message
 		if parsed.command == "MODE" {
 			handleMode(s, c, parsed)
 			continue
