@@ -136,16 +136,34 @@ func (c *client) prefix() string {
 	return fmt.Sprintf("%s!%s@%s", c.nick, c.user, c.host)
 }
 
+func (c *client) modestring() string {
+	modes := []rune{}
+	for m, r := range clientModeMap {
+		if c.hasMode(r) {
+			modes = append(modes, m)
+		}
+	}
+	return string(modes)
+}
+
 func (c *client) addMode(mode clientMode) {
+	c.mu.Lock()
 	c.modes |= mode
+	c.mu.Unlock()
 }
 
 func (c *client) removeMode(mode clientMode) {
+	c.mu.Lock()
 	c.modes &= ^mode
+	c.mu.Unlock()
 }
 
 func (c *client) hasMode(mode clientMode) bool {
-	return c.modes&mode != 0
+	has := false
+	c.mu.RLock()
+	has = c.modes&mode != 0
+	c.mu.RUnlock()
+	return has
 }
 
 func (c *client) write(message string) (int, error) {

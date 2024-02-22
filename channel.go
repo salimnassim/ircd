@@ -108,3 +108,33 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 		c.send <- rpl.format()
 	}
 }
+
+func (ch *channel) modestring() string {
+	modes := []rune{}
+	for m, r := range channelModeMap {
+		if ch.hasMode(r) {
+			modes = append(modes, m)
+		}
+	}
+	return string(modes)
+}
+
+func (ch *channel) addMode(mode channelMode) {
+	ch.mu.Lock()
+	ch.modes |= mode
+	ch.mu.Unlock()
+}
+
+func (ch *channel) removeMode(mode channelMode) {
+	ch.mu.Lock()
+	ch.modes &= ^mode
+	ch.mu.Unlock()
+}
+
+func (ch *channel) hasMode(mode channelMode) bool {
+	has := false
+	ch.mu.RLock()
+	has = ch.modes&mode != 0
+	ch.mu.RUnlock()
+	return has
+}
