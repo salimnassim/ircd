@@ -22,11 +22,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - "0.0.0.0:6667:6667"
+      - "0.0.0.0:6697:6697"
       - "2112:2112"
     environment:
       - SERVER_NAME=ircd.network.fqdn
       - SERVER_VERSION=0.1
-      - PROMETHEUS=yes
+      - PORT=6667
+      - PORT_TLS=6697
+      - PROMETHEUS=true
+      - TLS=true
+      - TLS_CERTIFICATE=/app/tls/server.crt
+      - TLS_KEY=/app/tls/server.key
 volumes:
   prometheus_data:
     external: false

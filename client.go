@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -18,6 +19,7 @@ type client struct {
 	real  string
 	host  string
 	modes clientMode
+	tls   bool
 
 	handshake bool
 	ping      int64
@@ -49,7 +51,12 @@ func newClient(connection net.Conn, id string) (*client, error) {
 		return nil, err
 	}
 
-	return &client{
+	_, port, err := net.SplitHostPort(connection.LocalAddr().String())
+	if err != nil {
+		return nil, err
+	}
+
+	client := &client{
 		mu:        &sync.RWMutex{},
 		id:        clientID(id),
 		ip:        host,
@@ -58,6 +65,7 @@ func newClient(connection net.Conn, id string) (*client, error) {
 		real:      "",
 		host:      "",
 		modes:     0,
+		tls:       false,
 		ping:      time.Now().Unix(),
 		handshake: false,
 		conn:      connection,
@@ -65,7 +73,13 @@ func newClient(connection net.Conn, id string) (*client, error) {
 		recv:      make(chan string, 1),
 		send:      make(chan string, 1),
 		stop:      make(chan interface{}),
-	}, nil
+	}
+
+	if port == os.Getenv("PORT_TLS") {
+		client.tls = true
+	}
+
+	return client, nil
 }
 
 func (c *client) sendRPL(server string, rpl rpl) {

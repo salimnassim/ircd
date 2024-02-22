@@ -21,7 +21,7 @@ type clientStore struct {
 	clients map[clientID]*client
 }
 
-func newClientStore(id string) *clientStore {
+func NewClientStore(id string) *clientStore {
 	return &clientStore{
 		mu:      &sync.RWMutex{},
 		id:      id,

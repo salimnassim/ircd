@@ -3,7 +3,6 @@ package ircd
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
 )
 
@@ -77,26 +76,31 @@ func handleNick(s *server, c *client, m message) {
 			c.setHostname(addr[0])
 		}
 
+		c.sendRPL(s.name, rplWelcome{
+			client:   c.nickname(),
+			network:  s.network,
+			hostname: c.prefix(),
+		})
+
+		c.sendRPL(s.name, rplYourHost{
+			client:     c.nickname(),
+			serverName: s.name,
+			version:    s.version,
+		})
+
 		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
 		if strings.Count(c.ip, ":") > 1 {
 			prefix = 6
 		}
 
-		c.sendRPL(s.name, rplWelcome{
-			client:   c.nickname(),
-			network:  "hello",
-			hostname: c.prefix(),
-		})
-
-		c.sendRPL(s.name, rplYourHost{
-			client:     c.nickname(),
-			serverName: os.Getenv("SERVER_NAME"),
-			version:    os.Getenv("SERVER_VERSION"),
-		})
+		tls := "plain"
+		if c.tls {
+			tls = "tls"
+		}
 
 		// cloak
-		c.setHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, c.id))
+		c.setHostname(fmt.Sprintf("ipv-%s-ipv%d-%s.vhost", tls, prefix, c.id))
 		c.sendNotice(noticeAuth{
 			client:  c.nickname(),
 			message: fmt.Sprintf("Your hostname has been cloaked to %s", c.host),
@@ -123,7 +127,7 @@ func handleNick(s *server, c *client, m message) {
 		c.addMode(modeClientInvisible)
 		c.addMode(modeClientVhost)
 
-		if s.tls {
+		if c.tls {
 			c.addMode(modeClientTLS)
 		}
 

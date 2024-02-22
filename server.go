@@ -17,8 +17,10 @@ const (
 )
 
 type ServerConfig struct {
-	Name string
-	MOTD []string
+	Name    string
+	Network string
+	Version string
+	MOTD    []string
 
 	TLS             bool
 	CertificateFile string
@@ -26,12 +28,14 @@ type ServerConfig struct {
 }
 
 type Server interface {
-	Run(listener net.Listener)
+	Run(listener net.Listener, isTLS bool)
 }
 
 type server struct {
 	mu       *sync.RWMutex
 	name     string
+	network  string
+	version  string
 	clients  ClientStorer
 	channels ChannelStorer
 	message  *[]string
@@ -45,8 +49,10 @@ func NewServer(config ServerConfig) *server {
 	server := &server{
 		mu:       &sync.RWMutex{},
 		name:     config.Name,
-		clients:  newClientStore("clients"),
-		channels: newChannelStore("channels"),
+		network:  config.Network,
+		version:  config.Version,
+		clients:  NewClientStore("clients"),
+		channels: NewChannelStore("channels"),
 		regex:    make(map[regexKey]*regexp.Regexp),
 		message:  &config.MOTD,
 		tls:      config.TLS,
@@ -57,7 +63,7 @@ func NewServer(config ServerConfig) *server {
 	return server
 }
 
-func (s *server) Run(listener net.Listener) {
+func (s *server) Run(listener net.Listener, isTLS bool) {
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
@@ -65,7 +71,7 @@ func (s *server) Run(listener net.Listener) {
 			continue
 		}
 		log.Info().Msgf("accepted connection from %s", connection.RemoteAddr())
-		go HandleConnection(connection, s)
+		go handleConnection(connection, s)
 	}
 }
 

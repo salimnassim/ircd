@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -30,7 +31,9 @@ func main() {
 	_, tlsEnabled := os.LookupEnv("TLS")
 
 	config := ircd.ServerConfig{
-		Name: "ircd",
+		Name:    os.Getenv("SERVER_NAME"),
+		Network: os.Getenv("NETWORK_NAME"),
+		Version: os.Getenv("SERVER_VERSION"),
 		MOTD: []string{
 			"This is the message of the day.",
 			"It contains multiple lines because the lines could be long.",
@@ -43,47 +46,37 @@ func main() {
 
 	server := ircd.NewServer(config)
 
-	// go func(listener net.Listener, server ircd.Server) {
-	// 	server.Run(listener)
-	// }(listener, server)
-
-	var listener net.Listener
-	var err error
-	if !config.TLS {
-		log.Info().Msg("starting irc, listening on tcp:6667")
-		listener, err = net.Listen("tcp", ":6667")
+	go func(server ircd.Server, isTLS bool) {
+		log.Info().Msgf("starting irc, listening on tcp:%s", os.Getenv("PORT"))
+		listener, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT")))
 		if err != nil {
 			log.Fatal().Err(err).Msg("unable to listen")
 		}
-	}
+		server.Run(listener, isTLS)
+		defer listener.Close()
+	}(server, false)
 
 	if config.TLS {
-		log.Info().Msg("starting irc, listening on tcp:6697 TLS")
-		listener, err = tls.Listen(
-			"tcp", ":6697",
-			&tls.Config{
-				GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					cert, err := tls.LoadX509KeyPair(config.CertificateFile, config.CertificateKey)
-					if err != nil {
-						return nil, err
-					}
-					return &cert, nil
-				},
-			})
-		if err != nil {
-			log.Fatal().Err(err).Msg("unable to listen")
-		}
+		go func(server ircd.Server, isTLS bool) {
+			log.Info().Msgf("starting irc, listening on tcp:%s TLS", os.Getenv("PORT_TLS"))
+			listener, err := tls.Listen(
+				"tcp", fmt.Sprintf(":%s", os.Getenv("PORT_TLS")),
+				&tls.Config{
+					GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+						cert, err := tls.LoadX509KeyPair(config.CertificateFile, config.CertificateKey)
+						if err != nil {
+							return nil, err
+						}
+						return &cert, nil
+					},
+				})
+			if err != nil {
+				log.Fatal().Err(err).Msg("unable to listen tls")
+			}
+			server.Run(listener, isTLS)
+			defer listener.Close()
+		}(server, true)
 	}
 
-	defer listener.Close()
-
-	for {
-		connection, err := listener.Accept()
-		if err != nil {
-			log.Error().Err(err).Msg("unable to accept connection")
-			continue
-		}
-		log.Info().Msgf("accepted connection from %s", connection.RemoteAddr())
-		go ircd.HandleConnection(connection, server)
-	}
+	select {}
 }

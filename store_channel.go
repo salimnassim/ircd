@@ -22,7 +22,7 @@ type channelStore struct {
 	channels map[string]*channel
 }
 
-func newChannelStore(id string) *channelStore {
+func NewChannelStore(id string) *channelStore {
 	return &channelStore{
 		mu:       &sync.RWMutex{},
 		id:       id,

@@ -6,5 +6,6 @@ COPY . ./
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o ./ircd ./cmd
 
 FROM scratch
+COPY --from=builder /app/tls/ /app/tls/
 COPY --from=builder /app/ircd /app/ircd
 CMD ["/app/ircd"]

@@ -11,7 +11,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func HandleConnection(conn net.Conn, s *server) {
+func handleConnection(conn net.Conn, s *server) {
 	id := uuid.Must(uuid.NewRandom()).String()
 	c, err := newClient(conn, id)
 	if err != nil {
