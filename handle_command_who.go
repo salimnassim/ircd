@@ -12,15 +12,15 @@ func handleWho(s *server, c *client, m message) {
 		return
 	}
 
-	if len(m.Params) == 0 {
+	if len(m.params) == 0 {
 		c.sendRPL(s.name, errNeedMoreParams{
 			client:  c.nickname(),
-			command: m.Command,
+			command: m.command,
 		})
 		return
 	}
 
-	target := m.Params[0]
+	target := m.params[0]
 	if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
 		channel, ok := s.channels.get(target)
 		if !ok {

@@ -15,8 +15,8 @@ func handlePrivmsg(s *server, c *client, m message) {
 		return
 	}
 
-	targets := strings.Split(m.Params[0], ",")
-	text := strings.Join(m.Params[1:len(m.Params)], " ")
+	targets := strings.Split(m.params[0], ",")
+	text := strings.Join(m.params[1:len(m.params)], " ")
 
 	for _, target := range targets {
 		// is channel

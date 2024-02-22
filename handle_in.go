@@ -16,69 +16,73 @@ func handleConnectionIn(c *client, s *server) {
 			continue
 		}
 
-		log.Debug().Msgf("%s", parsed.Raw)
+		log.Debug().Str("nick", c.nickname()).Msgf("%s", parsed.raw)
 
 		// NICK
 		// https://modern.ircdocs.horse/#nick-message
-		if parsed.Command == "NICK" {
+		if parsed.command == "NICK" {
 			handleNick(s, c, parsed)
 			continue
 		}
 
 		// USER
 		// https://modern.ircdocs.horse/#user-message
-		if parsed.Command == "USER" {
+		if parsed.command == "USER" {
 			handleUser(s, c, parsed)
 			continue
 		}
 
 		// LUSERS
 		// https://modern.ircdocs.horse/#lusers-message
-		if parsed.Command == "LUSERS" {
+		if parsed.command == "LUSERS" {
 			handleLusers(s, c, parsed)
 			continue
 		}
 
 		// JOIN
 		// https://modern.ircdocs.horse/#join-message
-		if parsed.Command == "JOIN" {
+		if parsed.command == "JOIN" {
 			handleJoin(s, c, parsed)
 			continue
 		}
 
 		// PART
 		// https://modern.ircdocs.horse/#part-message
-		if parsed.Command == "PART" {
+		if parsed.command == "PART" {
 			handlePart(s, c, parsed)
 			continue
 		}
 
 		// TOPIC
 		// https://modern.ircdocs.horse/#topic-message
-		if parsed.Command == "TOPIC" {
+		if parsed.command == "TOPIC" {
 			handleTopic(s, c, parsed)
 			continue
 		}
 
 		// PRIVMSG
 		// https://modern.ircdocs.horse/#privmsg-message
-		if parsed.Command == "PRIVMSG" {
+		if parsed.command == "PRIVMSG" {
 			handlePrivmsg(s, c, parsed)
 			continue
 		}
 
 		// WHOIS
 		// https://modern.ircdocs.horse/#whois-message
-		if parsed.Command == "WHOIS" {
+		if parsed.command == "WHOIS" {
 			handleWhois(s, c, parsed)
 			continue
 		}
 
 		// https://modern.ircdocs.horse/#who-message
-		if parsed.Command == "WHO" {
+		if parsed.command == "WHO" {
 			handleWho(s, c, parsed)
+			continue
 		}
 
+		if parsed.command == "MODE" {
+			handleMode(s, c, parsed)
+			continue
+		}
 	}
-
 }

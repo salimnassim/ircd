@@ -14,7 +14,7 @@ func handleTopic(s *server, c *client, m message) {
 		return
 	}
 
-	target := m.Params[0]
+	target := m.params[0]
 
 	// channel name max length is 50, check for allowed channel prefixes
 	if !(strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&")) {
@@ -36,7 +36,7 @@ func handleTopic(s *server, c *client, m message) {
 	}
 
 	// set topic
-	remainder := strings.Join(m.Params[1:len(m.Params)], " ")
+	remainder := strings.Join(m.params[1:len(m.params)], " ")
 	channel.setTopic(remainder, c.nick)
 	metrics.Topic.Inc()
 

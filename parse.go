@@ -15,11 +15,11 @@ func parseMessage(line string) (message, error) {
 	}
 
 	message := message{
-		Raw:     line,
-		Tags:    make(map[string]interface{}),
-		Prefix:  "",
-		Command: "",
-		Params:  make([]string, 0),
+		raw:     line,
+		tags:    make(map[string]interface{}),
+		prefix:  "",
+		command: "",
+		params:  make([]string, 0),
 	}
 
 	pos := 0
@@ -41,9 +41,9 @@ func parseMessage(line string) (message, error) {
 				break
 			}
 
-			message.Tags[pair[0]] = pair[1]
+			message.tags[pair[0]] = pair[1]
 			if len(pair) == 1 {
-				message.Tags[pair[0]] = true
+				message.tags[pair[0]] = true
 			}
 		}
 
@@ -61,7 +61,7 @@ func parseMessage(line string) (message, error) {
 			return message, errors.New("malformed message")
 		}
 
-		message.Prefix = line[pos+1 : pos+next]
+		message.prefix = line[pos+1 : pos+next]
 		pos += next + 1
 
 		for pos < len(line) && line[pos] == ' ' {
@@ -70,7 +70,7 @@ func parseMessage(line string) (message, error) {
 	}
 
 	if line[pos] == ':' {
-		message.Params = append(message.Params, line[pos+1:])
+		message.params = append(message.params, line[pos+1:])
 		return message, nil
 	}
 
@@ -79,19 +79,19 @@ func parseMessage(line string) (message, error) {
 	if next == -1 {
 		if len(line) > pos {
 			cmd := line[pos:]
-			message.Command = strings.ToUpper(cmd)
+			message.command = strings.ToUpper(cmd)
 			return message, nil
 		}
 
 		return message, errors.New("malformed message")
 	}
 
-	message.Command = line[pos : pos+next]
+	message.command = line[pos : pos+next]
 	pos += next + 1
 
 	for pos < len(line) {
 		if line[pos] == ':' {
-			message.Params = append(message.Params, line[pos+1:])
+			message.params = append(message.params, line[pos+1:])
 			break
 		}
 
@@ -103,7 +103,7 @@ func parseMessage(line string) (message, error) {
 		next = strings.IndexByte(line[pos:], ' ')
 
 		if next != -1 {
-			message.Params = append(message.Params, line[pos:pos+next])
+			message.params = append(message.params, line[pos:pos+next])
 			pos += next + 1
 
 			for pos < len(line) && line[pos] == ' ' {
@@ -114,7 +114,7 @@ func parseMessage(line string) (message, error) {
 		}
 
 		if next == -1 {
-			message.Params = append(message.Params, line[pos:])
+			message.params = append(message.params, line[pos:])
 			break
 		}
 	}

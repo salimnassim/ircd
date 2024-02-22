@@ -8,7 +8,7 @@ func handleWhois(s *server, c *client, m message) {
 		return
 	}
 
-	target := m.Params[0]
+	target := m.params[0]
 	who, exists := s.clients.get(target)
 	if who == nil || !exists {
 		c.sendRPL(s.name, errNoSuchNick{

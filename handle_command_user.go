@@ -8,7 +8,7 @@ func handleUser(s *server, c *client, m message) {
 		return
 	}
 
-	if len(m.Params) < 4 {
+	if len(m.params) < 4 {
 		c.sendRPL(s.name, errNeedMoreParams{
 			client: c.nick,
 		})
@@ -22,8 +22,8 @@ func handleUser(s *server, c *client, m message) {
 		return
 	}
 
-	username := m.Params[0]
-	realname := m.Params[3]
+	username := m.params[0]
+	realname := m.params[3]
 
 	c.setUsername(username, realname)
 }

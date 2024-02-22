@@ -15,7 +15,7 @@ func handlePart(s *server, c *client, m message) {
 		return
 	}
 
-	targets := strings.Split(m.Params[0], ",")
+	targets := strings.Split(m.params[0], ",")
 
 	for _, target := range targets {
 		// try to get channel

@@ -9,44 +9,44 @@ import (
 
 func handleNick(s *server, c *client, m message) {
 	// nick params should be 1
-	if len(m.Params) != 1 {
+	if len(m.params) != 1 {
 		c.sendRPL(s.name, errNeedMoreParams{
 			client:  c.nickname(),
-			command: m.Command,
+			command: m.command,
 		})
 		return
 	}
 
 	// nicks should be more than 2 characters and less than 16
-	if len(m.Params[0]) < 2 || len(m.Params[0]) > 16 {
+	if len(m.params[0]) < 2 || len(m.params[0]) > 16 {
 		c.sendRPL(s.name, errErroneusNickname{
 			client: c.nickname(),
-			nick:   m.Params[0],
+			nick:   m.params[0],
 		})
 		return
 	}
 
 	// validate nickname
-	ok := s.regex[regexKeyNick].MatchString(m.Params[0])
+	ok := s.regex[regexKeyNick].MatchString(m.params[0])
 	if !ok {
 		c.sendRPL(s.name, errErroneusNickname{
 			client: c.nickname(),
-			nick:   m.Params[0],
+			nick:   m.params[0],
 		})
 		return
 	}
 
 	// check if nick is already in use
-	_, ok = s.clients.get(m.Params[0])
+	_, ok = s.clients.get(m.params[0])
 	if ok {
 		c.sendRPL(s.name, errNicknameInUse{
 			client: c.nickname(),
-			nick:   m.Params[0],
+			nick:   m.params[0],
 		})
 		return
 	}
 
-	c.setNickname(m.Params[0])
+	c.setNickname(m.params[0])
 
 	// check for handshake
 	if !c.handshake {
