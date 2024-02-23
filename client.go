@@ -12,6 +12,7 @@ import (
 type client struct {
 	mu *sync.RWMutex
 
+	alive bool
 	id    clientID
 	ip    string
 	nick  string
@@ -29,7 +30,7 @@ type client struct {
 
 	recv chan string
 	send chan string
-	stop chan bool
+	stop chan string
 	pong chan bool
 }
 
@@ -59,6 +60,7 @@ func newClient(connection net.Conn, id string) (*client, error) {
 
 	client := &client{
 		mu:    &sync.RWMutex{},
+		alive: true,
 		id:    clientID(id),
 		ip:    host,
 		nick:  "",
@@ -76,7 +78,7 @@ func newClient(connection net.Conn, id string) (*client, error) {
 
 		recv: make(chan string),
 		send: make(chan string),
-		stop: make(chan bool),
+		stop: make(chan string),
 		pong: make(chan bool),
 	}
 

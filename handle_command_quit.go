@@ -18,5 +18,5 @@ func handleQuit(s *server, c *client, m message) {
 		}, c.id, false)
 	}
 
-	c.stop <- true
+	c.stop <- "quit"
 }

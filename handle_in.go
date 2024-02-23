@@ -6,7 +6,7 @@ import (
 
 func handleConnectionIn(c *client, s *server) {
 	defer func() {
-		c.stop <- true
+		c.stop <- "broken pipe"
 	}()
 
 	for message := range c.recv {

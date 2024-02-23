@@ -37,12 +37,12 @@ func handleConnection(conn net.Conn, s *server) {
 		scanner := bufio.NewScanner(c.reader)
 		for scanner.Scan() {
 			if scanner.Err() != nil {
-				c.stop <- true
+				c.stop <- err.Error()
 				break
 			}
 			line := scanner.Text()
 			if err != nil {
-				c.stop <- true
+				c.stop <- err.Error()
 				break
 			}
 			line = strings.Trim(line, "\r\n")
@@ -54,15 +54,17 @@ func handleConnection(conn net.Conn, s *server) {
 	pongDuration := time.Duration(s.pongMaxLatency) * time.Second
 
 	var timer <-chan time.Time
-	for {
+	for c.alive {
 		select {
-		case <-c.stop:
-			for _, ch := range s.channels.memberOf(c) {
-				ch.broadcastCommand(partCommand{
-					prefix:  c.prefix(),
-					channel: ch.name,
-					text:    "Quit: I/O error",
-				}, c.id, true)
+		case e := <-c.stop:
+			if e != "quit" {
+				for _, ch := range s.channels.memberOf(c) {
+					ch.broadcastCommand(partCommand{
+						prefix:  c.prefix(),
+						channel: ch.name,
+						text:    fmt.Sprintf("Quit: %s", e),
+					}, c.id, true)
+				}
 			}
 			return
 		case <-c.pong:
