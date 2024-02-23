@@ -45,6 +45,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 			metrics.PrivmsgChannel.Inc()
 			continue
 		}
+
 		// is user
 		dest, exists := s.clients.get(target)
 		if dest == nil || !exists {
@@ -53,6 +54,15 @@ func handlePrivmsg(s *server, c *client, m message) {
 				channel: target,
 			})
 			continue
+		}
+
+		// is away?
+		if dest.away() != "" {
+			dest.sendRPL(s.name, rplAway{
+				client:  c.nickname(),
+				nick:    dest.nickname(),
+				message: dest.away(),
+			})
 		}
 
 		dest.send <- fmt.Sprintf(":%s PRIVMSG %s :%s",

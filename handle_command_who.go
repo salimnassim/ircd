@@ -1,5 +1,7 @@
 package ircd
 
+import "strings"
+
 func handleWho(s *server, c *client, m message) {
 	if !c.handshake {
 		c.sendRPL(s.name, errNotRegistered{
@@ -28,6 +30,13 @@ func handleWho(s *server, c *client, m message) {
 		}
 
 		for _, cl := range channel.clients.all() {
+			flags := []string{}
+			if cl.away() == "" {
+				flags = append(flags, "H")
+			} else {
+				flags = append(flags, "G")
+			}
+
 			c.sendRPL(s.name, rplWhoReply{
 				client:   c.nickname(),
 				channel:  channel.name,
@@ -35,7 +44,7 @@ func handleWho(s *server, c *client, m message) {
 				host:     cl.hostname(),
 				server:   s.name,
 				nick:     cl.nickname(),
-				flags:    "",
+				flags:    strings.Join(flags, ""),
 				hopcount: 0,
 				realname: cl.realname(),
 			})

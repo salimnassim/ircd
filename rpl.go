@@ -97,8 +97,49 @@ type rplLuserChannels struct {
 
 func (r rplLuserChannels) format() string {
 	return fmt.Sprintf(
-		"254 %s %d :channels formed",
+		"254 %s %d :channels formed.",
 		r.client, r.channels,
+	)
+}
+
+// 301 RPL_AWAY
+// https://modern.ircdocs.horse/#rplaway-301
+type rplAway struct {
+	client  string
+	nick    string
+	message string
+}
+
+func (r rplAway) format() string {
+	return fmt.Sprintf(
+		"301 %s %s :%s",
+		r.client, r.nick, r.message,
+	)
+}
+
+// 305 RPL_UNAWAY
+// https://modern.ircdocs.horse/#rplunaway-305
+type rplUnAway struct {
+	client string
+}
+
+func (r rplUnAway) format() string {
+	return fmt.Sprintf(
+		"305 %s :You are no longer marked as being away.",
+		r.client,
+	)
+}
+
+// 306 RPL_NOWAWAY
+// You are no longer marked as being away
+type rplNowAway struct {
+	client string
+}
+
+func (r rplNowAway) format() string {
+	return fmt.Sprintf(
+		"306 %s :You have been marked as being away.",
+		r.client,
 	)
 }
 
@@ -146,6 +187,20 @@ func (r rplWhoisChannels) format() string {
 	return fmt.Sprintf(
 		"319 %s %s :%s",
 		r.client, r.nick, channels,
+	)
+}
+
+// 320 RPL_WHOISSPECIAL
+type rplWhoisSpecial struct {
+	client string
+	nick   string
+	text   string
+}
+
+func (r rplWhoisSpecial) format() string {
+	return fmt.Sprintf(
+		"320 %s %s :%s",
+		r.client, r.nick, r.text,
 	)
 }
 

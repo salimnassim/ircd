@@ -57,9 +57,7 @@ func handleConnection(conn net.Conn, s *server) {
 	for {
 		select {
 		case <-c.stop:
-			log.Debug().Msg("SELECT STOP")
 			return
-
 		case <-c.pong:
 			timer = nil
 		case <-timer:

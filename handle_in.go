@@ -58,6 +58,9 @@ func handleConnectionIn(c *client, s *server) {
 		case "QUIT":
 			handleQuit(s, c, parsed)
 			continue
+		case "AWAY":
+			handleAway(s, c, parsed)
+			continue
 		case "DEBUG":
 			// breakpoint here
 			continue

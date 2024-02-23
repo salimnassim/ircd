@@ -40,4 +40,12 @@ func handleWhois(s *server, c *client, m message) {
 		nick:     who.nickname(),
 		channels: channels,
 	})
+
+	if who.away() != "" {
+		c.sendRPL(s.name, rplWhoisSpecial{
+			client: c.nickname(),
+			nick:   who.nickname(),
+			text:   "User is away.",
+		})
+	}
 }

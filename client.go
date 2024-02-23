@@ -10,7 +10,8 @@ import (
 )
 
 type client struct {
-	mu    *sync.RWMutex
+	mu *sync.RWMutex
+
 	id    clientID
 	ip    string
 	nick  string
@@ -19,6 +20,7 @@ type client struct {
 	host  string
 	modes clientMode
 	tls   bool
+	afk   string
 
 	handshake bool
 
@@ -56,15 +58,17 @@ func newClient(connection net.Conn, id string) (*client, error) {
 	}
 
 	client := &client{
-		mu:        &sync.RWMutex{},
-		id:        clientID(id),
-		ip:        host,
-		nick:      "",
-		user:      "",
-		real:      "",
-		host:      "",
-		modes:     0,
-		tls:       false,
+		mu:    &sync.RWMutex{},
+		id:    clientID(id),
+		ip:    host,
+		nick:  "",
+		user:  "",
+		real:  "",
+		host:  "",
+		modes: 0,
+		tls:   false,
+		afk:   "",
+
 		handshake: false,
 
 		conn:   connection,
@@ -89,6 +93,18 @@ func (c *client) sendRPL(server string, rpl rpl) {
 
 func (c *client) sendNotice(n notice) {
 	c.send <- n.format()
+}
+
+func (c *client) setAway(text string) {
+	c.mu.Lock()
+	c.afk = text
+	c.mu.Unlock()
+}
+
+func (c *client) away() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.afk
 }
 
 func (c *client) setHostname(hostname string) {
