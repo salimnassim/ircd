@@ -3,12 +3,12 @@ package ircd
 import "github.com/salimnassim/ircd/metrics"
 
 func handleLusers(s *server, c *client, m message) {
-	clients, channels := s.stats()
+	visible, invisible, channels := s.stats()
 
 	c.sendRPL(s.name, rplLuserClient{
 		client:    c.nickname(),
-		users:     clients,
-		invisible: 0,
+		users:     (visible + invisible),
+		invisible: invisible,
 		servers:   1,
 	})
 	c.sendRPL(s.name, rplLuserOp{

@@ -67,7 +67,7 @@ type rplLuserClient struct {
 
 func (r rplLuserClient) format() string {
 	return fmt.Sprintf(
-		"251 %s :There are %d users and %d invisible on %d servers",
+		"251 %s :There are %d users (%d invisible) on %d servers",
 		r.client, r.users, r.invisible, r.servers,
 	)
 }

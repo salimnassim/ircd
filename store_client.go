@@ -6,7 +6,7 @@ type clientID string
 
 type ClientStorer interface {
 	// Number of clients in store.
-	count() int
+	count() (visible int, invisible int)
 	// add client to store.
 	add(id clientID, c *client)
 	// Remove client from store.
@@ -30,14 +30,18 @@ func NewClientStore(id string) *clientStore {
 }
 
 // Get number of clients in store.
-func (s *clientStore) count() int {
-	clients := 0
-
+func (s *clientStore) count() (visible int, invisible int) {
 	s.mu.RLock()
-	clients = len(s.clients)
+	for _, c := range s.clients {
+		if c.hasMode(modeClientInvisible) {
+			invisible++
+		} else {
+			visible++
+		}
+	}
 	s.mu.RUnlock()
 
-	return clients
+	return visible, invisible
 }
 
 // get client from store by nickname.

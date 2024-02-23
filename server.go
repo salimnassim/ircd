@@ -97,8 +97,9 @@ func compileRegexp(s *server) {
 }
 
 // Returns the number of connected clients and open channels.
-func (s *server) stats() (c int, channels int) {
-	return s.clients.count(), s.channels.count()
+func (s *server) stats() (visible int, invisible, channels int) {
+	visible, invisible = s.clients.count()
+	return visible, invisible, s.channels.count()
 }
 
 // Removes client from channels and client map.
