@@ -44,6 +44,8 @@ func main() {
 		TLS:             tlsEnabled,
 		CertificateFile: os.Getenv("TLS_CERTIFICATE"),
 		CertificateKey:  os.Getenv("TLS_KEY"),
+		PingFrequency:   30,
+		PongMaxLatency:  10,
 	}
 
 	server := ircd.NewServer(config)

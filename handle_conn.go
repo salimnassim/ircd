@@ -2,8 +2,10 @@ package ircd
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -48,11 +50,30 @@ func handleConnection(conn net.Conn, s *server) {
 		}
 	}()
 
+	pingDuration := time.Duration(s.pingFrequency) * time.Second
+	pongDuration := time.Duration(s.pongMaxLatency) * time.Second
+
+	var timer <-chan time.Time
 	for {
 		select {
 		case <-c.stop:
 			log.Debug().Msg("SELECT STOP")
 			return
+
+		case <-c.pong:
+			timer = nil
+		case <-timer:
+			for _, ch := range s.channels.memberOf(c) {
+				ch.broadcast(
+					fmt.Sprintf(":%s PART %s :Quit: Timeout after %d seconds.", c.prefix(), ch.name, s.pongMaxLatency),
+					c.id,
+					false,
+				)
+			}
+			return
+		case <-time.After(pingDuration):
+			c.send <- fmt.Sprintf("PING %s", s.name)
+			timer = time.After(pongDuration)
 		}
 	}
 }

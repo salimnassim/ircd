@@ -22,6 +22,9 @@ func handleConnectionIn(c *client, s *server) {
 		case "PING":
 			handlePing(s, c, parsed)
 			continue
+		case "PONG":
+			handlePong(s, c, parsed)
+			continue
 		case "NICK":
 			handleNick(s, c, parsed)
 			continue

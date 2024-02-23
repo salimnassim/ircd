@@ -25,6 +25,9 @@ type ServerConfig struct {
 	TLS             bool
 	CertificateFile string
 	CertificateKey  string
+
+	PingFrequency  int
+	PongMaxLatency int
 }
 
 type Server interface {
@@ -40,20 +43,25 @@ type server struct {
 	channels ChannelStorer
 	message  *[]string
 
+	pingFrequency  int
+	pongMaxLatency int
+
 	// regex cache
 	regex map[regexKey]*regexp.Regexp
 }
 
 func NewServer(config ServerConfig) *server {
 	server := &server{
-		mu:       &sync.RWMutex{},
-		name:     config.Name,
-		network:  config.Network,
-		version:  config.Version,
-		clients:  NewClientStore("clients"),
-		channels: NewChannelStore("channels"),
-		regex:    make(map[regexKey]*regexp.Regexp),
-		message:  &config.MOTD,
+		mu:             &sync.RWMutex{},
+		name:           config.Name,
+		network:        config.Network,
+		version:        config.Version,
+		clients:        NewClientStore("clients"),
+		channels:       NewChannelStore("channels"),
+		regex:          make(map[regexKey]*regexp.Regexp),
+		message:        &config.MOTD,
+		pingFrequency:  config.PingFrequency,
+		pongMaxLatency: config.PongMaxLatency,
 	}
 
 	compileRegexp(server)
