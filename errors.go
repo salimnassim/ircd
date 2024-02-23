@@ -10,3 +10,7 @@ var (
 var (
 	errorBadChannelKey = errors.New("bad channel key")
 )
+
+var (
+	errorCommandNotFound = errors.New("unknown command")
+)
