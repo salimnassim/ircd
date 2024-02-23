@@ -116,7 +116,7 @@ func (ch *channel) modestring() string {
 			modes = append(modes, m)
 		}
 	}
-	return string(modes)
+	return fmt.Sprintf("+%s", string(modes))
 }
 
 func (ch *channel) addMode(mode channelMode) {

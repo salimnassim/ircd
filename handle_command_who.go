@@ -1,9 +1,5 @@
 package ircd
 
-import (
-	"strings"
-)
-
 func handleWho(s *server, c *client, m message) {
 	if !c.handshake {
 		c.sendRPL(s.name, errNotRegistered{
@@ -21,7 +17,7 @@ func handleWho(s *server, c *client, m message) {
 	}
 
 	target := m.params[0]
-	if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
+	if m.isTargetChannel() {
 		channel, ok := s.channels.get(target)
 		if !ok {
 			c.sendRPL(s.name, errNoSuchChannel{

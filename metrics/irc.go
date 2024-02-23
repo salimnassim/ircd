@@ -19,10 +19,16 @@ var (
 		Help:      "Number of existing channels",
 	})
 	// Number of PING messages.
-	Pings = promauto.NewCounter(prometheus.CounterOpts{
+	Ping = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "ircd",
-		Name:      "pings",
+		Name:      "ping",
 		Help:      "Number of PING messages",
+	})
+	// Number of PONG replies.
+	Pong = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "ircd",
+		Name:      "pong",
+		Help:      "Number of PONG messages",
 	})
 	// Number of PRIVMSG sent to channels.
 	PrivmsgChannel = promauto.NewCounter(prometheus.CounterOpts{

@@ -3,31 +3,20 @@ package ircd
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
 )
 
 func handleNick(s *server, c *client, m message) {
 	// nick params should be 1
-	if len(m.params) != 1 {
-		c.sendRPL(s.name, errNeedMoreParams{
-			client:  c.nickname(),
-			command: m.command,
-		})
-		return
-	}
-
-	// nicks should be more than 2 characters and less than 16
-	if len(m.params[0]) < 2 || len(m.params[0]) > 16 {
-		c.sendRPL(s.name, errErroneusNickname{
+	if len(m.params) < 1 {
+		c.sendRPL(s.name, errNoNicknameGiven{
 			client: c.nickname(),
-			nick:   m.params[0],
 		})
 		return
 	}
 
 	// validate nickname
-	ok := s.regex[regexKeyNick].MatchString(m.params[0])
+	ok := s.regex[regexNick].MatchString(m.params[0])
 	if !ok {
 		c.sendRPL(s.name, errErroneusNickname{
 			client: c.nickname(),
@@ -40,7 +29,7 @@ func handleNick(s *server, c *client, m message) {
 	_, ok = s.clients.get(m.params[0])
 	if ok {
 		c.sendRPL(s.name, errNicknameInUse{
-			client: c.nickname(),
+			client: m.params[0],
 			nick:   m.params[0],
 		})
 		return
@@ -50,7 +39,6 @@ func handleNick(s *server, c *client, m message) {
 
 	// check for handshake
 	if !c.handshake {
-
 		// send handshake preamble
 		c.sendNotice(noticeAuth{
 			client:  c.nickname(),
@@ -77,26 +65,31 @@ func handleNick(s *server, c *client, m message) {
 			c.setHostname(addr[0])
 		}
 
+		c.sendRPL(s.name, rplWelcome{
+			client:   c.nickname(),
+			network:  s.network,
+			hostname: c.prefix(),
+		})
+
+		c.sendRPL(s.name, rplYourHost{
+			client:     c.nickname(),
+			serverName: s.name,
+			version:    s.version,
+		})
+
 		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
 		if strings.Count(c.ip, ":") > 1 {
 			prefix = 6
 		}
 
-		c.sendRPL(s.name, rplWelcome{
-			client:   c.nickname(),
-			network:  "hello",
-			hostname: c.prefix(),
-		})
-
-		c.sendRPL(s.name, rplYourHost{
-			client:     c.nickname(),
-			serverName: os.Getenv("SERVER_NAME"),
-			version:    os.Getenv("SERVER_VERSION"),
-		})
+		tls := "plain"
+		if c.tls {
+			tls = "tls"
+		}
 
 		// cloak
-		c.setHostname(fmt.Sprintf("ipv%d-%s.vhost", prefix, c.id))
+		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.id))
 		c.sendNotice(noticeAuth{
 			client:  c.nickname(),
 			message: fmt.Sprintf("Your hostname has been cloaked to %s", c.host),
@@ -123,12 +116,11 @@ func handleNick(s *server, c *client, m message) {
 		c.addMode(modeClientInvisible)
 		c.addMode(modeClientVhost)
 
-		c.send <- fmt.Sprintf("MODE %s %s", c.nickname(), c.modestring())
+		if c.tls {
+			c.addMode(modeClientTLS)
+		}
 
-		// c.sendRPL(s.name, rplUModeIs{
-		// 	client:     c.nickname(),
-		// 	modestring: c.modestring(),
-		// })
+		c.send <- fmt.Sprintf("MODE %s %s", c.nickname(), c.modestring())
 
 		c.handshake = true
 	}

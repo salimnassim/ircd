@@ -31,6 +31,8 @@ func TestParse(t *testing.T) {
 		{input: "MODE #testing2", want: message{command: "MODE", params: []string{"#testing2"}}},
 		{input: "WHO salami", want: message{command: "WHO", params: []string{"salami"}}},
 		{input: "WHO #test", want: message{command: "WHO", params: []string{"#test"}}},
+		{input: "QUIT :reason", want: message{command: "QUIT", params: []string{"reason"}}},
+		{input: "QUIT :reason here", want: message{command: "QUIT", params: []string{"reason", "here"}}},
 		{input: "", want: message{command: ""}},
 	}
 

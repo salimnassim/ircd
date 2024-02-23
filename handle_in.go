@@ -18,6 +18,12 @@ func handleConnectionIn(c *client, s *server) {
 
 		log.Debug().Str("nick", c.nickname()).Msgf("%s", parsed.raw)
 
+		// PING
+		if parsed.command == "PING" {
+			handlePing(s, c, parsed)
+			continue
+		}
+
 		// NICK
 		// https://modern.ircdocs.horse/#nick-message
 		if parsed.command == "NICK" {
@@ -83,6 +89,15 @@ func handleConnectionIn(c *client, s *server) {
 		// https://modern.ircdocs.horse/#mode-message
 		if parsed.command == "MODE" {
 			handleMode(s, c, parsed)
+			continue
+		}
+
+		if parsed.command == "QUIT" {
+			handleQuit(s, c, parsed)
+			continue
+		}
+
+		if parsed.command == "DEBUG" {
 			continue
 		}
 	}

@@ -17,9 +17,22 @@ func handlePart(s *server, c *client, m message) {
 
 	targets := strings.Split(m.params[0], ",")
 
+	reason := "no reason given"
+	if len(m.params) >= 1 {
+		reason = strings.Join(m.params[1:len(m.params)], " ")
+	}
+
 	for _, target := range targets {
-		// try to get channel
-		channel, exists := s.channels.get(target)
+		if !m.isTargetChannel() {
+			c.sendRPL(s.name, errNoSuchChannel{
+				client:  c.nickname(),
+				channel: target,
+			})
+			continue
+		}
+
+		// try to get ch
+		ch, exists := s.channels.get(target)
 		if !exists {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
@@ -29,14 +42,18 @@ func handlePart(s *server, c *client, m message) {
 		}
 
 		// remove client
-		channel.removeClient(c)
+		ch.removeClient(c)
 
 		// broadcast that user has left the channel
-		channel.broadcast(fmt.Sprintf(":%s PART %s :<no reason given>",
-			c.prefix(), target), c.id, false)
+		ch.broadcast(
+			fmt.Sprintf(
+				":%s PART %s :%s",
+				c.prefix(), ch.name, reason,
+			),
+			c.id, false)
 
-		if channel.clients.count() == 0 {
-			s.channels.delete(channel.name)
+		if ch.clients.count() == 0 {
+			s.channels.delete(ch.name)
 			metrics.Channels.Dec()
 		}
 	}

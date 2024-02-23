@@ -5,8 +5,7 @@ import (
 	"testing"
 )
 
-func TestParseModestring(t *testing.T) {
-
+func TestParseClientModestring(t *testing.T) {
 	type tcg struct {
 		add []clientMode
 		del []clientMode
@@ -34,6 +33,46 @@ func TestParseModestring(t *testing.T) {
 
 	for _, tc := range tcs {
 		a, d := parseModestring[clientMode](tc.input, clientModeMap)
+
+		for i, v := range a {
+			if v != tc.want.add[i] {
+				t.Errorf("got: %d, want: %d", v, tc.want.add[i])
+			}
+		}
+
+		for i, v := range d {
+			if v != tc.want.del[i] {
+				t.Errorf("got: %d, want: %d", v, tc.want.add[i])
+			}
+		}
+	}
+}
+
+func TestParseChannelModestring(t *testing.T) {
+	type tcg struct {
+		add []channelMode
+		del []channelMode
+	}
+
+	type tc struct {
+		input string
+		want  tcg
+	}
+
+	tcs := []tc{
+		{
+			input: "+z",
+			want: tcg{
+				add: []channelMode{
+					modeChannelTLSOnly,
+				},
+				del: []channelMode{},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		a, d := parseModestring[channelMode](tc.input, channelModeMap)
 
 		for i, v := range a {
 			if v != tc.want.add[i] {

@@ -13,7 +13,6 @@ func handleConnectionOut(c *client, s *server) {
 		log.Debug().Msgf("%s", message)
 		_, err := c.write(message + "\r\n")
 		if err != nil {
-			log.Error().Err(err).Msgf("unable to write message to client (%s)", c.ip)
 			break
 		}
 	}

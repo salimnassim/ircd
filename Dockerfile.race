@@ -9,6 +9,8 @@ FROM debian:stable-slim
 RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
+COPY --from=builder /app/tls/server.crt /app/tls/server.crt
+COPY --from=builder /app/tls/server.key /app/tls/server.key
 COPY --from=builder /app/ircd /app/ircd
 
 CMD ["/app/ircd"]

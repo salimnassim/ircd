@@ -46,11 +46,15 @@ func handleMode(s *server, c *client, m message) {
 			switch a {
 			case modeChannelModerated:
 				ch.addMode(a)
+			case modeChannelTLSOnly:
+				ch.addMode(a)
 			}
 		}
 		for _, d := range del {
 			switch d {
 			case modeChannelModerated:
+				ch.removeMode(d)
+			case modeChannelTLSOnly:
 				ch.removeMode(d)
 			}
 		}

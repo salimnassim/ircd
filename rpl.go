@@ -334,6 +334,19 @@ func (r errNoSuchChannel) format() string {
 	)
 }
 
+// 431 ERR_NONICKNAMEGIVEN
+// https://modern.ircdocs.horse/#errnonicknamegiven-431
+type errNoNicknameGiven struct {
+	client string
+}
+
+func (r errNoNicknameGiven) format() string {
+	return fmt.Sprintf(
+		"431 %s :No nickname given.",
+		r.client,
+	)
+}
+
 // 432 ERR_ERRONEUSNICKNAME
 // https://modern.ircdocs.horse/#errerroneusnickname-432
 type errErroneusNickname struct {
@@ -413,6 +426,35 @@ func (r errAlreadyRegistered) format() string {
 	return fmt.Sprintf(
 		"462 %s :You may not reregister.",
 		r.client,
+	)
+}
+
+// 474 ERR_BANNEDFROMCHAN
+// https://modern.ircdocs.horse/#errbannedfromchan-474
+type errBannedFromChan struct {
+	client  string
+	channel string
+}
+
+func (r errBannedFromChan) format() string {
+	return fmt.Sprintf(
+		"474 %s %s :Cannot join channel (+b)",
+		r.client, r.channel,
+	)
+}
+
+// 474 ERR_BANNEFROMCHAN
+// NOTE: Used for +z
+// https://modern.ircdocs.horse/#errbannedfromchan-474
+type errNeedTLSJoin struct {
+	client  string
+	channel string
+}
+
+func (r errNeedTLSJoin) format() string {
+	return fmt.Sprintf(
+		"474 %s %s :Cannot join channel (+z)",
+		r.client, r.channel,
 	)
 }
 
