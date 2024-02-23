@@ -20,8 +20,8 @@ func handleNick(s *server, c *client, m message) {
 	}
 
 	// check if nick is already in use
-	_, ok = s.clients.get(m.params[0])
-	if ok {
+	_, exists := s.clients.get(m.params[0])
+	if exists {
 		c.sendRPL(s.name, errNicknameInUse{
 			client: m.params[0],
 			nick:   m.params[0],
@@ -31,6 +31,7 @@ func handleNick(s *server, c *client, m message) {
 
 	c.setNickname(m.params[0])
 
-	// check for handshake
-
+	if !c.handshake && c.nickname() != "" && c.username() != "" {
+		handleHandshake(s, c)
+	}
 }
