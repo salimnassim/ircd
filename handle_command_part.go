@@ -47,7 +47,7 @@ func handlePart(s *server, c *client, m message) {
 		// broadcast that user has left the channel
 		channel.broadcast(
 			fmt.Sprintf(
-				":%s PART %s :Part: %s",
+				":%s PART %s :%s",
 				c.prefix(), target, reason,
 			),
 			c.id, false)
