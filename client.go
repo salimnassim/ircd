@@ -70,8 +70,8 @@ func newClient(connection net.Conn, id string) (*client, error) {
 		handshake: false,
 		conn:      connection,
 		reader:    bufio.NewReader(connection),
-		recv:      make(chan string, 1),
-		send:      make(chan string, 1),
+		recv:      make(chan string),
+		send:      make(chan string),
 		stop:      make(chan bool),
 	}
 
