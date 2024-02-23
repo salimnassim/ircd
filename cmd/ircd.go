@@ -37,13 +37,15 @@ func main() {
 		Network: os.Getenv("NETWORK_NAME"),
 		Version: os.Getenv("SERVER_VERSION"),
 		MOTD: []string{
-			"This is the message of the day.",
-			"It contains multiple lines because the lines could be long.",
+			"\u00034This is the message of the day.\u0003",
+			"\u00035It contains multiple lines because the lines could be long.\u0003",
 			"🍩🍫🍡🍦🍬🍮",
 		},
 		TLS:             tlsEnabled,
 		CertificateFile: os.Getenv("TLS_CERTIFICATE"),
 		CertificateKey:  os.Getenv("TLS_KEY"),
+		PingFrequency:   30,
+		PongMaxLatency:  10,
 	}
 
 	server := ircd.NewServer(config)
@@ -52,7 +54,7 @@ func main() {
 		log.Info().Msgf("starting irc, listening on tcp:%s", os.Getenv("PORT"))
 		listener, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT")))
 		if err != nil {
-			log.Fatal().Err(err).Msg("unable to listen")
+			log.Fatal().Err(err).Msg("cant listen")
 		}
 		server.Run(listener, isTLS)
 		defer listener.Close()
@@ -73,7 +75,7 @@ func main() {
 					},
 				})
 			if err != nil {
-				log.Fatal().Err(err).Msg("unable to listen tls")
+				log.Fatal().Err(err).Msg("cant listen tls")
 			}
 			server.Run(listener, isTLS)
 			defer listener.Close()

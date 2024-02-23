@@ -14,7 +14,7 @@ func handleQuit(s *server, c *client, m message) {
 	for _, ch := range s.channels.memberOf(c) {
 		ch.broadcast(
 			fmt.Sprintf(":%s PART %s :Quit: %s", c.prefix(), ch.name, reason),
-			clientID(c.nickname()),
+			c.id,
 			false,
 		)
 	}

@@ -18,86 +18,48 @@ func handleConnectionIn(c *client, s *server) {
 
 		log.Debug().Str("nick", c.nickname()).Msgf("%s", parsed.raw)
 
-		// PING
-		if parsed.command == "PING" {
+		switch parsed.command {
+		case "PING":
 			handlePing(s, c, parsed)
 			continue
-		}
-
-		// NICK
-		// https://modern.ircdocs.horse/#nick-message
-		if parsed.command == "NICK" {
+		case "PONG":
+			handlePong(s, c, parsed)
+			continue
+		case "NICK":
 			handleNick(s, c, parsed)
 			continue
-		}
-
-		// USER
-		// https://modern.ircdocs.horse/#user-message
-		if parsed.command == "USER" {
+		case "USER":
 			handleUser(s, c, parsed)
 			continue
-		}
-
-		// LUSERS
-		// https://modern.ircdocs.horse/#lusers-message
-		if parsed.command == "LUSERS" {
+		case "LUSERS":
 			handleLusers(s, c, parsed)
 			continue
-		}
-
-		// JOIN
-		// https://modern.ircdocs.horse/#join-message
-		if parsed.command == "JOIN" {
+		case "JOIN":
 			handleJoin(s, c, parsed)
 			continue
-		}
-
-		// PART
-		// https://modern.ircdocs.horse/#part-message
-		if parsed.command == "PART" {
+		case "PART":
 			handlePart(s, c, parsed)
 			continue
-		}
-
-		// TOPIC
-		// https://modern.ircdocs.horse/#topic-message
-		if parsed.command == "TOPIC" {
+		case "TOPIC":
 			handleTopic(s, c, parsed)
 			continue
-		}
-
-		// PRIVMSG
-		// https://modern.ircdocs.horse/#privmsg-message
-		if parsed.command == "PRIVMSG" {
+		case "PRIVMSG":
 			handlePrivmsg(s, c, parsed)
 			continue
-		}
-
-		// WHOIS
-		// https://modern.ircdocs.horse/#whois-message
-		if parsed.command == "WHOIS" {
+		case "WHOIS":
 			handleWhois(s, c, parsed)
 			continue
-		}
-
-		// https://modern.ircdocs.horse/#who-message
-		if parsed.command == "WHO" {
+		case "WHO":
 			handleWho(s, c, parsed)
 			continue
-		}
-
-		// https://modern.ircdocs.horse/#mode-message
-		if parsed.command == "MODE" {
+		case "MODE":
 			handleMode(s, c, parsed)
 			continue
-		}
-
-		if parsed.command == "QUIT" {
+		case "QUIT":
 			handleQuit(s, c, parsed)
 			continue
-		}
-
-		if parsed.command == "DEBUG" {
+		case "DEBUG":
+			// breakpoint here
 			continue
 		}
 	}

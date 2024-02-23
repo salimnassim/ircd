@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"sync"
-	"time"
 )
 
 type client struct {
@@ -22,7 +21,6 @@ type client struct {
 	tls   bool
 
 	handshake bool
-	ping      int64
 
 	conn   net.Conn
 	reader io.Reader
@@ -30,6 +28,7 @@ type client struct {
 	recv chan string
 	send chan string
 	stop chan bool
+	pong chan bool
 }
 
 func (c *client) String() string {
@@ -66,13 +65,15 @@ func newClient(connection net.Conn, id string) (*client, error) {
 		host:      "",
 		modes:     0,
 		tls:       false,
-		ping:      time.Now().Unix(),
 		handshake: false,
-		conn:      connection,
-		reader:    bufio.NewReader(connection),
-		recv:      make(chan string, 1),
-		send:      make(chan string, 1),
-		stop:      make(chan bool),
+
+		conn:   connection,
+		reader: bufio.NewReader(connection),
+
+		recv: make(chan string),
+		send: make(chan string),
+		stop: make(chan bool),
+		pong: make(chan bool),
 	}
 
 	if port == os.Getenv("PORT_TLS") {
@@ -88,12 +89,6 @@ func (c *client) sendRPL(server string, rpl rpl) {
 
 func (c *client) sendNotice(n notice) {
 	c.send <- n.format()
-}
-
-func (c *client) setPing(ping int64) {
-	c.mu.Lock()
-	c.ping = ping
-	c.mu.Unlock()
 }
 
 func (c *client) setHostname(hostname string) {
@@ -147,7 +142,7 @@ func (c *client) prefix() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	return fmt.Sprintf("%s!%s@%s", c.nick, c.user, c.host)
+	return fmt.Sprintf("%s!%s@%s", c.nickname(), c.username(), c.hostname())
 }
 
 func (c *client) modestring() string {
