@@ -12,7 +12,7 @@ type ClientStorer interface {
 	// Remove client from store.
 	delete(id clientID)
 	// get client from store by nickname.
-	get(nickname string) (c *client, ok bool)
+	get(nickname string) (c *client, exists bool)
 }
 
 type clientStore struct {
@@ -50,7 +50,7 @@ func (s *clientStore) get(nickname string) (*client, bool) {
 
 	s.mu.RLock()
 	for _, c := range s.clients {
-		if c.nick == nickname {
+		if c.nickname() == nickname {
 			client = c
 			break
 		}
