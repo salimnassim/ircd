@@ -20,7 +20,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 
 	for _, target := range targets {
 		// is channel
-		if strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&") {
+		if m.isTargetChannel() {
 			channel, exists := s.channels.get(target)
 			if !exists {
 				c.sendRPL(s.name, errNoSuchChannel{

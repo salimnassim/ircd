@@ -19,7 +19,7 @@ func handleJoin(s *server, c *client, m message) {
 	targets := strings.Split(m.params[0], ",")
 	for _, target := range targets {
 		// channels have to start with # or & and be less than 9 charaacters
-		if !strings.HasPrefix(target, "#") && !strings.HasPrefix(target, "&") || len(target) > 9 {
+		if !m.isTargetChannel() {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
 				channel: target,

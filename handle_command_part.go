@@ -18,6 +18,15 @@ func handlePart(s *server, c *client, m message) {
 	targets := strings.Split(m.params[0], ",")
 
 	for _, target := range targets {
+
+		if !m.isTargetChannel() {
+			c.sendRPL(s.name, errNoSuchChannel{
+				client:  c.nickname(),
+				channel: target,
+			})
+			continue
+		}
+
 		// try to get channel
 		channel, exists := s.channels.get(target)
 		if !exists {

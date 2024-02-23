@@ -17,7 +17,7 @@ func handleTopic(s *server, c *client, m message) {
 	target := m.params[0]
 
 	// channel name max length is 50, check for allowed channel prefixes
-	if !(strings.HasPrefix(target, "#") || strings.HasPrefix(target, "&")) {
+	if !m.isTargetChannel() {
 		c.sendRPL(s.name, errNoSuchChannel{
 			client:  c.nickname(),
 			channel: target,
