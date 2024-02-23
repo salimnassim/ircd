@@ -21,6 +21,7 @@ func handleAway(s *server, c *client, m message) {
 		return
 	}
 
+	// away
 	text := strings.Join(m.params[0:len(m.params)], " ")
 	c.setAway(text)
 

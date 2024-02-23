@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/salimnassim/ircd/metrics"
@@ -45,12 +44,11 @@ func handlePart(s *server, c *client, m message) {
 		ch.removeClient(c)
 
 		// broadcast that user has left the channel
-		ch.broadcast(
-			fmt.Sprintf(
-				":%s PART %s :%s",
-				c.prefix(), ch.name, reason,
-			),
-			c.id, false)
+		ch.broadcastCommand(partCommand{
+			prefix:  c.prefix(),
+			channel: ch.name,
+			text:    reason,
+		}, c.id, false)
 
 		if ch.clients.count() == 0 {
 			s.channels.delete(ch.name)

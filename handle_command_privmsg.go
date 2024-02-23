@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/salimnassim/ircd/metrics"
@@ -39,10 +38,11 @@ func handlePrivmsg(s *server, c *client, m message) {
 				continue
 			}
 
-			// send message to channel
-			channel.broadcast(fmt.Sprintf(":%s PRIVMSG %s :%s",
-				c.prefix(), channel.name, text), c.id, true)
-			metrics.PrivmsgChannel.Inc()
+			channel.broadcastCommand(privmsgCommand{
+				prefix: c.prefix(),
+				target: channel.name,
+				text:   text,
+			}, c.id, true)
 			continue
 		}
 
@@ -65,8 +65,12 @@ func handlePrivmsg(s *server, c *client, m message) {
 			})
 		}
 
-		dest.send <- fmt.Sprintf(":%s PRIVMSG %s :%s",
-			c.nick, dest.nick, text)
+		dest.sendCommand(privmsgCommand{
+			prefix: c.nick,
+			target: dest.nickname(),
+			text:   text,
+		})
+
 		metrics.PrivmsgClient.Inc()
 		continue
 	}

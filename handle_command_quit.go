@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -12,11 +11,11 @@ func handleQuit(s *server, c *client, m message) {
 	}
 
 	for _, ch := range s.channels.memberOf(c) {
-		ch.broadcast(
-			fmt.Sprintf(":%s PART %s :Quit: %s", c.prefix(), ch.name, reason),
-			c.id,
-			false,
-		)
+		ch.broadcastCommand(partCommand{
+			prefix:  c.prefix(),
+			channel: ch.name,
+			text:    reason,
+		}, c.id, false)
 	}
 
 	c.stop <- true
