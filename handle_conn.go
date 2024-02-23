@@ -31,8 +31,8 @@ func handleConnection(conn net.Conn, s *server) {
 	go handleConnectionOut(c, s)
 
 	// read input from client
-	scanner := bufio.NewScanner(c.reader)
 	go func() {
+		scanner := bufio.NewScanner(c.reader)
 		for scanner.Scan() {
 			if scanner.Err() != nil {
 				c.stop <- true
@@ -40,7 +40,7 @@ func handleConnection(conn net.Conn, s *server) {
 			}
 			line := scanner.Text()
 			if err != nil {
-				log.Error().Err(err).Msgf("unable to read from client (%s)", c.ip)
+				c.stop <- true
 				break
 			}
 			line = strings.Trim(line, "\r\n")
