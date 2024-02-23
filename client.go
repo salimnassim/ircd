@@ -91,6 +91,10 @@ func (c *client) sendRPL(server string, rpl rpl) {
 	c.send <- fmt.Sprintf(":%s %s", server, rpl.format())
 }
 
+func (c *client) sendCommand(cmd command) {
+	c.send <- cmd.command()
+}
+
 func (c *client) sendNotice(n notice) {
 	c.send <- n.format()
 }

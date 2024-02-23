@@ -62,11 +62,11 @@ func handleConnection(conn net.Conn, s *server) {
 			timer = nil
 		case <-timer:
 			for _, ch := range s.channels.memberOf(c) {
-				ch.broadcast(
-					fmt.Sprintf(":%s PART %s :Quit: Timeout after %d seconds.", c.prefix(), ch.name, s.pongMaxLatency),
-					c.id,
-					false,
-				)
+				ch.broadcastCommand(partCommand{
+					prefix:  c.prefix(),
+					channel: ch.name,
+					text:    fmt.Sprintf("Quit: Timeout after %d seconds.", s.pongMaxLatency),
+				}, c.id, false)
 			}
 			return
 		case <-time.After(pingDuration):

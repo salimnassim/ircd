@@ -109,6 +109,15 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 	}
 }
 
+func (ch *channel) broadcastCommand(cmd command, sourceID clientID, skip bool) {
+	for _, c := range ch.clients.all() {
+		if c.id == sourceID && skip {
+			continue
+		}
+		c.send <- cmd.command()
+	}
+}
+
 func (ch *channel) modestring() string {
 	modes := []rune{}
 	for m, r := range channelModeMap {
