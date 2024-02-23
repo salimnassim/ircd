@@ -56,6 +56,5 @@ func handleWho(s *server, c *client, m message) {
 		})
 		return
 	}
-
 	// todo: support querying users with mask
 }

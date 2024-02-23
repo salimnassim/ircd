@@ -104,6 +104,8 @@ func (s *server) stats() (visible int, invisible, channels int) {
 
 // Removes client from channels and client map.
 func (s *server) removeClient(c *client) error {
+	log.Info().Msgf("removing client '%s' from store.", c.id)
+
 	memberOf := s.channels.memberOf(c)
 	for _, ch := range memberOf {
 		ch.removeClient(c)

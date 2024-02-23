@@ -486,17 +486,17 @@ func (r errAlreadyRegistered) format() string {
 
 // 474 ERR_BANNEDFROMCHAN
 // https://modern.ircdocs.horse/#errbannedfromchan-474
-type errBannedFromChan struct {
-	client  string
-	channel string
-}
+// type errBannedFromChan struct {
+// 	client  string
+// 	channel string
+// }
 
-func (r errBannedFromChan) format() string {
-	return fmt.Sprintf(
-		"474 %s %s :Cannot join channel (+b)",
-		r.client, r.channel,
-	)
-}
+// func (r errBannedFromChan) format() string {
+// 	return fmt.Sprintf(
+// 		"474 %s %s :Cannot join channel (+b)",
+// 		r.client, r.channel,
+// 	)
+// }
 
 // 474 ERR_BANNEFROMCHAN
 // NOTE: Used for +z

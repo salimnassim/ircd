@@ -52,24 +52,24 @@ const (
 	modeChannelTLSOnly
 )
 
-type membershipMode uint16
+// type membershipMode uint16
 
-var membershipModeMap = map[rune]membershipMode{
-	'v': modeVoice,
-	'h': modeHalfOperator,
-	'o': modeOperator,
-	'a': modeAdmin,
-	'q': modeOwner,
-}
+// var membershipModeMap = map[rune]membershipMode{
+// 	'v': modeVoice,
+// 	'h': modeHalfOperator,
+// 	'o': modeOperator,
+// 	'a': modeAdmin,
+// 	'q': modeOwner,
+// }
 
-// channel membership modes
-const (
-	modeVoice = membershipMode(1) << iota
-	modeHalfOperator
-	modeOperator
-	modeAdmin
-	modeOwner
-)
+// // channel membership modes
+// const (
+// 	modeVoice = membershipMode(1) << iota
+// 	modeHalfOperator
+// 	modeOperator
+// 	modeAdmin
+// 	modeOwner
+// )
 
 func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del []T) {
 	q := true
