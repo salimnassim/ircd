@@ -10,7 +10,7 @@ func handleConnectionOut(c *client, s *server) {
 	}()
 
 	for message := range c.send {
-		log.Debug().Msgf("%s", message)
+		log.Debug().Str("nick", c.nickname()).Msgf("%s", message)
 		_, err := c.write(message + "\r\n")
 		if err != nil {
 			break

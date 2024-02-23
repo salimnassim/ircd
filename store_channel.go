@@ -11,7 +11,7 @@ type ChannelStorer interface {
 	// Check if client is a member of channel.
 	isMember(c *client, ch *channel) (ok bool)
 	// get channel by name.
-	get(name string) (ch *channel, ok bool)
+	get(name string) (ch *channel, exists bool)
 	// Get which channels a client belongs to.
 	memberOf(c *client) (chs []*channel)
 }
@@ -41,9 +41,9 @@ func (s *channelStore) count() int {
 
 func (s *channelStore) get(name string) (*channel, bool) {
 	s.mu.RLock()
-	channel, ok := s.channels[name]
+	channel, exists := s.channels[name]
 	s.mu.RUnlock()
-	if !ok {
+	if !exists {
 		return nil, false
 	}
 	return channel, true

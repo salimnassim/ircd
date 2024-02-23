@@ -46,7 +46,7 @@ func handleJoin(s *server, c *client, m message) {
 			ch = newChannel(target, c.id)
 
 			// todo: use channel.id instead of target
-			s.channels.add(target, ch)
+			s.channels.add(ch.name, ch)
 
 			// set default channel modes
 			ch.addMode(modeChannelNoExternal)

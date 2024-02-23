@@ -18,3 +18,16 @@ func (cmd partCommand) command() string {
 		cmd.prefix, cmd.channel, cmd.text,
 	)
 }
+
+type privmsgCommand struct {
+	prefix string
+	target string
+	text   string
+}
+
+func (cmd privmsgCommand) command() string {
+	return fmt.Sprintf(
+		":%s PRIVMSG %s :%s",
+		cmd.prefix, cmd.target, cmd.text,
+	)
+}
