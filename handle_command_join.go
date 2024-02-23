@@ -1,7 +1,6 @@
 package ircd
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/salimnassim/ircd/metrics"
@@ -75,19 +74,19 @@ func handleJoin(s *server, c *client, m message) {
 
 		// broadcast to all clients on the channel
 		// that a client has joined
-		ch.broadcast(
-			fmt.Sprintf(":%s JOIN %s", c.prefix(), ch.name),
-			c.id,
-			false,
-		)
+		ch.broadcastCommand(joinCommand{
+			prefix:  c.prefix(),
+			channel: ch.name,
+		}, c.id, false)
 
 		// chanowner
 		if ch.owner == c.id {
-			ch.broadcast(
-				fmt.Sprintf(":%s MODE %s +o %s", s.name, ch.name, c.nick),
-				c.id,
-				false,
-			)
+			ch.broadcastCommand(modeCommand{
+				source:     s.name,
+				target:     ch.name,
+				modestring: "+o",
+				args:       c.nickname(),
+			}, c.id, false)
 		}
 
 		topic := ch.topic()

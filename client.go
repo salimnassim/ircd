@@ -95,10 +95,6 @@ func (c *client) sendCommand(cmd command) {
 	c.send <- cmd.command()
 }
 
-func (c *client) sendNotice(n notice) {
-	c.send <- n.format()
-}
-
 func (c *client) setAway(text string) {
 	c.mu.Lock()
 	c.afk = text

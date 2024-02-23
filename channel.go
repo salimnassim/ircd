@@ -89,17 +89,8 @@ func (ch *channel) names() []string {
 	return names
 }
 
-// Send message to all clients on the channel.
+// Send RPL to all clients on the channel.
 // If skip is true, the client in source will not receive the message.
-func (ch *channel) broadcast(m string, sourceID clientID, skip bool) {
-	for _, c := range ch.clients.all() {
-		if c.id == sourceID && skip {
-			continue
-		}
-		c.send <- m
-	}
-}
-
 func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 	for _, c := range ch.clients.all() {
 		if c.id == sourceID && skip {
@@ -109,6 +100,8 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 	}
 }
 
+// Send command to all clients on the channel.
+// If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastCommand(cmd command, sourceID clientID, skip bool) {
 	for _, c := range ch.clients.all() {
 		if c.id == sourceID && skip {

@@ -9,19 +9,19 @@ import (
 func handleHandshake(s *server, c *client) {
 	if !c.handshake {
 		// send handshake preamble
-		c.sendNotice(noticeAuth{
+		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("Your ID is: %s", c.id),
+			message: fmt.Sprintf("AUTH :*** Your ID is: %s", c.id),
 		})
 
-		c.sendNotice(noticeAuth{
+		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("Your IP address is: %s", c.ip),
+			message: fmt.Sprintf("AUTH :*** Your IP address is: %s", c.ip),
 		})
 
-		c.sendNotice(noticeAuth{
+		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: "Looking up your hostname...",
+			message: "AUTH :*** Looking up your hostname...",
 		})
 
 		// lookup address
@@ -59,9 +59,9 @@ func handleHandshake(s *server, c *client) {
 
 		// cloak
 		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.id))
-		c.sendNotice(noticeAuth{
+		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("Your hostname has been cloaked to %s", c.host),
+			message: fmt.Sprintf("AUTH :*** Your hostname has been cloaked to %s", c.host),
 		})
 
 		c.sendRPL(s.name, rplMotdStart{
@@ -89,7 +89,11 @@ func handleHandshake(s *server, c *client) {
 			c.addMode(modeClientTLS)
 		}
 
-		c.send <- fmt.Sprintf("MODE %s %s", c.nickname(), c.modestring())
+		c.sendCommand(modeCommand{
+			target:     c.nickname(),
+			modestring: c.modestring(),
+			args:       "",
+		})
 
 		c.handshake = true
 	}
