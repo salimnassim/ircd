@@ -12,6 +12,7 @@ type middlewareFunc func(s *server, c *client, m message, next handlerFunc) hand
 type router interface {
 	// Register cmd route, assign optional middleware.
 	registerHandler(cmd string, h handlerFunc, mws ...middlewareFunc)
+	registerGlobalMiddleware(mw middlewareFunc)
 	// Execute handler.
 	handle(s *server, c *client, m message) error
 }
@@ -19,20 +20,25 @@ type router interface {
 type commandRouter struct {
 	mu *sync.RWMutex
 
-	server *server
-
-	handlers   map[string]handlerFunc
-	middleware map[string][]middlewareFunc
+	server           *server
+	handlers         map[string]handlerFunc
+	middleware       map[string][]middlewareFunc
+	globalMiddleware []middlewareFunc
 }
 
 func NewCommandRouter(s *server) *commandRouter {
 	return &commandRouter{
 		mu: &sync.RWMutex{},
 
-		server:     s,
-		handlers:   map[string]handlerFunc{},
-		middleware: map[string][]middlewareFunc{},
+		server:           s,
+		handlers:         map[string]handlerFunc{},
+		middleware:       map[string][]middlewareFunc{},
+		globalMiddleware: []middlewareFunc{},
 	}
+}
+
+func (cr *commandRouter) registerGlobalMiddleware(mw middlewareFunc) {
+	cr.globalMiddleware = append(cr.globalMiddleware, mw)
 }
 
 func (cr *commandRouter) registerHandler(cmd string, h handlerFunc, mws ...middlewareFunc) {
@@ -61,6 +67,12 @@ func (cr *commandRouter) wrap(s *server, c *client, m message, handler handlerFu
 		return nil
 	}
 	wrap := handler
+	for _, gmw := range cr.globalMiddleware {
+		if gmw == nil {
+			continue
+		}
+		wrap = gmw(s, c, m, wrap)
+	}
 	for _, mw := range middleware {
 		if mw == nil {
 			continue

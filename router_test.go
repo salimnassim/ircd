@@ -186,4 +186,32 @@ func Test(t *testing.T) {
 		}
 	})
 
+	t.Run("access global middleware", func(t *testing.T) {
+		m := message{
+			command: "TEST",
+		}
+		want := "global"
+		got := ""
+		router := NewCommandRouter(s)
+
+		router.registerGlobalMiddleware(func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+			got = "global"
+			return next
+		})
+
+		router.registerHandler("TEST", func(s *server, c *client, m message) {
+			// nothing
+		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+			return next
+		})
+
+		err := router.handle(s, c, m)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if want != got {
+			t.Errorf("got: %s, want %s", got, want)
+		}
+	})
 }
