@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test(t *testing.T) {
+func TestRouter(t *testing.T) {
 
 	s := NewServer(ServerConfig{
 		Name: "mock",
