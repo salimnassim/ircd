@@ -9,6 +9,73 @@ import (
 	"sync"
 )
 
+type clienter interface {
+	String() string
+
+	// Get client ID.
+	id() string
+	// Get client IP.
+	ip() string
+
+	// Get client nickname.
+	nick() string
+	// Set client nickname.
+	setNickname(nickname string)
+
+	// Get client username.
+	user() string
+	// Set client username.
+	setUser(username string)
+
+	// Get client realname.
+	real() string
+	// Set user realname.
+	setRealname(realname string)
+
+	// Get client hostname
+	host() string
+
+	// Is client using TLS?
+	tls() bool
+	// Set client TLS.
+	setTLS(tls bool)
+
+	// Get client away message.
+	away() string
+	// Set client away message.
+	setAway(text string)
+
+	// Get user handshake status.
+	handshake() bool
+	// Set user handshake status.
+	setHandshake(handshake bool)
+
+	// Get client prefix.
+	prefix() string
+	// Get client modes as a string (e.g. +viz).
+	modestring() string
+
+	// Add mode to client bitmask.
+	addMode(mode clientMode)
+	// Remove mode from client bitmask.
+	removeMove(mode clientMode)
+	// Does user have mode in bitmask?
+	hasMode(mode clientMode) bool
+
+	// Send RPL to client.
+	sendRPL(serverName string, rpl rpl)
+	// Send command to client.
+	sendCommand(serverName string, command command)
+
+	// Send message to internal channel.
+	send(text string)
+	// Send pong to internal channel.
+	pong(pong bool)
+
+	// Write message to client socket.
+	write(message string) (bytes int, err error)
+}
+
 type client struct {
 	mu *sync.RWMutex
 
