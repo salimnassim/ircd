@@ -41,7 +41,7 @@ func handlePart(s *server, c *client, m message) {
 			prefix:  c.prefix(),
 			channel: ch.name,
 			text:    reason,
-		}, c.id, false)
+		}, c.clientID, false)
 
 		if ch.clients.count() == 0 {
 			s.Channels.delete(ch.name)

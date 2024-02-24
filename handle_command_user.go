@@ -20,7 +20,7 @@ func handleUser(s *server, c *client, m message) {
 
 	c.setUsername(username, realname)
 
-	if !c.handshake && c.nickname() != "" && c.username() != "" {
+	if !c.hs && c.nickname() != "" && c.username() != "" {
 		handleHandshake(s, c)
 	}
 }

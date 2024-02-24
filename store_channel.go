@@ -9,11 +9,11 @@ type ChannelStorer interface {
 	add(name string, ch *channel)
 	delete(name string)
 	// Check if client is a member of channel.
-	isMember(c *client, ch *channel) (ok bool)
+	isMember(c clienter, ch *channel) (ok bool)
 	// get channel by name.
 	get(name string) (ch *channel, exists bool)
 	// Get which channels a client belongs to.
-	memberOf(c *client) (chs []*channel)
+	memberOf(c clienter) (chs []*channel)
 }
 
 type channelStore struct {
@@ -61,16 +61,16 @@ func (s *channelStore) delete(name string) {
 	s.mu.Unlock()
 }
 
-func (s *channelStore) isMember(c *client, ch *channel) bool {
-	return ch.clients.isMember(c.id)
+func (s *channelStore) isMember(c clienter, ch *channel) bool {
+	return ch.clients.isMember(c.id())
 }
 
-func (s *channelStore) memberOf(c *client) []*channel {
+func (s *channelStore) memberOf(c clienter) []*channel {
 	channels := []*channel{}
 
 	s.mu.RLock()
 	for _, ch := range s.channels {
-		if ch.clients.isMember(clientID(c.id)) {
+		if ch.clients.isMember(c.id()) {
 			channels = append(channels, ch)
 		}
 	}

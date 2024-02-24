@@ -9,11 +9,11 @@ func handleConnectionOut(c *client, s *server) {
 		c.stop <- "Broken pipe."
 	}()
 
-	for message := range c.send {
+	for message := range c.out {
 		log.Debug().Str("nick", c.nickname()).Msgf("%s", message)
 		_, err := c.write(message + "\r\n")
 		if err != nil {
-			log.Error().Err(err).Msgf("cant write to client '%s'", c.id)
+			log.Error().Err(err).Msgf("cant write to client '%s'", c.clientID)
 			break
 		}
 	}

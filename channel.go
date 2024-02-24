@@ -59,19 +59,19 @@ func (ch *channel) topic() *topic {
 }
 
 // Adds client to channel. If password does not match, an error is returned.
-func (ch *channel) addClient(c *client, password string) error {
+func (ch *channel) addClient(c clienter, password string) error {
 	if password != "" && ch.password != password {
 		return errorBadChannelKey
 	}
 
-	ch.clients.add(clientID(c.id), c)
+	ch.clients.add(c.id(), c)
 
 	return nil
 }
 
 // Remove client from channel.
-func (ch *channel) removeClient(c *client) {
-	ch.clients.delete(clientID(c.id))
+func (ch *channel) removeClient(c clienter) {
+	ch.clients.delete(c.id())
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY.
@@ -79,7 +79,7 @@ func (ch *channel) names() []string {
 	var names []string
 
 	for _, c := range ch.clients.all() {
-		if ch.owner == c.id {
+		if ch.owner == c.id() {
 			names = append(names, fmt.Sprintf("@%s", c.nickname()))
 		} else {
 			names = append(names, c.nickname())
@@ -93,10 +93,10 @@ func (ch *channel) names() []string {
 // If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 	for _, c := range ch.clients.all() {
-		if c.id == sourceID && skip {
+		if c.id() == sourceID && skip {
 			continue
 		}
-		c.send <- rpl.format()
+		c.send(rpl.format())
 	}
 }
 
@@ -104,10 +104,10 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 // If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastCommand(cmd command, sourceID clientID, skip bool) {
 	for _, c := range ch.clients.all() {
-		if c.id == sourceID && skip {
+		if c.id() == sourceID && skip {
 			continue
 		}
-		c.send <- cmd.command()
+		c.send(cmd.command())
 	}
 }
 

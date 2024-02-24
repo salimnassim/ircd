@@ -35,7 +35,7 @@ func handleJoin(s *server, c *client, m message) {
 		ch, exists := s.Channels.get(target)
 		if !exists {
 			// create channel if it does not exist
-			ch = newChannel(target, c.id)
+			ch = newChannel(target, c.clientID)
 
 			// todo: use channel.id instead of target
 			s.Channels.add(ch.name, ch)
@@ -47,7 +47,7 @@ func handleJoin(s *server, c *client, m message) {
 		}
 
 		// if channel has +z, do not allow joining without tls
-		if ch.hasMode(modeChannelTLSOnly) && !c.tls {
+		if ch.hasMode(modeChannelTLSOnly) && !c.secure {
 			c.sendRPL(s.name, errNeedTLSJoin{
 				client:  c.nickname(),
 				channel: ch.name,
@@ -70,16 +70,16 @@ func handleJoin(s *server, c *client, m message) {
 		ch.broadcastCommand(joinCommand{
 			prefix:  c.prefix(),
 			channel: ch.name,
-		}, c.id, false)
+		}, c.clientID, false)
 
 		// chanowner
-		if ch.owner == c.id {
+		if ch.owner == c.clientID {
 			ch.broadcastCommand(modeCommand{
 				source:     s.name,
 				target:     ch.name,
 				modestring: "+o",
 				args:       c.nickname(),
-			}, c.id, false)
+			}, c.clientID, false)
 		}
 
 		topic := ch.topic()

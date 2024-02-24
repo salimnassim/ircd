@@ -155,15 +155,15 @@ func (s *server) Stats() (visible int, invisible, channels int) {
 }
 
 // Removes client from channels and client map.
-func (s *server) removeClient(c *client) error {
-	log.Info().Msgf("removing client '%s' from store.", c.id)
+func (s *server) removeClient(c clienter) error {
+	log.Info().Msgf("removing client '%s' from store.", c.id())
 
 	memberOf := s.Channels.memberOf(c)
 	for _, ch := range memberOf {
 		ch.removeClient(c)
 	}
 
-	s.Clients.delete(clientID(c.id))
+	s.Clients.delete(c.id())
 	metrics.Clients.Dec()
 
 	return nil

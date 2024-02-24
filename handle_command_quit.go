@@ -15,7 +15,7 @@ func handleQuit(s *server, c *client, m message) {
 			prefix:  c.prefix(),
 			channel: ch.name,
 			text:    reason,
-		}, c.id, false)
+		}, c.clientID, false)
 	}
 
 	c.stop <- "quit"

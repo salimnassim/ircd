@@ -7,16 +7,16 @@ import (
 )
 
 func handleHandshake(s *server, c *client) {
-	if !c.handshake {
+	if !c.hs {
 		// send handshake preamble
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("AUTH :*** Your ID is: %s", c.id),
+			message: fmt.Sprintf("AUTH :*** Your ID is: %s", c.clientID),
 		})
 
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("AUTH :*** Your IP address is: %s", c.ip),
+			message: fmt.Sprintf("AUTH :*** Your IP address is: %s", c.ipAddress),
 		})
 
 		c.sendCommand(noticeCommand{
@@ -26,10 +26,10 @@ func handleHandshake(s *server, c *client) {
 
 		// lookup address
 		// todo: resolver
-		addr, err := net.LookupAddr(c.ip)
+		addr, err := net.LookupAddr(c.ipAddress)
 		if err != nil {
 			// if it cant be resolved use ip
-			c.setHostname(c.ip)
+			c.setHostname(c.ipAddress)
 		} else {
 			c.setHostname(addr[0])
 		}
@@ -48,17 +48,17 @@ func handleHandshake(s *server, c *client) {
 
 		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
-		if strings.Count(c.ip, ":") > 1 {
+		if strings.Count(c.ipAddress, ":") > 1 {
 			prefix = 6
 		}
 
 		tls := "plain"
-		if c.tls {
+		if c.secure {
 			tls = "tls"
 		}
 
 		// cloak
-		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.id))
+		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.clientID))
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
 			message: fmt.Sprintf("AUTH :*** Your hostname has been cloaked to %s", c.host),
@@ -93,7 +93,7 @@ func handleHandshake(s *server, c *client) {
 		c.addMode(modeClientInvisible)
 		c.addMode(modeClientVhost)
 
-		if c.tls {
+		if c.secure {
 			c.addMode(modeClientTLS)
 		}
 
@@ -103,6 +103,6 @@ func handleHandshake(s *server, c *client) {
 			args:       "",
 		})
 
-		c.handshake = true
+		c.hs = true
 	}
 }

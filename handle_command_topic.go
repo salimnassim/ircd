@@ -38,6 +38,6 @@ func handleTopic(s *server, c *client, m message) {
 			client:  c.nickname(),
 			channel: channel.name,
 			topic:   topic.text,
-		}, c.id, false,
+		}, c.clientID, false,
 	)
 }

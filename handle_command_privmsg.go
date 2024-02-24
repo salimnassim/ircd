@@ -33,7 +33,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 				prefix: c.prefix(),
 				target: channel.name,
 				text:   text,
-			}, c.id, true)
+			}, c.clientID, true)
 			continue
 		}
 

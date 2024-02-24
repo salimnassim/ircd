@@ -63,11 +63,11 @@ func handleConnection(conn net.Conn, s *server) {
 						prefix:  c.prefix(),
 						channel: ch.name,
 						text:    fmt.Sprintf("Quit: %s", e),
-					}, c.id, true)
+					}, c.clientID, true)
 				}
 			}
 			return
-		case <-c.pong:
+		case <-c.gotPong:
 			timer = nil
 		case <-timer:
 			for _, ch := range s.Channels.memberOf(c) {
@@ -75,7 +75,7 @@ func handleConnection(conn net.Conn, s *server) {
 					prefix:  c.prefix(),
 					channel: ch.name,
 					text:    fmt.Sprintf("Quit: Timeout after %d seconds", s.pongMaxLatency),
-				}, c.id, true)
+				}, c.clientID, true)
 			}
 			return
 		case <-time.After(pingDuration):

@@ -13,27 +13,26 @@ type clienter interface {
 	String() string
 
 	// Get client ID.
-	id() string
+	id() clientID
 	// Get client IP.
 	ip() string
 
 	// Get client nickname.
-	nick() string
+	nickname() string
 	// Set client nickname.
 	setNickname(nickname string)
 
 	// Get client username.
-	user() string
+	username() string
 	// Set client username.
-	setUser(username string)
+	setUser(username string, realname string)
 
 	// Get client realname.
-	real() string
+	realname() string
 	// Set user realname.
-	setRealname(realname string)
 
 	// Get client hostname
-	host() string
+	hostname() string
 
 	// Is client using TLS?
 	tls() bool
@@ -58,14 +57,14 @@ type clienter interface {
 	// Add mode to client bitmask.
 	addMode(mode clientMode)
 	// Remove mode from client bitmask.
-	removeMove(mode clientMode)
+	removeMode(mode clientMode)
 	// Does user have mode in bitmask?
 	hasMode(mode clientMode) bool
 
 	// Send RPL to client.
 	sendRPL(serverName string, rpl rpl)
 	// Send command to client.
-	sendCommand(serverName string, command command)
+	sendCommand(command command)
 
 	// Send message to internal channel.
 	send(text string)
@@ -79,31 +78,31 @@ type clienter interface {
 type client struct {
 	mu *sync.RWMutex
 
-	alive bool
-	id    clientID
-	ip    string
-	nick  string
-	user  string
-	real  string
-	host  string
-	modes clientMode
-	tls   bool
-	afk   string
+	alive     bool
+	clientID  clientID
+	ipAddress string
+	nick      string
+	user      string
+	real      string
+	host      string
+	modes     clientMode
+	secure    bool
+	afk       string
 
-	handshake bool
+	hs bool
 
 	conn   net.Conn
 	reader io.Reader
 
-	recv chan string
-	send chan string
-	stop chan string
-	pong chan bool
+	recv    chan string
+	out     chan string
+	stop    chan string
+	gotPong chan bool
 }
 
 func (c *client) String() string {
 	return fmt.Sprintf("id: %s, nickname: %s, username: %s, realname: %s, hostname: %s, handshake: %t",
-		c.id, c.nick, c.user, c.real, c.host, c.handshake)
+		c.clientID, c.nick, c.user, c.real, c.host, c.hs)
 }
 
 func newClient(connection net.Conn, id string) (*client, error) {
@@ -130,42 +129,93 @@ func newClient(connection net.Conn, id string) (*client, error) {
 	}
 
 	client := &client{
-		mu:    &sync.RWMutex{},
-		alive: true,
-		id:    clientID(id),
-		ip:    host,
-		nick:  "",
-		user:  "",
-		real:  "",
-		host:  "",
-		modes: 0,
-		tls:   false,
-		afk:   "",
+		mu:        &sync.RWMutex{},
+		alive:     true,
+		clientID:  clientID(id),
+		ipAddress: host,
+		nick:      "",
+		user:      "",
+		real:      "",
+		host:      "",
+		modes:     0,
+		secure:    false,
+		afk:       "",
 
-		handshake: false,
+		hs: false,
 
 		conn:   connection,
 		reader: bufio.NewReader(connection),
 
-		recv: make(chan string),
-		send: make(chan string),
-		stop: make(chan string),
-		pong: make(chan bool),
+		recv:    make(chan string),
+		out:     make(chan string),
+		stop:    make(chan string),
+		gotPong: make(chan bool),
 	}
 
 	if port == os.Getenv("PORT_TLS") {
-		client.tls = true
+		client.secure = true
 	}
 
 	return client, nil
 }
 
+func (c *client) tls() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.secure
+}
+
+func (c *client) setTLS(tls bool) {
+	c.mu.Lock()
+	c.secure = true
+	c.mu.Unlock()
+}
+
+func (c *client) setUser(username string, realname string) {
+	c.mu.Lock()
+	c.user = username
+	c.real = realname
+	c.mu.Unlock()
+}
+
+func (c *client) setHandshake(handshake bool) {
+	c.mu.Lock()
+	c.hs = handshake
+	c.mu.Unlock()
+}
+
+func (c *client) send(text string) {
+	c.out <- text
+}
+
+func (c *client) pong(pong bool) {
+	c.gotPong <- pong
+}
+
+func (c *client) id() clientID {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.clientID
+}
+
+func (c *client) ip() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.ipAddress
+}
+
+func (c *client) handshake() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.hs
+}
+
 func (c *client) sendRPL(server string, rpl rpl) {
-	c.send <- fmt.Sprintf(":%s %s", server, rpl.format())
+	c.out <- fmt.Sprintf(":%s %s", server, rpl.format())
 }
 
 func (c *client) sendCommand(cmd command) {
-	c.send <- cmd.command()
+	c.out <- cmd.command()
 }
 
 func (c *client) setAway(text string) {

@@ -5,5 +5,5 @@ import (
 )
 
 func handlePing(s *server, c *client, m message) {
-	c.send <- strings.Replace(m.raw, "PING", "PONG", 1)
+	c.out <- strings.Replace(m.raw, "PING", "PONG", 1)
 }
