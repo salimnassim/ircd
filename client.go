@@ -53,6 +53,10 @@ func newClient(connection net.Conn, id string) (*client, error) {
 		return nil, err
 	}
 
+	if connection.LocalAddr() == nil {
+		return nil, errorConnectionLocalAddressNil
+	}
+
 	_, port, err := net.SplitHostPort(connection.LocalAddr().String())
 	if err != nil {
 		return nil, err

@@ -5,6 +5,7 @@ import "errors"
 var (
 	errorConnectionNil              = errors.New("connection is nil")
 	errorConnectionRemoteAddressNil = errors.New("connection remote address is nil")
+	errorConnectionLocalAddressNil  = errors.New("connection local address is nil")
 )
 
 var (
