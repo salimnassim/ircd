@@ -70,7 +70,7 @@ func handleHandshake(s *server, c *client) {
 			text:   "MOTD -",
 		})
 
-		for _, line := range s.motd() {
+		for _, line := range s.MOTD() {
 			c.sendRPL(s.name, rplMotd{
 				client: c.nickname(),
 				text:   line,

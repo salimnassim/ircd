@@ -20,7 +20,7 @@ func handleWho(s *server, c *client, m message) {
 
 	target := m.params[0]
 	if m.isTargetChannel() {
-		channel, ok := s.channels.get(target)
+		channel, ok := s.Channels.get(target)
 		if !ok {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),

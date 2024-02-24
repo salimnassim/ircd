@@ -10,7 +10,7 @@ func handleLusers(s *server, c *client, m message) {
 		return
 	}
 
-	visible, invisible, channels := s.stats()
+	visible, invisible, channels := s.Stats()
 
 	c.sendRPL(s.name, rplLuserClient{
 		client:    c.nickname(),

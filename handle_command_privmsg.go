@@ -20,7 +20,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 	for _, target := range targets {
 		// is channel
 		if m.isTargetChannel() {
-			channel, exists := s.channels.get(target)
+			channel, exists := s.Channels.get(target)
 			if !exists {
 				c.sendRPL(s.name, errNoSuchChannel{
 					client:  c.nickname(),
@@ -30,7 +30,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 			}
 
 			// is user a member of the channel?
-			if !s.channels.isMember(c, channel) {
+			if !s.Channels.isMember(c, channel) {
 				c.sendRPL(s.name, errNotOnChannel{
 					client:  c.nickname(),
 					channel: channel.name,
@@ -47,7 +47,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 		}
 
 		// is user
-		dest, exists := s.clients.get(target)
+		dest, exists := s.Clients.get(target)
 		if dest == nil || !exists {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),

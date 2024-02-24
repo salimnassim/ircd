@@ -39,13 +39,13 @@ func handleJoin(s *server, c *client, m message) {
 		// ptr to existing ch or ch that will be created
 		var ch *channel
 
-		ch, exists := s.channels.get(target)
+		ch, exists := s.Channels.get(target)
 		if !exists {
 			// create channel if it does not exist
 			ch = newChannel(target, c.id)
 
 			// todo: use channel.id instead of target
-			s.channels.add(ch.name, ch)
+			s.Channels.add(ch.name, ch)
 
 			// set default channel modes
 			ch.addMode(modeChannelNoExternal)

@@ -25,7 +25,7 @@ func handleTopic(s *server, c *client, m message) {
 	}
 
 	// try to get channel
-	channel, exists := s.channels.get(target)
+	channel, exists := s.Channels.get(target)
 	if !exists {
 		c.sendRPL(s.name, errNoSuchChannel{
 			client:  c.nickname(),
