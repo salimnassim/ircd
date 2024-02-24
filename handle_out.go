@@ -6,7 +6,7 @@ import (
 
 func handleConnectionOut(c *client, s *server) {
 	defer func() {
-		c.stop <- "broken pipe"
+		c.stop <- "Broken pipe."
 	}()
 
 	for message := range c.send {
