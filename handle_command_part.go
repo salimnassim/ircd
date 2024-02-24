@@ -7,13 +7,6 @@ import (
 )
 
 func handlePart(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	targets := strings.Split(m.params[0], ",")
 
 	reason := "no reason given"

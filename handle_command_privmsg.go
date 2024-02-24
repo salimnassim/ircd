@@ -2,18 +2,9 @@ package ircd
 
 import (
 	"strings"
-
-	"github.com/salimnassim/ircd/metrics"
 )
 
 func handlePrivmsg(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	targets := strings.Split(m.params[0], ",")
 	text := strings.Join(m.params[1:len(m.params)], " ")
 
@@ -70,8 +61,6 @@ func handlePrivmsg(s *server, c *client, m message) {
 			target: dest.nickname(),
 			text:   text,
 		})
-
-		metrics.PrivmsgClient.Inc()
 		continue
 	}
 }

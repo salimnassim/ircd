@@ -1,13 +1,6 @@
 package ircd
 
 func handleWhois(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	target := m.params[0]
 	who, exists := s.Clients.get(target)
 	if who == nil || !exists {

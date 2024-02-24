@@ -2,18 +2,9 @@ package ircd
 
 import (
 	"strings"
-
-	"github.com/salimnassim/ircd/metrics"
 )
 
 func handleTopic(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	target := m.params[0]
 
 	if !m.isTargetChannel() {
@@ -37,7 +28,6 @@ func handleTopic(s *server, c *client, m message) {
 	// set topic
 	remainder := strings.Join(m.params[1:len(m.params)], " ")
 	channel.setTopic(remainder, c.nick)
-	metrics.Topic.Inc()
 
 	// get topic
 	topic := channel.topic()

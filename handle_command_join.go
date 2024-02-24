@@ -7,13 +7,6 @@ import (
 )
 
 func handleJoin(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	// join can have multiple channels separated by a comma
 	targets := strings.Split(m.params[0], ",")
 	for _, target := range targets {
