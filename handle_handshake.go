@@ -16,7 +16,7 @@ func handleHandshake(s *server, c *client) {
 
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("AUTH :*** Your IP address is: %s", c.ipAddress),
+			message: fmt.Sprintf("AUTH :*** Your IP address is: %s", c.address),
 		})
 
 		c.sendCommand(noticeCommand{
@@ -26,10 +26,10 @@ func handleHandshake(s *server, c *client) {
 
 		// lookup address
 		// todo: resolver
-		addr, err := net.LookupAddr(c.ipAddress)
+		addr, err := net.LookupAddr(c.address)
 		if err != nil {
 			// if it cant be resolved use ip
-			c.setHostname(c.ipAddress)
+			c.setHostname(c.address)
 		} else {
 			c.setHostname(addr[0])
 		}
@@ -48,7 +48,7 @@ func handleHandshake(s *server, c *client) {
 
 		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
-		if strings.Count(c.ipAddress, ":") > 1 {
+		if strings.Count(c.address, ":") > 1 {
 			prefix = 6
 		}
 

@@ -24,15 +24,16 @@ type clienter interface {
 
 	// Get client username.
 	username() string
-	// Set client username.
-	setUser(username string, realname string)
 
 	// Get client realname.
 	realname() string
-	// Set user realname.
+	// Set client username.
+	setUser(username string, realname string)
 
-	// Get client hostname
+	// Get client hostname.
 	hostname() string
+	// Set client hostname.
+	setHostname(hostname string)
 
 	// Is client using TLS?
 	tls() bool
@@ -78,16 +79,16 @@ type clienter interface {
 type client struct {
 	mu *sync.RWMutex
 
-	alive     bool
-	clientID  clientID
-	ipAddress string
-	nick      string
-	user      string
-	real      string
-	host      string
-	modes     clientMode
-	secure    bool
-	afk       string
+	alive    bool
+	clientID clientID
+	address  string
+	nick     string
+	user     string
+	real     string
+	host     string
+	modes    clientMode
+	secure   bool
+	afk      string
 
 	hs bool
 
@@ -98,11 +99,6 @@ type client struct {
 	out     chan string
 	stop    chan string
 	gotPong chan bool
-}
-
-func (c *client) String() string {
-	return fmt.Sprintf("id: %s, nickname: %s, username: %s, realname: %s, hostname: %s, handshake: %t",
-		c.clientID, c.nick, c.user, c.real, c.host, c.hs)
 }
 
 func newClient(connection net.Conn, id string) (*client, error) {
@@ -129,17 +125,17 @@ func newClient(connection net.Conn, id string) (*client, error) {
 	}
 
 	client := &client{
-		mu:        &sync.RWMutex{},
-		alive:     true,
-		clientID:  clientID(id),
-		ipAddress: host,
-		nick:      "",
-		user:      "",
-		real:      "",
-		host:      "",
-		modes:     0,
-		secure:    false,
-		afk:       "",
+		mu:       &sync.RWMutex{},
+		alive:    true,
+		clientID: clientID(id),
+		address:  host,
+		nick:     "",
+		user:     "",
+		real:     "",
+		host:     "",
+		modes:    0,
+		secure:   false,
+		afk:      "",
 
 		hs: false,
 
@@ -159,37 +155,9 @@ func newClient(connection net.Conn, id string) (*client, error) {
 	return client, nil
 }
 
-func (c *client) tls() bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.secure
-}
-
-func (c *client) setTLS(tls bool) {
-	c.mu.Lock()
-	c.secure = true
-	c.mu.Unlock()
-}
-
-func (c *client) setUser(username string, realname string) {
-	c.mu.Lock()
-	c.user = username
-	c.real = realname
-	c.mu.Unlock()
-}
-
-func (c *client) setHandshake(handshake bool) {
-	c.mu.Lock()
-	c.hs = handshake
-	c.mu.Unlock()
-}
-
-func (c *client) send(text string) {
-	c.out <- text
-}
-
-func (c *client) pong(pong bool) {
-	c.gotPong <- pong
+func (c *client) String() string {
+	return fmt.Sprintf("id: %s, nickname: %s, username: %s, realname: %s, hostname: %s, handshake: %t",
+		c.clientID, c.nick, c.user, c.real, c.host, c.hs)
 }
 
 func (c *client) id() clientID {
@@ -201,52 +169,7 @@ func (c *client) id() clientID {
 func (c *client) ip() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.ipAddress
-}
-
-func (c *client) handshake() bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.hs
-}
-
-func (c *client) sendRPL(server string, rpl rpl) {
-	c.out <- fmt.Sprintf(":%s %s", server, rpl.format())
-}
-
-func (c *client) sendCommand(cmd command) {
-	c.out <- cmd.command()
-}
-
-func (c *client) setAway(text string) {
-	c.mu.Lock()
-	c.afk = text
-	c.mu.Unlock()
-}
-
-func (c *client) away() string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.afk
-}
-
-func (c *client) setHostname(hostname string) {
-	c.mu.Lock()
-	c.host = hostname
-	c.mu.Unlock()
-}
-
-func (c *client) setNickname(nickname string) {
-	c.mu.Lock()
-	c.nick = nickname
-	c.mu.Unlock()
-}
-
-func (c *client) setUsername(username string, realname string) {
-	c.mu.Lock()
-	c.user = username
-	c.real = realname
-	c.mu.Unlock()
+	return c.address
 }
 
 func (c *client) nickname() string {
@@ -254,6 +177,12 @@ func (c *client) nickname() string {
 	defer c.mu.RUnlock()
 
 	return c.nick
+}
+
+func (c *client) setNickname(nickname string) {
+	c.mu.Lock()
+	c.nick = nickname
+	c.mu.Unlock()
 }
 
 func (c *client) username() string {
@@ -270,6 +199,13 @@ func (c *client) realname() string {
 	return c.real
 }
 
+func (c *client) setUser(username string, realname string) {
+	c.mu.Lock()
+	c.user = username
+	c.real = realname
+	c.mu.Unlock()
+}
+
 func (c *client) hostname() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -277,11 +213,53 @@ func (c *client) hostname() string {
 	return c.host
 }
 
+func (c *client) setHostname(hostname string) {
+	c.mu.Lock()
+	c.host = hostname
+	c.mu.Unlock()
+}
+
+func (c *client) tls() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.secure
+}
+
+func (c *client) setTLS(tls bool) {
+	c.mu.Lock()
+	c.secure = true
+	c.mu.Unlock()
+}
+
+func (c *client) away() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.afk
+}
+
+func (c *client) setAway(text string) {
+	c.mu.Lock()
+	c.afk = text
+	c.mu.Unlock()
+}
+
+func (c *client) handshake() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.hs
+}
+
+func (c *client) setHandshake(handshake bool) {
+	c.mu.Lock()
+	c.hs = handshake
+	c.mu.Unlock()
+}
+
 func (c *client) prefix() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	return fmt.Sprintf("%s!%s@%s", c.nickname(), c.username(), c.hostname())
+	return fmt.Sprintf("%s!%s@%s", c.nick, c.user, c.host)
 }
 
 func (c *client) modestring() string {
@@ -316,6 +294,22 @@ func (c *client) hasMode(mode clientMode) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.modes&mode != 0
+}
+
+func (c *client) sendRPL(server string, rpl rpl) {
+	c.out <- fmt.Sprintf(":%s %s", server, rpl.format())
+}
+
+func (c *client) sendCommand(cmd command) {
+	c.out <- cmd.command()
+}
+
+func (c *client) send(text string) {
+	c.out <- text
+}
+
+func (c *client) pong(pong bool) {
+	c.gotPong <- pong
 }
 
 func (c *client) write(message string) (int, error) {
