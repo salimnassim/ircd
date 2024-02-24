@@ -3,13 +3,6 @@ package ircd
 import "strings"
 
 func handleAway(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	// unaway
 	if len(m.params) == 0 {
 		if c.away() != "" {

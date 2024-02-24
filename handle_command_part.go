@@ -7,13 +7,6 @@ import (
 )
 
 func handlePart(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	targets := strings.Split(m.params[0], ",")
 
 	reason := "no reason given"
@@ -31,7 +24,7 @@ func handlePart(s *server, c *client, m message) {
 		}
 
 		// try to get ch
-		ch, exists := s.channels.get(target)
+		ch, exists := s.Channels.get(target)
 		if !exists {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
@@ -51,7 +44,7 @@ func handlePart(s *server, c *client, m message) {
 		}, c.id, false)
 
 		if ch.clients.count() == 0 {
-			s.channels.delete(ch.name)
+			s.Channels.delete(ch.name)
 			metrics.Channels.Dec()
 		}
 	}

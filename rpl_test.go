@@ -26,7 +26,7 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
-			want: "251 client :There are 1 users and 2 invisible on 3 servers",
+			want: "251 client :There are 1 users (2 invisible) on 3 servers",
 			input: rplLuserClient{
 				client:    "client",
 				users:     1,
@@ -42,7 +42,7 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
-			want: "254 client 5 :channels formed",
+			want: "254 client 5 :channels formed.",
 			input: rplLuserChannels{
 				client:   "client",
 				channels: 5,

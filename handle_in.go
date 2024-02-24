@@ -6,7 +6,7 @@ import (
 
 func handleConnectionIn(c *client, s *server) {
 	defer func() {
-		c.stop <- true
+		c.stop <- "Broken pipe."
 	}()
 
 	for message := range c.recv {
@@ -18,52 +18,6 @@ func handleConnectionIn(c *client, s *server) {
 
 		log.Debug().Str("nick", c.nickname()).Msgf("%s", parsed.raw)
 
-		switch parsed.command {
-		case "PING":
-			handlePing(s, c, parsed)
-			continue
-		case "PONG":
-			handlePong(s, c, parsed)
-			continue
-		case "NICK":
-			handleNick(s, c, parsed)
-			continue
-		case "USER":
-			handleUser(s, c, parsed)
-			continue
-		case "LUSERS":
-			handleLusers(s, c, parsed)
-			continue
-		case "JOIN":
-			handleJoin(s, c, parsed)
-			continue
-		case "PART":
-			handlePart(s, c, parsed)
-			continue
-		case "TOPIC":
-			handleTopic(s, c, parsed)
-			continue
-		case "PRIVMSG":
-			handlePrivmsg(s, c, parsed)
-			continue
-		case "WHOIS":
-			handleWhois(s, c, parsed)
-			continue
-		case "WHO":
-			handleWho(s, c, parsed)
-			continue
-		case "MODE":
-			handleMode(s, c, parsed)
-			continue
-		case "QUIT":
-			handleQuit(s, c, parsed)
-			continue
-		case "AWAY":
-			handleAway(s, c, parsed)
-			continue
-		case "DEBUG":
-			// breakpoint here
-			continue
-		}
+		s.router.handle(s, c, parsed)
 	}
 }

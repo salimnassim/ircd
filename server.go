@@ -1,6 +1,7 @@
 package ircd
 
 import (
+	"fmt"
 	"net"
 	"regexp"
 	"sync"
@@ -36,12 +37,14 @@ type Server interface {
 
 type server struct {
 	mu       *sync.RWMutex
+	router   router
 	name     string
 	network  string
 	version  string
-	clients  ClientStorer
-	channels ChannelStorer
-	message  *[]string
+	Clients  ClientStorer
+	Channels ChannelStorer
+	motd     *[]string
+	ports    []string
 
 	pingFrequency  int
 	pongMaxLatency int
@@ -56,20 +59,32 @@ func NewServer(config ServerConfig) *server {
 		name:           config.Name,
 		network:        config.Network,
 		version:        config.Version,
-		clients:        NewClientStore("clients"),
-		channels:       NewChannelStore("channels"),
-		regex:          make(map[regexKey]*regexp.Regexp),
-		message:        &config.MOTD,
+		Clients:        NewClientStore("clients"),
+		Channels:       NewChannelStore("channels"),
+		motd:           &config.MOTD,
 		pingFrequency:  config.PingFrequency,
 		pongMaxLatency: config.PongMaxLatency,
+		regex:          make(map[regexKey]*regexp.Regexp),
 	}
 
 	compileRegexp(server)
+	registerHandlers(server)
 
 	return server
 }
 
 func (s *server) Run(listener net.Listener, isTLS bool) {
+	_, port, err := net.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		log.Error().Err(err).Msgf("cant split net host port")
+	}
+
+	if isTLS {
+		s.addPort(fmt.Sprintf("+%s", port))
+	} else {
+		s.addPort(port)
+	}
+
 	for {
 		connection, err := listener.Accept()
 		if err != nil {
@@ -96,31 +111,68 @@ func compileRegexp(s *server) {
 	s.regex[regexChannel] = rgxChannel
 }
 
+func registerHandlers(s *server) {
+	router := NewCommandRouter(s)
+	router.registerGlobalMiddleware(func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		metrics.Command.WithLabelValues(m.command).Inc()
+		return next
+	})
+
+	router.registerHandler("PING", handlePing)
+	router.registerHandler("PONG", handlePong)
+	router.registerHandler("NICK", handleNick)
+	router.registerHandler("USER", handleUser)
+	router.registerHandler("LUSERS", handleLusers, middlewareNeedHandshake)
+	router.registerHandler("JOIN", handleJoin, middlewareNeedHandshake)
+	router.registerHandler("PART", handlePart, middlewareNeedHandshake)
+	router.registerHandler("TOPIC", handleTopic, middlewareNeedHandshake)
+	router.registerHandler("PRIVMSG", handlePrivmsg, middlewareNeedHandshake)
+	router.registerHandler("WHOIS", handleWhois, middlewareNeedHandshake)
+	router.registerHandler("WHO", handleWho, middlewareNeedHandshake)
+	router.registerHandler("MODE", handleMode, middlewareNeedHandshake)
+	router.registerHandler("AWAY", handleAway, middlewareNeedHandshake)
+	router.registerHandler("QUIT", handleQuit)
+
+	s.router = router
+}
+
+func (s *server) addPort(port string) {
+	s.mu.Lock()
+	s.ports = append(s.ports, port)
+	s.mu.Unlock()
+}
+
+func (s *server) Ports() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.ports
+}
+
 // Returns the number of connected clients and open channels.
-func (s *server) stats() (visible int, invisible, channels int) {
-	visible, invisible = s.clients.count()
-	return visible, invisible, s.channels.count()
+func (s *server) Stats() (visible int, invisible, channels int) {
+	visible, invisible = s.Clients.count()
+	return visible, invisible, s.Channels.count()
 }
 
 // Removes client from channels and client map.
 func (s *server) removeClient(c *client) error {
 	log.Info().Msgf("removing client '%s' from store.", c.id)
 
-	memberOf := s.channels.memberOf(c)
+	memberOf := s.Channels.memberOf(c)
 	for _, ch := range memberOf {
 		ch.removeClient(c)
 	}
 
-	s.clients.delete(clientID(c.id))
+	s.Clients.delete(clientID(c.id))
 	metrics.Clients.Dec()
 
 	return nil
 }
 
-func (s *server) motd() []string {
+func (s *server) MOTD() []string {
 	var motd []string
 	s.mu.RLock()
-	motd = *s.message
+	motd = *s.motd
 	s.mu.RUnlock()
 	return motd
 }

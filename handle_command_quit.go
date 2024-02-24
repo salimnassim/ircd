@@ -10,7 +10,7 @@ func handleQuit(s *server, c *client, m message) {
 		reason = strings.Join(m.params[0:len(m.params)], " ")
 	}
 
-	for _, ch := range s.channels.memberOf(c) {
+	for _, ch := range s.Channels.memberOf(c) {
 		ch.broadcastCommand(partCommand{
 			prefix:  c.prefix(),
 			channel: ch.name,
@@ -18,5 +18,5 @@ func handleQuit(s *server, c *client, m message) {
 		}, c.id, false)
 	}
 
-	c.stop <- true
+	c.stop <- "quit"
 }

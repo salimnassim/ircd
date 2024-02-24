@@ -1,15 +1,8 @@
 package ircd
 
 func handleWhois(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	target := m.params[0]
-	who, exists := s.clients.get(target)
+	who, exists := s.Clients.get(target)
 	if who == nil || !exists {
 		c.sendRPL(s.name, errNoSuchNick{
 			client: c.nickname(),
@@ -28,7 +21,7 @@ func handleWhois(s *server, c *client, m message) {
 	})
 
 	channels := []string{}
-	memberOf := s.channels.memberOf(who)
+	memberOf := s.Channels.memberOf(who)
 	for _, c := range memberOf {
 		if !c.secret {
 			channels = append(channels, c.name)

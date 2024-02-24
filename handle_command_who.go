@@ -3,13 +3,6 @@ package ircd
 import "strings"
 
 func handleWho(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	if len(m.params) == 0 {
 		c.sendRPL(s.name, errNeedMoreParams{
 			client:  c.nickname(),
@@ -20,7 +13,7 @@ func handleWho(s *server, c *client, m message) {
 
 	target := m.params[0]
 	if m.isTargetChannel() {
-		channel, ok := s.channels.get(target)
+		channel, ok := s.Channels.get(target)
 		if !ok {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),

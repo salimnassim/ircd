@@ -20,7 +20,7 @@ func handleMode(s *server, c *client, m message) {
 	// is channel
 	if m.isTargetChannel() {
 		// get channel
-		ch, ok := s.channels.get(target)
+		ch, ok := s.Channels.get(target)
 		// does it exist?
 		if !ok {
 			c.sendRPL(s.name, errNoSuchChannel{

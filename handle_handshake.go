@@ -64,13 +64,21 @@ func handleHandshake(s *server, c *client) {
 			message: fmt.Sprintf("AUTH :*** Your hostname has been cloaked to %s", c.host),
 		})
 
+		c.sendCommand(noticeCommand{
+			client: c.nickname(),
+			message: fmt.Sprintf(
+				"NOTICE :*** Server is listening on ports %s",
+				strings.Join(s.ports, ", "),
+			),
+		})
+
 		c.sendRPL(s.name, rplMotdStart{
 			client: c.nickname(),
 			server: s.name,
 			text:   "MOTD -",
 		})
 
-		for _, line := range s.motd() {
+		for _, line := range s.MOTD() {
 			c.sendRPL(s.name, rplMotd{
 				client: c.nickname(),
 				text:   line,

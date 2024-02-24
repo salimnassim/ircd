@@ -50,16 +50,16 @@ func (cmd noticeCommand) command() string {
 	)
 }
 
-type errorCommand struct {
-	text string
-}
+// type errorCommand struct {
+// 	text string
+// }
 
-func (cmd errorCommand) command() string {
-	return fmt.Sprintf(
-		"ERROR :%s",
-		cmd.text,
-	)
-}
+// func (cmd errorCommand) command() string {
+// 	return fmt.Sprintf(
+// 		"ERROR :%s",
+// 		cmd.text,
+// 	)
+// }
 
 type pingCommand struct {
 	text string

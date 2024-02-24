@@ -7,13 +7,6 @@ import (
 )
 
 func handleJoin(s *server, c *client, m message) {
-	if !c.handshake {
-		c.sendRPL(s.name, errNotRegistered{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	// join can have multiple channels separated by a comma
 	targets := strings.Split(m.params[0], ",")
 	for _, target := range targets {
@@ -39,13 +32,13 @@ func handleJoin(s *server, c *client, m message) {
 		// ptr to existing ch or ch that will be created
 		var ch *channel
 
-		ch, exists := s.channels.get(target)
+		ch, exists := s.Channels.get(target)
 		if !exists {
 			// create channel if it does not exist
 			ch = newChannel(target, c.id)
 
 			// todo: use channel.id instead of target
-			s.channels.add(ch.name, ch)
+			s.Channels.add(ch.name, ch)
 
 			// set default channel modes
 			ch.addMode(modeChannelNoExternal)
