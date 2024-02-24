@@ -1,34 +1,8 @@
 package ircd
 
 import (
-	"net"
 	"testing"
-	"time"
 )
-
-type connTester struct {
-	deadline time.Time
-}
-
-func (c *connTester) Read(b []byte) (n int, err error) {
-	return 0, nil
-}
-func (c *connTester) SetDeadline(t time.Time) error {
-	c.deadline = t
-	return nil
-}
-func (c *connTester) SetReadDeadline(t time.Time) error {
-	c.deadline = t
-	return nil
-}
-func (c *connTester) SetWriteDeadline(t time.Time) error {
-	c.deadline = t
-	return nil
-}
-func (c *connTester) Write(b []byte) (int, error) { return 0, nil }
-func (c *connTester) Close() error                { return nil }
-func (C *connTester) LocalAddr() net.Addr         { return &net.IPAddr{} }
-func (C *connTester) RemoteAddr() net.Addr        { return &net.IPAddr{} }
 
 func Test(t *testing.T) {
 
@@ -36,7 +10,7 @@ func Test(t *testing.T) {
 		Name: "mock",
 	})
 
-	c, _ := newClient(&connTester{}, "test")
+	c, _ := newClient(&connMock{}, "test")
 
 	t.Run("access handler function", func(t *testing.T) {
 		m := message{
