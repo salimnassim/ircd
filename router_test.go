@@ -19,7 +19,7 @@ func TestRouter(t *testing.T) {
 		want := "hello"
 		got := ""
 		r := NewCommandRouter(s)
-		r.registerHandler("TEST", func(s *server, c *client, m message) {
+		r.registerHandler("TEST", func(s *server, c clienter, m message) {
 			got = "hello"
 		})
 		err := r.handle(s, c, m)
@@ -39,9 +39,9 @@ func TestRouter(t *testing.T) {
 		got := ""
 		router := NewCommandRouter(s)
 
-		router.registerHandler("TEST", func(s *server, c *client, m message) {
+		router.registerHandler("TEST", func(s *server, c clienter, m message) {
 			got = got + "after"
-		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = "before"
 			return next
 		})
@@ -64,7 +64,7 @@ func TestRouter(t *testing.T) {
 		got := ""
 		router := NewCommandRouter(s)
 
-		router.registerHandler("TEST", func(s *server, c *client, m message) {
+		router.registerHandler("TEST", func(s *server, c clienter, m message) {
 			got = "hello"
 		}, nil)
 
@@ -86,12 +86,12 @@ func TestRouter(t *testing.T) {
 		got := ""
 		router := NewCommandRouter(s)
 
-		router.registerHandler("TEST", func(s *server, c *client, m message) {
+		router.registerHandler("TEST", func(s *server, c clienter, m message) {
 			got = got + "three"
-		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = got + "one"
 			return next
-		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = got + "two"
 			return next
 		})
@@ -115,9 +115,9 @@ func TestRouter(t *testing.T) {
 		got := ""
 		router := NewCommandRouter(s)
 
-		router.registerHandler("TEST", func(s *server, c *client, m message) {
+		router.registerHandler("TEST", func(s *server, c clienter, m message) {
 			// nothing
-		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = m.params[0]
 			return next
 		})
@@ -140,12 +140,12 @@ func TestRouter(t *testing.T) {
 		got := ""
 		router := NewCommandRouter(s)
 
-		router.registerHandler("TEST", func(s *server, c *client, m message) {
+		router.registerHandler("TEST", func(s *server, c clienter, m message) {
 			// nothing
-		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = "exit here"
 			return nil
-		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = "should not be here"
 			return next
 		})
@@ -168,14 +168,14 @@ func TestRouter(t *testing.T) {
 		got := ""
 		router := NewCommandRouter(s)
 
-		router.registerGlobalMiddleware(func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		router.registerGlobalMiddleware(func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = "global"
 			return next
 		})
 
-		router.registerHandler("TEST", func(s *server, c *client, m message) {
+		router.registerHandler("TEST", func(s *server, c clienter, m message) {
 			// nothing
-		}, func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			return next
 		})
 

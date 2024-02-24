@@ -2,7 +2,7 @@ package ircd
 
 import "strings"
 
-func handleWho(s *server, c *client, m message) {
+func handleWho(s *server, c clienter, m message) {
 	if len(m.params) == 0 {
 		c.sendRPL(s.name, errNeedMoreParams{
 			client:  c.nickname(),

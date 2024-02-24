@@ -1,6 +1,6 @@
 package ircd
 
-func handleLusers(s *server, c *client, m message) {
+func handleLusers(s *server, c clienter, m message) {
 	visible, invisible, channels := s.Stats()
 
 	c.sendRPL(s.name, rplLuserClient{

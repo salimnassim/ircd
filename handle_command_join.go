@@ -6,7 +6,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handleJoin(s *server, c *client, m message) {
+func handleJoin(s *server, c clienter, m message) {
 	// join can have multiple channels separated by a comma
 	targets := strings.Split(m.params[0], ",")
 	for _, target := range targets {
@@ -35,7 +35,7 @@ func handleJoin(s *server, c *client, m message) {
 		ch, exists := s.Channels.get(target)
 		if !exists {
 			// create channel if it does not exist
-			ch = newChannel(target, c.clientID)
+			ch = newChannel(target, c.id())
 
 			// todo: use channel.id instead of target
 			s.Channels.add(ch.name, ch)
@@ -47,7 +47,7 @@ func handleJoin(s *server, c *client, m message) {
 		}
 
 		// if channel has +z, do not allow joining without tls
-		if ch.hasMode(modeChannelTLSOnly) && !c.secure {
+		if ch.hasMode(modeChannelTLSOnly) && !c.tls() {
 			c.sendRPL(s.name, errNeedTLSJoin{
 				client:  c.nickname(),
 				channel: ch.name,
@@ -70,16 +70,16 @@ func handleJoin(s *server, c *client, m message) {
 		ch.broadcastCommand(joinCommand{
 			prefix:  c.prefix(),
 			channel: ch.name,
-		}, c.clientID, false)
+		}, c.id(), false)
 
 		// chanowner
-		if ch.owner == c.clientID {
+		if ch.owner == c.id() {
 			ch.broadcastCommand(modeCommand{
 				source:     s.name,
 				target:     ch.name,
 				modestring: "+o",
 				args:       c.nickname(),
-			}, c.clientID, false)
+			}, c.id(), false)
 		}
 
 		topic := ch.topic()

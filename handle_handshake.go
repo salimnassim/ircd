@@ -6,17 +6,17 @@ import (
 	"strings"
 )
 
-func handleHandshake(s *server, c *client) {
-	if !c.hs {
+func handleHandshake(s *server, c clienter) {
+	if !c.handshake() {
 		// send handshake preamble
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("AUTH :*** Your ID is: %s", c.clientID),
+			message: fmt.Sprintf("AUTH :*** Your ID is: %s", c.id()),
 		})
 
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("AUTH :*** Your IP address is: %s", c.address),
+			message: fmt.Sprintf("AUTH :*** Your IP address is: %s", c.ip()),
 		})
 
 		c.sendCommand(noticeCommand{
@@ -26,10 +26,10 @@ func handleHandshake(s *server, c *client) {
 
 		// lookup address
 		// todo: resolver
-		addr, err := net.LookupAddr(c.address)
+		addr, err := net.LookupAddr(c.ip())
 		if err != nil {
 			// if it cant be resolved use ip
-			c.setHostname(c.address)
+			c.setHostname(c.ip())
 		} else {
 			c.setHostname(addr[0])
 		}
@@ -48,20 +48,20 @@ func handleHandshake(s *server, c *client) {
 
 		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
-		if strings.Count(c.address, ":") > 1 {
+		if strings.Count(c.ip(), ":") > 1 {
 			prefix = 6
 		}
 
 		tls := "plain"
-		if c.secure {
+		if c.tls() {
 			tls = "tls"
 		}
 
 		// cloak
-		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.clientID))
+		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.id()))
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
-			message: fmt.Sprintf("AUTH :*** Your hostname has been cloaked to %s", c.host),
+			message: fmt.Sprintf("AUTH :*** Your hostname has been cloaked to %s", c.hostname()),
 		})
 
 		c.sendCommand(noticeCommand{
@@ -93,7 +93,7 @@ func handleHandshake(s *server, c *client) {
 		c.addMode(modeClientInvisible)
 		c.addMode(modeClientVhost)
 
-		if c.secure {
+		if c.tls() {
 			c.addMode(modeClientTLS)
 		}
 
@@ -103,6 +103,6 @@ func handleHandshake(s *server, c *client) {
 			args:       "",
 		})
 
-		c.hs = true
+		c.setHandshake(true)
 	}
 }

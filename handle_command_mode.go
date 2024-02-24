@@ -1,6 +1,6 @@
 package ircd
 
-func handleMode(s *server, c *client, m message) {
+func handleMode(s *server, c clienter, m message) {
 	// command needs target
 	if len(m.params) < 1 {
 		c.sendRPL(s.name, errNeedMoreParams{

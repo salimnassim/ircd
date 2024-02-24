@@ -71,6 +71,8 @@ type clienter interface {
 	send(text string)
 	// Send pong to internal channel.
 	pong(pong bool)
+	// Send stop to internal channel.
+	kill(reason string)
 
 	// Write message to client socket.
 	write(message string) (bytes int, err error)
@@ -310,6 +312,10 @@ func (c *client) send(text string) {
 
 func (c *client) pong(pong bool) {
 	c.gotPong <- pong
+}
+
+func (c *client) kill(reason string) {
+	c.stop <- reason
 }
 
 func (c *client) write(message string) (int, error) {

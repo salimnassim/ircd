@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func handlePrivmsg(s *server, c *client, m message) {
+func handlePrivmsg(s *server, c clienter, m message) {
 	targets := strings.Split(m.params[0], ",")
 	text := strings.Join(m.params[1:len(m.params)], " ")
 
@@ -33,7 +33,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 				prefix: c.prefix(),
 				target: channel.name,
 				text:   text,
-			}, c.clientID, true)
+			}, c.id(), true)
 			continue
 		}
 
@@ -57,7 +57,7 @@ func handlePrivmsg(s *server, c *client, m message) {
 		}
 
 		dest.sendCommand(privmsgCommand{
-			prefix: c.nick,
+			prefix: c.nickname(),
 			target: dest.nickname(),
 			text:   text,
 		})

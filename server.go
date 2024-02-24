@@ -113,7 +113,7 @@ func compileRegexp(s *server) {
 
 func registerHandlers(s *server) {
 	router := NewCommandRouter(s)
-	router.registerGlobalMiddleware(func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+	router.registerGlobalMiddleware(func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 		metrics.Command.WithLabelValues(m.command).Inc()
 		return next
 	})

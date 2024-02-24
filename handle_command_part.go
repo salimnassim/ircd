@@ -6,7 +6,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handlePart(s *server, c *client, m message) {
+func handlePart(s *server, c clienter, m message) {
 	targets := strings.Split(m.params[0], ",")
 
 	reason := "no reason given"
@@ -41,7 +41,7 @@ func handlePart(s *server, c *client, m message) {
 			prefix:  c.prefix(),
 			channel: ch.name,
 			text:    reason,
-		}, c.clientID, false)
+		}, c.id(), false)
 
 		if ch.clients.count() == 0 {
 			s.Channels.delete(ch.name)

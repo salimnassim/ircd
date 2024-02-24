@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func handleQuit(s *server, c *client, m message) {
+func handleQuit(s *server, c clienter, m message) {
 	reason := "no reason given"
 	if len(m.params) >= 1 {
 		reason = strings.Join(m.params[0:len(m.params)], " ")
@@ -15,8 +15,8 @@ func handleQuit(s *server, c *client, m message) {
 			prefix:  c.prefix(),
 			channel: ch.name,
 			text:    reason,
-		}, c.clientID, false)
+		}, c.id(), false)
 	}
 
-	c.stop <- "quit"
+	c.kill("quit")
 }
