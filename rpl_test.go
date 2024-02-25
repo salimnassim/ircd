@@ -26,6 +26,13 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
+			want: "221 client +viz",
+			input: rplUModeIs{
+				client:     "client",
+				modestring: "+viz",
+			},
+		},
+		{
 			want: "251 client :There are 1 users (2 invisible) on 3 servers",
 			input: rplLuserClient{
 				client:    "client",
@@ -49,11 +56,65 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
+			want: "301 client nick :text",
+			input: rplAway{
+				client:  "client",
+				nick:    "nick",
+				message: "text",
+			},
+		},
+		{
+			want: "305 client :You are no longer marked as being away.",
+			input: rplUnAway{
+				client: "client",
+			},
+		},
+		{
+			want: "306 client :You have been marked as being away.",
+			input: rplNowAway{
+				client: "client",
+			},
+		},
+		{
+			want: "311 client nick username host * :realname",
+			input: rplWhoisUser{
+				client:   "client",
+				nick:     "nick",
+				username: "username",
+				host:     "host",
+				realname: "realname",
+			},
+		},
+		{
+			want: "315 client mask :End of WHO list.",
+			input: rplEndOfWho{
+				client: "client",
+				mask:   "mask",
+			},
+		},
+		{
 			want: "319 client nick :#foo #baz",
 			input: rplWhoisChannels{
 				client:   "client",
 				nick:     "nick",
 				channels: []string{"#foo", "#baz"},
+			},
+		},
+		{
+			want: "320 client nick :text",
+			input: rplWhoisSpecial{
+				client: "client",
+				nick:   "nick",
+				text:   "text",
+			},
+		},
+		{
+			want: "324 client #channel +k password",
+			input: rplChannelModeIs{
+				client:     "client",
+				channel:    "#channel",
+				modestring: "+k",
+				modeargs:   "password",
 			},
 		},
 		{
@@ -81,6 +142,20 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
+			want: "352 client #channel username host server nick H :0 realname",
+			input: rplWhoReply{
+				client:   "client",
+				channel:  "#channel",
+				username: "username",
+				host:     "host",
+				server:   "server",
+				nick:     "nick",
+				flags:    "H",
+				hopcount: 0,
+				realname: "realname",
+			},
+		},
+		{
 			want: "353 client = testing :~foo @baz qax",
 			input: rplNamReply{
 				client:  "client",
@@ -99,9 +174,31 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
+			want: "372 client :text",
+			input: rplMotd{
+				client: "client",
+				text:   "text",
+			},
+		},
+		{
+			want: "375 client :- server text",
+			input: rplMotdStart{
+				client: "client",
+				server: "server",
+				text:   "text",
+			},
+		},
+		{
 			want: "376 client :End of /MOTD command.",
 			input: rplEndOfMotd{
 				client: "client",
+			},
+		},
+		{
+			want: "401 client nick :No such nickname.",
+			input: errNoSuchNick{
+				client: "client",
+				nick:   "nick",
 			},
 		},
 		{
@@ -109,6 +206,12 @@ func TestRPL(t *testing.T) {
 			input: errNoSuchChannel{
 				client:  "client",
 				channel: "#channel",
+			},
+		},
+		{
+			want: "431 client :No nickname given.",
+			input: errNoNicknameGiven{
+				client: "client",
 			},
 		},
 		{
@@ -123,6 +226,13 @@ func TestRPL(t *testing.T) {
 			input: errNicknameInUse{
 				client: "client",
 				nick:   "nickname",
+			},
+		},
+		{
+			want: "442 client #channel :You are not on that channel.",
+			input: errNotOnChannel{
+				client:  "client",
+				channel: "#channel",
 			},
 		},
 		{
@@ -145,10 +255,23 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
+			want: "474 client #channel :Cannot join channel (+z)",
+			input: errBannedFromChan{
+				client:  "client",
+				channel: "#channel",
+			},
+		},
+		{
 			want: "475 client #channel :Bad channel key (+k).",
 			input: errBadChannelKey{
 				client:  "client",
 				channel: "#channel",
+			},
+		},
+		{
+			want: "502 client :Can't change mode for other users.",
+			input: errUsersDontMatch{
+				client: "client",
 			},
 		},
 	}

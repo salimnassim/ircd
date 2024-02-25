@@ -48,9 +48,9 @@ func handleJoin(s *server, c clienter, m message) {
 
 		// if channel has +z, do not allow joining without tls
 		if ch.hasMode(modeChannelTLSOnly) && !c.tls() {
-			c.sendRPL(s.name, errNeedTLSJoin{
+			c.sendCommand(noticeCommand{
 				client:  c.nickname(),
-				channel: ch.name(),
+				message: "Cannot join channel (+z)",
 			})
 			return
 		}

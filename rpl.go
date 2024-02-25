@@ -486,27 +486,12 @@ func (r errAlreadyRegistered) format() string {
 
 // 474 ERR_BANNEDFROMCHAN
 // https://modern.ircdocs.horse/#errbannedfromchan-474
-// type errBannedFromChan struct {
-// 	client  string
-// 	channel string
-// }
-
-// func (r errBannedFromChan) format() string {
-// 	return fmt.Sprintf(
-// 		"474 %s %s :Cannot join channel (+b)",
-// 		r.client, r.channel,
-// 	)
-// }
-
-// 474 ERR_BANNEFROMCHAN
-// NOTE: Used for +z
-// https://modern.ircdocs.horse/#errbannedfromchan-474
-type errNeedTLSJoin struct {
+type errBannedFromChan struct {
 	client  string
 	channel string
 }
 
-func (r errNeedTLSJoin) format() string {
+func (r errBannedFromChan) format() string {
 	return fmt.Sprintf(
 		"474 %s %s :Cannot join channel (+z)",
 		r.client, r.channel,
@@ -535,7 +520,7 @@ type errUsersDontMatch struct {
 
 func (r errUsersDontMatch) format() string {
 	return fmt.Sprintf(
-		"502 %s: Can't change mode for other users.",
+		"502 %s :Can't change mode for other users.",
 		r.client,
 	)
 }
