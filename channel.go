@@ -1,7 +1,9 @@
 package ircd
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 )
@@ -193,6 +195,9 @@ func (ch *channel) modestring() string {
 			modes = append(modes, m)
 		}
 	}
+	slices.SortFunc[[]rune, rune](modes, func(a rune, b rune) int {
+		return cmp.Compare(a, b)
+	})
 	return fmt.Sprintf("+%s", string(modes))
 }
 
