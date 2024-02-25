@@ -12,15 +12,17 @@ var (
 		Name:      "clients",
 		Help:      "Number of connected clients",
 	})
-	Command = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "ircd",
-		Name:      "command",
-		Help:      "Numbers of commands received.",
-	}, []string{"name"})
 	// Number of existing channels.
 	Channels = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "ircd",
 		Name:      "channels",
 		Help:      "Number of existing channels",
 	})
+	// Number of commands received.
+	// This is a vector where the only label is 'name'.
+	Command = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "ircd",
+		Name:      "command",
+		Help:      "Number of commands received.",
+	}, []string{"name"})
 )
