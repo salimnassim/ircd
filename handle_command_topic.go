@@ -36,7 +36,7 @@ func handleTopic(s *server, c clienter, m message) {
 	channel.broadcastRPL(
 		rplTopic{
 			client:  c.nickname(),
-			channel: channel.name,
+			channel: channel.name(),
 			topic:   topic.text,
 		}, c.id(), false,
 	)

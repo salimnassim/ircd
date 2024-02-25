@@ -34,7 +34,7 @@ func handleMode(s *server, c clienter, m message) {
 		if modestring == "" {
 			c.sendRPL(s.name, rplChannelModeIs{
 				client:     c.nickname(),
-				channel:    ch.name,
+				channel:    ch.name(),
 				modestring: ch.modestring(),
 				modeargs:   "",
 			})

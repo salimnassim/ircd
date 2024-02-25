@@ -24,14 +24,14 @@ func handlePrivmsg(s *server, c clienter, m message) {
 			if !s.Channels.isMember(c, channel) {
 				c.sendRPL(s.name, errNotOnChannel{
 					client:  c.nickname(),
-					channel: channel.name,
+					channel: channel.name(),
 				})
 				continue
 			}
 
 			channel.broadcastCommand(privmsgCommand{
 				prefix: c.prefix(),
-				target: channel.name,
+				target: channel.name(),
 				text:   text,
 			}, c.id(), true)
 			continue

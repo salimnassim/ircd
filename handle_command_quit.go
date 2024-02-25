@@ -13,7 +13,7 @@ func handleQuit(s *server, c clienter, m message) {
 	for _, ch := range s.Channels.memberOf(c) {
 		ch.broadcastCommand(partCommand{
 			prefix:  c.prefix(),
-			channel: ch.name,
+			channel: ch.name(),
 			text:    reason,
 		}, c.id(), false)
 	}

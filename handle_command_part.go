@@ -39,12 +39,12 @@ func handlePart(s *server, c clienter, m message) {
 		// broadcast that user has left the channel
 		ch.broadcastCommand(partCommand{
 			prefix:  c.prefix(),
-			channel: ch.name,
+			channel: ch.name(),
 			text:    reason,
 		}, c.id(), false)
 
-		if ch.clients.count() == 0 {
-			s.Channels.delete(ch.name)
+		if ch.clients().count() == 0 {
+			s.Channels.delete(ch.name())
 			metrics.Channels.Dec()
 		}
 	}

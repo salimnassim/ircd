@@ -6,15 +6,50 @@ import (
 	"time"
 )
 
+type channeler interface {
+	name() string
+	owner() clientID
+
+	clients() ChannelClientStorer
+
+	password() string
+	setPassword(password string)
+
+	secret() bool
+	setSecret(secret bool)
+
+	topic() *topic
+	setTopic(text string, author string)
+
+	addClient(c clienter, password string) error
+	removeClient(c clienter)
+
+	names() []string
+
+	broadcastRPL(rpl rpl, sourceID clientID, skip bool)
+	broadcastCommand(cmd command, sourceID clientID, skip bool)
+
+	modestring() string
+	addMode(mode channelMode)
+	removeMode(mode channelMode)
+	hasMode(mode channelMode) bool
+}
+
 type channel struct {
-	mu       *sync.RWMutex
-	name     string
-	t        *topic
-	clients  ChannelClientStorer
-	modes    channelMode
-	owner    clientID
-	password string
-	secret   bool
+	mu *sync.RWMutex
+	// Channel name.
+	n string
+	// Channel topic.
+	t *topic
+	// Channel clients.
+	cs    ChannelClientStorer
+	modes channelMode
+	// Channel owner.
+	o clientID
+	// Channel password.
+	p string
+	// Is channel secret?
+	s bool
 }
 
 type topic struct {
@@ -25,21 +60,61 @@ type topic struct {
 
 func newChannel(channelName string, owner clientID) *channel {
 	channel := &channel{
-		mu:   &sync.RWMutex{},
-		name: channelName,
+		mu: &sync.RWMutex{},
+		n:  channelName,
 		t: &topic{
 			text:      "",
 			timestamp: 0,
 			author:    "",
 		},
-		clients:  newChannelClientStore(),
-		modes:    0,
-		owner:    owner,
-		password: "",
-		secret:   false,
+		cs:    newChannelClientStore(),
+		modes: 0,
+		o:     owner,
+		p:     "",
+		s:     false,
 	}
 
 	return channel
+}
+
+func (ch *channel) name() string {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.n
+}
+
+func (ch *channel) clients() ChannelClientStorer {
+	return ch.cs
+}
+
+func (ch *channel) password() string {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.p
+}
+
+func (ch *channel) setPassword(password string) {
+	ch.mu.Lock()
+	ch.p = password
+	ch.mu.Unlock()
+}
+
+func (ch *channel) secret() bool {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.s
+}
+
+func (ch *channel) setSecret(secret bool) {
+	ch.mu.Lock()
+	ch.s = secret
+	ch.mu.Unlock()
+}
+
+func (ch *channel) owner() clientID {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.o
 }
 
 // Sets channel topic.
@@ -60,26 +135,26 @@ func (ch *channel) topic() *topic {
 
 // Adds client to channel. If password does not match, an error is returned.
 func (ch *channel) addClient(c clienter, password string) error {
-	if password != "" && ch.password != password {
+	if password != "" && ch.p != password {
 		return errorBadChannelKey
 	}
 
-	ch.clients.add(c)
+	ch.cs.add(c)
 
 	return nil
 }
 
 // Remove client from channel.
 func (ch *channel) removeClient(c clienter) {
-	ch.clients.delete(c.id())
+	ch.cs.delete(c.id())
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY.
 func (ch *channel) names() []string {
 	var names []string
 
-	for _, c := range ch.clients.all() {
-		if ch.owner == c.id() {
+	for _, c := range ch.cs.all() {
+		if ch.o == c.id() {
 			names = append(names, fmt.Sprintf("@%s", c.nickname()))
 		} else {
 			names = append(names, c.nickname())
@@ -92,7 +167,7 @@ func (ch *channel) names() []string {
 // Send RPL to all clients on the channel.
 // If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
-	for _, c := range ch.clients.all() {
+	for _, c := range ch.cs.all() {
 		if c.id() == sourceID && skip {
 			continue
 		}
@@ -103,7 +178,7 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 // Send command to all clients on the channel.
 // If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastCommand(cmd command, sourceID clientID, skip bool) {
-	for _, c := range ch.clients.all() {
+	for _, c := range ch.cs.all() {
 		if c.id() == sourceID && skip {
 			continue
 		}

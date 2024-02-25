@@ -15,14 +15,14 @@ import (
 func handleConnection(conn net.Conn, s *server) {
 	id := uuid.Must(uuid.NewRandom()).String()
 	c, err := newClient(conn, id)
-
-	defer conn.Close()
-	defer s.removeClient(c)
-
 	if err != nil {
 		log.Error().Err(err).Msg("unable to create client")
 		return
 	}
+
+	defer conn.Close()
+	defer s.removeClient(c)
+	defer metrics.Clients.Dec()
 
 	// add client to store
 	s.Clients.add(c)
@@ -61,8 +61,8 @@ func handleConnection(conn net.Conn, s *server) {
 				for _, ch := range s.Channels.memberOf(c) {
 					ch.broadcastCommand(partCommand{
 						prefix:  c.prefix(),
-						channel: ch.name,
-						text:    fmt.Sprintf("Quit: %s", e),
+						channel: ch.name(),
+						text:    fmt.Sprintf("Quit: %s.", e),
 					}, c.clientID, true)
 				}
 			}
@@ -73,8 +73,8 @@ func handleConnection(conn net.Conn, s *server) {
 			for _, ch := range s.Channels.memberOf(c) {
 				ch.broadcastCommand(partCommand{
 					prefix:  c.prefix(),
-					channel: ch.name,
-					text:    fmt.Sprintf("Quit: Timeout after %d seconds", s.pongMaxLatency),
+					channel: ch.name(),
+					text:    fmt.Sprintf("Quit: Timeout after %d seconds.", s.pongMaxLatency),
 				}, c.clientID, true)
 			}
 			return
