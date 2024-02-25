@@ -197,7 +197,6 @@ func (c *client) username() string {
 func (c *client) realname() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-
 	return c.real
 }
 
@@ -211,7 +210,6 @@ func (c *client) setUser(username string, realname string) {
 func (c *client) hostname() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-
 	return c.host
 }
 
@@ -260,7 +258,6 @@ func (c *client) setHandshake(handshake bool) {
 func (c *client) prefix() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-
 	return fmt.Sprintf("%s!%s@%s", c.nick, c.user, c.host)
 }
 
