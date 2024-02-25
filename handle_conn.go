@@ -22,7 +22,6 @@ func handleConnection(conn net.Conn, s *server) {
 
 	defer conn.Close()
 	defer s.removeClient(c)
-	defer metrics.Clients.Dec()
 
 	// add client to store
 	s.Clients.add(c)
@@ -34,6 +33,10 @@ func handleConnection(conn net.Conn, s *server) {
 
 	// read input from client
 	go func() {
+		defer func() {
+			c.stop <- "Broken pipe."
+		}()
+
 		scanner := bufio.NewScanner(c.reader)
 		for scanner.Scan() {
 			if scanner.Err() != nil {
@@ -66,6 +69,7 @@ func handleConnection(conn net.Conn, s *server) {
 					}, c.clientID, true)
 				}
 			}
+			metrics.Clients.Dec()
 			return
 		case <-c.gotPong:
 			timer = nil

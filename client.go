@@ -45,11 +45,6 @@ type clienter interface {
 	// Set client away message.
 	setAway(text string)
 
-	// Is client an operator?
-	op() bool
-	// Set client operator status.
-	setOp(op bool)
-
 	// Get user handshake status.
 	handshake() bool
 	// Set user handshake status.
@@ -248,18 +243,6 @@ func (c *client) away() string {
 func (c *client) setAway(text string) {
 	c.mu.Lock()
 	c.afk = text
-	c.mu.Unlock()
-}
-
-func (c *client) op() bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.o
-}
-
-func (c *client) setOp(op bool) {
-	c.mu.Lock()
-	c.o = op
 	c.mu.Unlock()
 }
 
