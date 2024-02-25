@@ -8,24 +8,24 @@ type ClientStorer interface {
 	// Number of clients in store.
 	count() (visible int, invisible int)
 	// add client to store.
-	add(id clientID, c *client)
+	add(c clienter)
 	// Remove client from store.
 	delete(id clientID)
-	// get client from store by nickname.
-	get(nickname string) (c *client, exists bool)
+	// Get client from store by nickname.
+	get(nickname string) (c clienter, exists bool)
 }
 
 type clientStore struct {
 	mu      *sync.RWMutex
 	id      string
-	clients map[clientID]*client
+	clients map[clientID]clienter
 }
 
 func NewClientStore(id string) *clientStore {
 	return &clientStore{
 		mu:      &sync.RWMutex{},
 		id:      id,
-		clients: make(map[clientID]*client),
+		clients: make(map[clientID]clienter),
 	}
 }
 
@@ -45,8 +45,8 @@ func (s *clientStore) count() (visible int, invisible int) {
 }
 
 // get client from store by nickname.
-func (s *clientStore) get(nickname string) (*client, bool) {
-	var client *client
+func (s *clientStore) get(nickname string) (clienter, bool) {
+	var client clienter
 
 	s.mu.RLock()
 	for _, c := range s.clients {
@@ -65,9 +65,9 @@ func (s *clientStore) get(nickname string) (*client, bool) {
 }
 
 // add client to store.
-func (s *clientStore) add(id clientID, c *client) {
+func (s *clientStore) add(c clienter) {
 	s.mu.Lock()
-	s.clients[id] = c
+	s.clients[c.id()] = c
 	s.mu.Unlock()
 }
 

@@ -4,17 +4,18 @@ import (
 	"sync"
 )
 
-var nilHandler handlerFunc = func(s *server, c *client, m message) {}
+var nilHandler handlerFunc = func(s *server, c clienter, m message) {}
 
-type handlerFunc func(s *server, c *client, m message)
-type middlewareFunc func(s *server, c *client, m message, next handlerFunc) handlerFunc
+type handlerFunc func(s *server, c clienter, m message)
+type middlewareFunc func(s *server, c clienter, m message, next handlerFunc) handlerFunc
 
 type router interface {
 	// Register cmd route, assign optional middleware.
 	registerHandler(cmd string, h handlerFunc, mws ...middlewareFunc)
+	// Register a global middleware.
 	registerGlobalMiddleware(mw middlewareFunc)
 	// Execute handler.
-	handle(s *server, c *client, m message) error
+	handle(s *server, c clienter, m message) error
 }
 
 type commandRouter struct {
@@ -49,7 +50,7 @@ func (cr *commandRouter) registerHandler(cmd string, h handlerFunc, mws ...middl
 	cr.middleware[cmd] = mws
 }
 
-func (cr *commandRouter) handle(s *server, c *client, m message) error {
+func (cr *commandRouter) handle(s *server, c clienter, m message) error {
 	cr.mu.RLock()
 	h, ok := cr.handlers[m.command]
 	if !ok {
@@ -62,7 +63,7 @@ func (cr *commandRouter) handle(s *server, c *client, m message) error {
 	return nil
 }
 
-func (cr *commandRouter) wrap(s *server, c *client, m message, handler handlerFunc, middleware []middlewareFunc) handlerFunc {
+func (cr *commandRouter) wrap(s *server, c clienter, m message, handler handlerFunc, middleware []middlewareFunc) handlerFunc {
 	if handler == nil {
 		return nil
 	}

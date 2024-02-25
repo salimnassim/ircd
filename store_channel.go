@@ -6,27 +6,27 @@ type ChannelStorer interface {
 	// Number of channels in store.
 	count() int
 	// add channel to store. ID is most likely channel name.
-	add(name string, ch *channel)
+	add(name string, ch channeler)
 	delete(name string)
 	// Check if client is a member of channel.
-	isMember(c *client, ch *channel) (ok bool)
+	isMember(c clienter, ch channeler) (ok bool)
 	// get channel by name.
-	get(name string) (ch *channel, exists bool)
+	get(name string) (ch channeler, exists bool)
 	// Get which channels a client belongs to.
-	memberOf(c *client) (chs []*channel)
+	memberOf(c clienter) (chs []channeler)
 }
 
 type channelStore struct {
 	mu       *sync.RWMutex
 	id       string
-	channels map[string]*channel
+	channels map[string]channeler
 }
 
 func NewChannelStore(id string) *channelStore {
 	return &channelStore{
 		mu:       &sync.RWMutex{},
 		id:       id,
-		channels: make(map[string]*channel),
+		channels: make(map[string]channeler),
 	}
 }
 
@@ -39,7 +39,7 @@ func (s *channelStore) count() int {
 	return channels
 }
 
-func (s *channelStore) get(name string) (*channel, bool) {
+func (s *channelStore) get(name string) (channeler, bool) {
 	s.mu.RLock()
 	channel, exists := s.channels[name]
 	s.mu.RUnlock()
@@ -49,7 +49,7 @@ func (s *channelStore) get(name string) (*channel, bool) {
 	return channel, true
 }
 
-func (s *channelStore) add(name string, ch *channel) {
+func (s *channelStore) add(name string, ch channeler) {
 	s.mu.Lock()
 	s.channels[name] = ch
 	s.mu.Unlock()
@@ -61,16 +61,16 @@ func (s *channelStore) delete(name string) {
 	s.mu.Unlock()
 }
 
-func (s *channelStore) isMember(c *client, ch *channel) bool {
-	return ch.clients.isMember(c.id)
+func (s *channelStore) isMember(c clienter, ch channeler) bool {
+	return ch.clients().isMember(c.id())
 }
 
-func (s *channelStore) memberOf(c *client) []*channel {
-	channels := []*channel{}
+func (s *channelStore) memberOf(c clienter) []channeler {
+	channels := []channeler{}
 
 	s.mu.RLock()
 	for _, ch := range s.channels {
-		if ch.clients.isMember(clientID(c.id)) {
+		if ch.clients().isMember(c.id()) {
 			channels = append(channels, ch)
 		}
 	}

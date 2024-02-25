@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func handleTopic(s *server, c *client, m message) {
+func handleTopic(s *server, c clienter, m message) {
 	target := m.params[0]
 
 	if !m.isTargetChannel() {
@@ -27,7 +27,7 @@ func handleTopic(s *server, c *client, m message) {
 
 	// set topic
 	remainder := strings.Join(m.params[1:len(m.params)], " ")
-	channel.setTopic(remainder, c.nick)
+	channel.setTopic(remainder, c.nickname())
 
 	// get topic
 	topic := channel.topic()
@@ -36,8 +36,8 @@ func handleTopic(s *server, c *client, m message) {
 	channel.broadcastRPL(
 		rplTopic{
 			client:  c.nickname(),
-			channel: channel.name,
+			channel: channel.name(),
 			topic:   topic.text,
-		}, c.id, false,
+		}, c.id(), false,
 	)
 }

@@ -2,7 +2,7 @@ package ircd
 
 import "strings"
 
-func handleWho(s *server, c *client, m message) {
+func handleWho(s *server, c clienter, m message) {
 	if len(m.params) == 0 {
 		c.sendRPL(s.name, errNeedMoreParams{
 			client:  c.nickname(),
@@ -22,7 +22,7 @@ func handleWho(s *server, c *client, m message) {
 			return
 		}
 
-		for _, cl := range channel.clients.all() {
+		for _, cl := range channel.clients().all() {
 			flags := []string{}
 			if cl.away() == "" {
 				flags = append(flags, "H")
@@ -32,7 +32,7 @@ func handleWho(s *server, c *client, m message) {
 
 			c.sendRPL(s.name, rplWhoReply{
 				client:   c.nickname(),
-				channel:  channel.name,
+				channel:  channel.name(),
 				username: cl.username(),
 				host:     cl.hostname(),
 				server:   s.name,

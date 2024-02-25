@@ -21,11 +21,11 @@ func TestCommandAway(t *testing.T) {
 	go func() {
 		for {
 			select {
-			case <-c.pong:
+			case <-c.gotPong:
 				continue
 			case <-c.recv:
 				continue
-			case <-c.send:
+			case <-c.out:
 				continue
 			case <-c.stop:
 				return

@@ -15,17 +15,17 @@ import (
 func handleConnection(conn net.Conn, s *server) {
 	id := uuid.Must(uuid.NewRandom()).String()
 	c, err := newClient(conn, id)
-
-	defer conn.Close()
-	defer s.removeClient(c)
-
 	if err != nil {
 		log.Error().Err(err).Msg("unable to create client")
 		return
 	}
 
+	defer conn.Close()
+	defer s.removeClient(c)
+	defer metrics.Clients.Dec()
+
 	// add client to store
-	s.Clients.add(clientID(id), c)
+	s.Clients.add(c)
 	metrics.Clients.Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
@@ -61,21 +61,21 @@ func handleConnection(conn net.Conn, s *server) {
 				for _, ch := range s.Channels.memberOf(c) {
 					ch.broadcastCommand(partCommand{
 						prefix:  c.prefix(),
-						channel: ch.name,
-						text:    fmt.Sprintf("Quit: %s", e),
-					}, c.id, true)
+						channel: ch.name(),
+						text:    fmt.Sprintf("Quit: %s.", e),
+					}, c.clientID, true)
 				}
 			}
 			return
-		case <-c.pong:
+		case <-c.gotPong:
 			timer = nil
 		case <-timer:
 			for _, ch := range s.Channels.memberOf(c) {
 				ch.broadcastCommand(partCommand{
 					prefix:  c.prefix(),
-					channel: ch.name,
-					text:    fmt.Sprintf("Quit: Timeout after %d seconds", s.pongMaxLatency),
-				}, c.id, true)
+					channel: ch.name(),
+					text:    fmt.Sprintf("Quit: Timeout after %d seconds.", s.pongMaxLatency),
+				}, c.clientID, true)
 			}
 			return
 		case <-time.After(pingDuration):

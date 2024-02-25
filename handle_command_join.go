@@ -6,7 +6,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handleJoin(s *server, c *client, m message) {
+func handleJoin(s *server, c clienter, m message) {
 	// join can have multiple channels separated by a comma
 	targets := strings.Split(m.params[0], ",")
 	for _, target := range targets {
@@ -30,15 +30,15 @@ func handleJoin(s *server, c *client, m message) {
 		}
 
 		// ptr to existing ch or ch that will be created
-		var ch *channel
+		var ch channeler
 
 		ch, exists := s.Channels.get(target)
 		if !exists {
 			// create channel if it does not exist
-			ch = newChannel(target, c.id)
+			ch = newChannel(target, c.id())
 
 			// todo: use channel.id instead of target
-			s.Channels.add(ch.name, ch)
+			s.Channels.add(ch.name(), ch)
 
 			// set default channel modes
 			ch.addMode(modeChannelNoExternal)
@@ -47,10 +47,10 @@ func handleJoin(s *server, c *client, m message) {
 		}
 
 		// if channel has +z, do not allow joining without tls
-		if ch.hasMode(modeChannelTLSOnly) && !c.tls {
+		if ch.hasMode(modeChannelTLSOnly) && !c.tls() {
 			c.sendRPL(s.name, errNeedTLSJoin{
 				client:  c.nickname(),
-				channel: ch.name,
+				channel: ch.name(),
 			})
 			return
 		}
@@ -60,7 +60,7 @@ func handleJoin(s *server, c *client, m message) {
 		if err != nil {
 			c.sendRPL(s.name, errBadChannelKey{
 				client:  c.nickname(),
-				channel: ch.name,
+				channel: ch.name(),
 			})
 			continue
 		}
@@ -69,17 +69,17 @@ func handleJoin(s *server, c *client, m message) {
 		// that a client has joined
 		ch.broadcastCommand(joinCommand{
 			prefix:  c.prefix(),
-			channel: ch.name,
-		}, c.id, false)
+			channel: ch.name(),
+		}, c.id(), false)
 
 		// chanowner
-		if ch.owner == c.id {
+		if ch.owner() == c.id() {
 			ch.broadcastCommand(modeCommand{
 				source:     s.name,
-				target:     ch.name,
+				target:     ch.name(),
 				modestring: "+o",
 				args:       c.nickname(),
-			}, c.id, false)
+			}, c.id(), false)
 		}
 
 		topic := ch.topic()
@@ -87,20 +87,20 @@ func handleJoin(s *server, c *client, m message) {
 			// send no topic
 			c.sendRPL(s.name, rplNoTopic{
 				client:  c.nickname(),
-				channel: ch.name,
+				channel: ch.name(),
 			})
 		} else {
 			// send topic if not empty
 			c.sendRPL(s.name, rplTopic{
 				client:  c.nickname(),
-				channel: ch.name,
+				channel: ch.name(),
 				topic:   topic.text,
 			})
 
 			// send time and author
 			c.sendRPL(s.name, rplTopicWhoTime{
 				client:  c.nickname(),
-				channel: ch.name,
+				channel: ch.name(),
 				nick:    topic.author,
 				setat:   topic.timestamp,
 			})
@@ -114,13 +114,13 @@ func handleJoin(s *server, c *client, m message) {
 		c.sendRPL(s.name, rplNamReply{
 			client:  c.nickname(),
 			symbol:  symbol,
-			channel: ch.name,
+			channel: ch.name(),
 			nicks:   names,
 		})
 
 		c.sendRPL(s.name, rplEndOfNames{
 			client:  c.nickname(),
-			channel: ch.name,
+			channel: ch.name(),
 		})
 	}
 

@@ -1,6 +1,6 @@
 package ircd
 
-func handleUser(s *server, c *client, m message) {
+func handleUser(s *server, c clienter, m message) {
 	if len(m.params) < 4 {
 		c.sendRPL(s.name, errNeedMoreParams{
 			client: c.nickname(),
@@ -18,9 +18,9 @@ func handleUser(s *server, c *client, m message) {
 	username := m.params[0]
 	realname := m.params[3]
 
-	c.setUsername(username, realname)
+	c.setUser(username, realname)
 
-	if !c.handshake && c.nickname() != "" && c.username() != "" {
+	if !c.handshake() && c.nickname() != "" && c.username() != "" {
 		handleHandshake(s, c)
 	}
 }

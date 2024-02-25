@@ -1,6 +1,6 @@
 package ircd
 
-func handleNick(s *server, c *client, m message) {
+func handleNick(s *server, c clienter, m message) {
 	// nick params should be 1
 	if len(m.params) < 1 {
 		c.sendRPL(s.name, errNoNicknameGiven{
@@ -31,7 +31,7 @@ func handleNick(s *server, c *client, m message) {
 
 	c.setNickname(m.params[0])
 
-	if !c.handshake && c.nickname() != "" && c.username() != "" {
+	if !c.handshake() && c.nickname() != "" && c.username() != "" {
 		handleHandshake(s, c)
 	}
 }

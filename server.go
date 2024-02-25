@@ -10,6 +10,10 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
+type Server interface {
+	Run(listener net.Listener, isTLS bool)
+}
+
 type regexKey int
 
 const (
@@ -29,10 +33,6 @@ type ServerConfig struct {
 
 	PingFrequency  int
 	PongMaxLatency int
-}
-
-type Server interface {
-	Run(listener net.Listener, isTLS bool)
 }
 
 type server struct {
@@ -113,7 +113,7 @@ func compileRegexp(s *server) {
 
 func registerHandlers(s *server) {
 	router := NewCommandRouter(s)
-	router.registerGlobalMiddleware(func(s *server, c *client, m message, next handlerFunc) handlerFunc {
+	router.registerGlobalMiddleware(func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 		metrics.Command.WithLabelValues(m.command).Inc()
 		return next
 	})
@@ -155,18 +155,13 @@ func (s *server) Stats() (visible int, invisible, channels int) {
 }
 
 // Removes client from channels and client map.
-func (s *server) removeClient(c *client) error {
-	log.Info().Msgf("removing client '%s' from store.", c.id)
-
+func (s *server) removeClient(c clienter) {
 	memberOf := s.Channels.memberOf(c)
 	for _, ch := range memberOf {
 		ch.removeClient(c)
 	}
 
-	s.Clients.delete(clientID(c.id))
-	metrics.Clients.Dec()
-
-	return nil
+	s.Clients.delete(c.id())
 }
 
 func (s *server) MOTD() []string {

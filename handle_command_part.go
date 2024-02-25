@@ -6,7 +6,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-func handlePart(s *server, c *client, m message) {
+func handlePart(s *server, c clienter, m message) {
 	targets := strings.Split(m.params[0], ",")
 
 	reason := "no reason given"
@@ -39,12 +39,12 @@ func handlePart(s *server, c *client, m message) {
 		// broadcast that user has left the channel
 		ch.broadcastCommand(partCommand{
 			prefix:  c.prefix(),
-			channel: ch.name,
+			channel: ch.name(),
 			text:    reason,
-		}, c.id, false)
+		}, c.id(), false)
 
-		if ch.clients.count() == 0 {
-			s.Channels.delete(ch.name)
+		if ch.clients().count() == 0 {
+			s.Channels.delete(ch.name())
 			metrics.Channels.Dec()
 		}
 	}

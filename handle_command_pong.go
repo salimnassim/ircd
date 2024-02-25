@@ -1,5 +1,5 @@
 package ircd
 
-func handlePong(s *server, c *client, m message) {
-	c.pong <- true
+func handlePong(s *server, c clienter, m message) {
+	c.pong(true)
 }
