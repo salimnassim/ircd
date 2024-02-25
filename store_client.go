@@ -8,10 +8,10 @@ type ClientStorer interface {
 	// Number of clients in store.
 	count() (visible int, invisible int)
 	// add client to store.
-	add(id clientID, c clienter)
+	add(c clienter)
 	// Remove client from store.
 	delete(id clientID)
-	// get client from store by nickname.
+	// Get client from store by nickname.
 	get(nickname string) (c clienter, exists bool)
 }
 
@@ -65,9 +65,9 @@ func (s *clientStore) get(nickname string) (clienter, bool) {
 }
 
 // add client to store.
-func (s *clientStore) add(id clientID, c clienter) {
+func (s *clientStore) add(c clienter) {
 	s.mu.Lock()
-	s.clients[id] = c
+	s.clients[c.id()] = c
 	s.mu.Unlock()
 }
 

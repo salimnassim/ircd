@@ -25,7 +25,7 @@ func handleConnection(conn net.Conn, s *server) {
 	}
 
 	// add client to store
-	s.Clients.add(clientID(id), c)
+	s.Clients.add(c)
 	metrics.Clients.Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages

@@ -64,7 +64,7 @@ func (ch *channel) addClient(c clienter, password string) error {
 		return errorBadChannelKey
 	}
 
-	ch.clients.add(c.id(), c)
+	ch.clients.add(c)
 
 	return nil
 }

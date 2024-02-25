@@ -5,10 +5,15 @@ import (
 )
 
 type ChannelClientStorer interface {
+	// Number of clients on the channel.
 	count() int
-	add(ID clientID, c clienter)
+	// Add client to channel.
+	add(c clienter)
+	// Delete client from channel.
 	delete(ID clientID)
+	// Get all channel clients.
 	all() []clienter
+	// Is client member of the channel?
 	isMember(ID clientID) bool
 }
 
@@ -32,9 +37,9 @@ func (s *channelClientStore) count() int {
 	return clients
 }
 
-func (s *channelClientStore) add(ID clientID, c clienter) {
+func (s *channelClientStore) add(c clienter) {
 	s.mu.Lock()
-	s.clients[ID] = c
+	s.clients[c.id()] = c
 	s.mu.Unlock()
 }
 
