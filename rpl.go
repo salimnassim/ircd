@@ -538,6 +538,19 @@ func (r errBadChannelKey) format() string {
 	)
 }
 
+// 481 ERR_NOPRIVILEGES
+// https://modern.ircdocs.horse/#errnoprivileges-481
+type errNoPrivileges struct {
+	client string
+}
+
+func (r errNoPrivileges) format() string {
+	return fmt.Sprintf(
+		"481 %s :Permission Denied - You're not an IRC operator.",
+		r.client,
+	)
+}
+
 // 502 ERR_USERSDONTMATCH
 // https://modern.ircdocs.horse/#errusersdontmatch-502
 type errUsersDontMatch struct {
@@ -548,5 +561,19 @@ func (r errUsersDontMatch) format() string {
 	return fmt.Sprintf(
 		"502 %s :Can't change mode for other users.",
 		r.client,
+	)
+}
+
+// 723 ERR_NOPRIVS
+// https://modern.ircdocs.horse/#errnoprivs-723
+type errNoPrivs struct {
+	client string
+	priv   string
+}
+
+func (r errNoPrivs) format() string {
+	return fmt.Sprintf(
+		"723 %s %s :Insufficient oper privileges.",
+		r.client, r.priv,
 	)
 }

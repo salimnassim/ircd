@@ -134,6 +134,9 @@ func registerHandlers(s *server) {
 	router.registerHandler("AWAY", handleAway, middlewareNeedHandshake)
 	router.registerHandler("QUIT", handleQuit)
 	router.registerHandler("OPER", handleOper, middlewareNeedHandshake, middlewareNeedParams(2))
+	router.registerHandler("DEBUG", func(s *server, c clienter, m message) {
+		func() {}() // breakpoint here
+	}, middlewareNeedHandshake, middlewareNeedOper)
 
 	s.router = router
 }
