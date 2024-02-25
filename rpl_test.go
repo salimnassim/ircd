@@ -195,6 +195,12 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
+			want: "381 client :You are now an IRC operator.",
+			input: rplYoureOper{
+				client: "client",
+			},
+		},
+		{
 			want: "401 client nick :No such nickname.",
 			input: errNoSuchNick{
 				client: "client",
@@ -251,6 +257,12 @@ func TestRPL(t *testing.T) {
 		{
 			want: "462 client :You may not reregister.",
 			input: errAlreadyRegistered{
+				client: "client",
+			},
+		},
+		{
+			want: "464 client :Password incorrect.",
+			input: errPasswdMismatch{
 				client: "client",
 			},
 		},
