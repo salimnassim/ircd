@@ -1,14 +1,6 @@
 package ircd
 
 func handleNick(s *server, c clienter, m message) {
-	// nick params should be 1
-	if len(m.params) < 1 {
-		c.sendRPL(s.name, errNoNicknameGiven{
-			client: c.nickname(),
-		})
-		return
-	}
-
 	// validate nickname
 	ok := s.regex[regexNick].MatchString(m.params[0])
 	if !ok {

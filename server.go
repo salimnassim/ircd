@@ -121,19 +121,19 @@ func registerHandlers(s *server) {
 
 	router.registerHandler("PING", handlePing)
 	router.registerHandler("PONG", handlePong)
-	router.registerHandler("NICK", handleNick)
-	router.registerHandler("USER", handleUser)
+	router.registerHandler("NICK", handleNick, middlewareNeedParams(1))
+	router.registerHandler("USER", handleUser, middlewareNeedParams(4))
 	router.registerHandler("LUSERS", handleLusers, middlewareNeedHandshake)
-	router.registerHandler("JOIN", handleJoin, middlewareNeedHandshake)
-	router.registerHandler("PART", handlePart, middlewareNeedHandshake)
-	router.registerHandler("TOPIC", handleTopic, middlewareNeedHandshake)
-	router.registerHandler("PRIVMSG", handlePrivmsg, middlewareNeedHandshake)
-	router.registerHandler("WHOIS", handleWhois, middlewareNeedHandshake)
+	router.registerHandler("JOIN", handleJoin, middlewareNeedHandshake, middlewareNeedParams(1))
+	router.registerHandler("PART", handlePart, middlewareNeedHandshake, middlewareNeedParams(1))
+	router.registerHandler("TOPIC", handleTopic, middlewareNeedHandshake, middlewareNeedParams(1))
+	router.registerHandler("PRIVMSG", handlePrivmsg, middlewareNeedHandshake, middlewareNeedParams(1))
+	router.registerHandler("WHOIS", handleWhois, middlewareNeedHandshake, middlewareNeedParams(1))
 	router.registerHandler("WHO", handleWho, middlewareNeedHandshake)
-	router.registerHandler("MODE", handleMode, middlewareNeedHandshake)
+	router.registerHandler("MODE", handleMode, middlewareNeedHandshake, middlewareNeedParams(1))
 	router.registerHandler("AWAY", handleAway, middlewareNeedHandshake)
 	router.registerHandler("QUIT", handleQuit)
-	router.registerHandler("OPER", handleOper, middlewareNeedHandshake)
+	router.registerHandler("OPER", handleOper, middlewareNeedHandshake, middlewareNeedParams(2))
 
 	s.router = router
 }
