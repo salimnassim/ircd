@@ -12,7 +12,7 @@ type middlewareFunc func(s *server, c clienter, m message, next handlerFunc) han
 type router interface {
 	// Register cmd route, assign optional middleware.
 	registerHandler(cmd string, h handlerFunc, mws ...middlewareFunc)
-	// Register a global middleware.
+	// Register a global middleware. Middleware has return 'nil' to exit early.
 	registerGlobalMiddleware(mw middlewareFunc)
 	// Execute handler.
 	handle(s *server, c clienter, m message) error

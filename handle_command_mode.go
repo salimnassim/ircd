@@ -1,15 +1,6 @@
 package ircd
 
 func handleMode(s *server, c clienter, m message) {
-	// command needs target
-	if len(m.params) < 1 {
-		c.sendRPL(s.name, errNeedMoreParams{
-			client:  c.nickname(),
-			command: m.command,
-		})
-		return
-	}
-
 	target := m.params[0]
 
 	modestring := ""

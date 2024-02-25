@@ -1,14 +1,6 @@
 package ircd
 
 func handleOper(s *server, c clienter, m message) {
-	if len(m.params) < 2 {
-		c.sendRPL(s.name, errNeedMoreParams{
-			client:  c.nickname(),
-			command: m.command,
-		})
-		return
-	}
-
 	user := m.params[0]
 	password := m.params[1]
 
