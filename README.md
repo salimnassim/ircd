@@ -1,8 +1,8 @@
 # ircd
 
-Simple IRC server which implements a subset of RFC1459. 
+Somewhat complex IRC server which implements a subset of RFC1459.
 
-By default the server will run on port `6667` and prometheus metrics are exposed on port `2112`.
+By default the server will run on port `6667` and prometheus metrics are exposed on port `2112`. See `docker-compose.yml` for example environment variable configuration.
 
 ## Features
 
@@ -23,10 +23,12 @@ By default the server will run on port `6667` and prometheus metrics are exposed
 - [X] OPER (pertial, no commands)
 - [ ] LIST
 - [ ] INVITE
-- [ ] VERSION
+- [X] VERSION (partial, local server only)
 - [ ] ADMIN
 - [X] MODE (partial)
 - [X] AWAY
+- [ ] LINK
+- [ ] IRCv3
 
 ## Environment variables
 
@@ -60,6 +62,9 @@ openssl x509 -req -in server_reqout.txt -days 3650 -sha256 \
 3. Run with `SERVER_NAME=foo SERVER_VERSION=0.1 PORT=6667 ./dist/ircd`
 
 ### Docker
+
+Note: in order for clients to discover their IP address and get the real remote IP address, the server needs to run using the host network driver.
+If host networking is not enabled all clients will use the Docker gateway address which might lead to interesting situations. 
 
 1. Configure the environment variables in in `docker-compose.yml`.
 2. Run `docker compose up`.
