@@ -89,6 +89,12 @@ func handleHandshake(s *server, c clienter) {
 			client: c.nickname(),
 		})
 
+		// todo: get tokens from config state and actually enforce them
+		c.sendRPL(s.name, rplISupport{
+			client: c.nickname(),
+			tokens: "AWAYLEN=128 CASEMAPPING=ascii CHANLIMIT=#&:64 CHANNELLEN=50 CHANTYPES=#& ELIST=CUM HOSTLEN=128 KICKLEN=128 MODES=24 NICKLEN=31 PREFIX=(qaohv)~&@%+ TOPICLEN=307 USERLEN=18",
+		})
+
 		// set default modes
 		c.addMode(modeClientInvisible)
 		c.addMode(modeClientVhost)

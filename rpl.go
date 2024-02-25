@@ -39,6 +39,20 @@ func (r rplYourHost) format() string {
 	)
 }
 
+// 005 RPL_ISUPPORT
+// https://modern.ircdocs.horse/#rplisupport-005
+type rplISupport struct {
+	client string
+	tokens string
+}
+
+func (r rplISupport) format() string {
+	return fmt.Sprintf(
+		"005 %s %s :are supported by this server.",
+		r.client, r.tokens,
+	)
+}
+
 // 221 RPL_UMODEIS
 // https://modern.ircdocs.horse/#rplumodeis-221
 type rplUModeIs struct {
@@ -265,6 +279,22 @@ func (r rplTopicWhoTime) format() string {
 	)
 }
 
+// 351 RPL_VERSION
+// https://modern.ircdocs.horse/#rplversion-351
+type rplVersion struct {
+	client   string
+	version  string
+	server   string
+	comments string
+}
+
+func (r rplVersion) format() string {
+	return fmt.Sprintf(
+		"351 %s %s %s :%s",
+		r.client, r.version, r.server, r.comments,
+	)
+}
+
 // 352 RPL_WHOREPLY
 // https://modern.ircdocs.horse/#rplwhoreply-352
 type rplWhoReply struct {
@@ -385,6 +415,20 @@ func (r errNoSuchNick) format() string {
 	return fmt.Sprintf(
 		"401 %s %s :No such nickname.",
 		r.client, r.nick,
+	)
+}
+
+// 402 ERR_NOSUCHSERVER
+// https://modern.ircdocs.horse/#errnosuchserver-402
+type errNoSuchServer struct {
+	client string
+	server string
+}
+
+func (r errNoSuchServer) format() string {
+	return fmt.Sprintf(
+		"402 %s %s :No such server or user.",
+		r.client, r.server,
 	)
 }
 
