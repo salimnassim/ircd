@@ -10,6 +10,10 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
+type Server interface {
+	Run(listener net.Listener, isTLS bool)
+}
+
 type regexKey int
 
 const (
@@ -29,10 +33,6 @@ type ServerConfig struct {
 
 	PingFrequency  int
 	PongMaxLatency int
-}
-
-type Server interface {
-	Run(listener net.Listener, isTLS bool)
 }
 
 type server struct {
