@@ -36,15 +36,16 @@ type ServerConfig struct {
 }
 
 type server struct {
-	mu       *sync.RWMutex
-	router   router
-	name     string
-	network  string
-	version  string
-	Clients  ClientStorer
-	Channels ChannelStorer
-	motd     *[]string
-	ports    []string
+	mu        *sync.RWMutex
+	router    router
+	name      string
+	network   string
+	version   string
+	Clients   ClientStorer
+	Channels  ChannelStorer
+	Operators OperatorStorer
+	motd      *[]string
+	ports     []string
 
 	pingFrequency  int
 	pongMaxLatency int
@@ -61,6 +62,7 @@ func NewServer(config ServerConfig) *server {
 		version:        config.Version,
 		Clients:        NewClientStore("clients"),
 		Channels:       NewChannelStore("channels"),
+		Operators:      NewOperatorStore(),
 		motd:           &config.MOTD,
 		pingFrequency:  config.PingFrequency,
 		pongMaxLatency: config.PongMaxLatency,
@@ -69,7 +71,6 @@ func NewServer(config ServerConfig) *server {
 
 	compileRegexp(server)
 	registerHandlers(server)
-
 	return server
 }
 
@@ -132,6 +133,7 @@ func registerHandlers(s *server) {
 	router.registerHandler("MODE", handleMode, middlewareNeedHandshake)
 	router.registerHandler("AWAY", handleAway, middlewareNeedHandshake)
 	router.registerHandler("QUIT", handleQuit)
+	router.registerHandler("OPER", handleOper, middlewareNeedHandshake)
 
 	s.router = router
 }

@@ -361,6 +361,19 @@ func (r rplEndOfMotd) format() string {
 	)
 }
 
+// 381 RPL_YOUREOPER
+// https://modern.ircdocs.horse/#rplyoureoper-381
+type rplYoureOper struct {
+	client string
+}
+
+func (r rplYoureOper) format() string {
+	return fmt.Sprintf(
+		"381 %s :You are now an IRC operator.",
+		r.client,
+	)
+}
+
 // 401 ERR_NOSUCHNICK
 // https://modern.ircdocs.horse/#errnosuchnick-401
 type errNoSuchNick struct {
@@ -480,6 +493,19 @@ type errAlreadyRegistered struct {
 func (r errAlreadyRegistered) format() string {
 	return fmt.Sprintf(
 		"462 %s :You may not reregister.",
+		r.client,
+	)
+}
+
+// 464 RR_PASSWDMISMATCH
+// https://modern.ircdocs.horse/#errpasswdmismatch-464
+type errPasswdMismatch struct {
+	client string
+}
+
+func (r errPasswdMismatch) format() string {
+	return fmt.Sprintf(
+		"464 %s :Password incorrect.",
 		r.client,
 	)
 }
