@@ -99,7 +99,7 @@ func (s *server) Run(listener net.Listener, isTLS bool) {
 
 // Compiles expressions and caches them to a map.
 func compileRegexp(s *server) {
-	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\{\}\\\|]{2,16})`)
+	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\{\}\\\|]{2,31})`)
 	if err != nil {
 		log.Panic().Err(err).Msg("unable to compile nickname validation regex")
 	}
@@ -134,6 +134,7 @@ func registerHandlers(s *server) {
 	router.registerHandler("AWAY", handleAway, middlewareNeedHandshake)
 	router.registerHandler("QUIT", handleQuit)
 	router.registerHandler("OPER", handleOper, middlewareNeedHandshake, middlewareNeedParams(2))
+	router.registerHandler("VERSION", handleVersion, middlewareNeedHandshake)
 	router.registerHandler("DEBUG", func(s *server, c clienter, m message) {
 		func() {}() // breakpoint here
 	}, middlewareNeedHandshake, middlewareNeedOper)
