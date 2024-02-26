@@ -65,6 +65,8 @@ func handleMode(s *server, c clienter, m message) {
 				ch.addMode(a)
 			case modeChannelRestrictTopic:
 				ch.addMode(a)
+			case modeChannelInviteOnly:
+				ch.addMode(a)
 			}
 		}
 		for _, d := range del {
@@ -76,6 +78,8 @@ func handleMode(s *server, c clienter, m message) {
 			case modeChannelSecret:
 				ch.removeMode(d)
 			case modeChannelRestrictTopic:
+				ch.removeMode(d)
+			case modeChannelInviteOnly:
 				ch.removeMode(d)
 			}
 		}

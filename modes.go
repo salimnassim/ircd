@@ -25,7 +25,7 @@ const (
 type channelMode uint16
 
 var channelModeMap = map[rune]channelMode{
-	'i': modeChannelInvite,
+	'i': modeChannelInviteOnly,
 	'k': modeChannelKey,
 	'm': modeChannelModerated,
 	's': modeChannelSecret,
@@ -40,7 +40,7 @@ var channelModeMap = map[rune]channelMode{
 }
 
 const (
-	modeChannelInvite = channelMode(1) << iota
+	modeChannelInviteOnly = channelMode(1) << iota
 	modeChannelKey
 	modeChannelModerated
 	modeChannelSecret
