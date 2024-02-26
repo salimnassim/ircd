@@ -218,6 +218,49 @@ func (r rplWhoisSpecial) format() string {
 	)
 }
 
+// 321 RPL_LISTSTART
+// https://modern.ircdocs.horse/#rplliststart-321
+type rplListStart struct {
+	client string
+}
+
+func (r rplListStart) format() string {
+	return fmt.Sprintf(
+		"321 %s Channel :Users Name",
+		r.client,
+	)
+}
+
+// 322 RPL_LIST
+// https://modern.ircdocs.horse/#rpllist-322
+type rplList struct {
+	client  string
+	channel string
+	// Number of clients on server.
+	count int
+	topic string
+}
+
+func (r rplList) format() string {
+	return fmt.Sprintf(
+		"322 %s %s %d :%s",
+		r.client, r.channel, r.count, r.topic,
+	)
+}
+
+// 323 RPL_LISTEND
+// https://modern.ircdocs.horse/#rpllistend-323
+type rplListEnd struct {
+	client string
+}
+
+func (r rplListEnd) format() string {
+	return fmt.Sprintf(
+		"323 %s :End of /LIST",
+		r.client,
+	)
+}
+
 // 324 RPL_CHANNELMODEIS
 // https://modern.ircdocs.horse/#rplchannelmodeis-324
 type rplChannelModeIs struct {
