@@ -157,17 +157,17 @@ func (c *clientMock) sendCommand(command command) {
 }
 
 func (c *clientMock) recv(text string) {
-	return
+	c.messagesIn = append(c.messagesIn, text)
 }
 
 func (c *clientMock) send(text string) {
-	return
+	c.messagesOut = append(c.messagesOut, text)
 }
 
-func (c *clientMock) ping(pong bool) {
-	return
+func (c *clientMock) pong(pong bool) {
+
 }
 
 func (c *clientMock) kill(reason string) {
-	return
+
 }
