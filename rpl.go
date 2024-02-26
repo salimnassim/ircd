@@ -747,14 +747,14 @@ func (r errUsersDontMatch) rpl() string {
 // 723 ERR_NOPRIVS
 //
 // https://modern.ircdocs.horse/#errnoprivs-723
-type errNoPrivs struct {
-	client string
-	priv   string
-}
+// type errNoPrivs struct {
+// 	client string
+// 	priv   string
+// }
 
-func (r errNoPrivs) format() string {
-	return fmt.Sprintf(
-		"723 %s %s :Insufficient oper privileges.",
-		r.client, r.priv,
-	)
-}
+// func (r errNoPrivs) format() string {
+// 	return fmt.Sprintf(
+// 		"723 %s %s :Insufficient oper privileges.",
+// 		r.client, r.priv,
+// 	)
+// }
