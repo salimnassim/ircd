@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+type clientNickname string
+
 type clienter interface {
 	String() string
 

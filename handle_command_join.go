@@ -56,6 +56,18 @@ func handleJoin(s *server, c clienter, m message) {
 			return
 		}
 
+		// is channel invite only, and client does not have an invitation?
+		if ch.hasMode(modeChannelInviteOnly) && !ch.isInvited(c) {
+			c.sendRPL(s.name, errInviteOnlyChan{
+				client:  c.nickname(),
+				channel: ch.name(),
+			})
+			return
+		} else {
+			// remove from invite map if invite is accepted
+			ch.removeInvite(c.id())
+		}
+
 		// add client to channel
 		err := ch.addClient(c, "")
 		if err != nil {

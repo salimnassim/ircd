@@ -129,3 +129,16 @@ func (cmd kickCommand) command() string {
 		cmd.prefix, cmd.channel, cmd.target, cmd.reason,
 	)
 }
+
+type inviteCommand struct {
+	prefix  string
+	target  string
+	channel string
+}
+
+func (cmd inviteCommand) command() string {
+	return fmt.Sprintf(
+		":%s INVITE %s %s",
+		cmd.prefix, cmd.target, cmd.channel,
+	)
+}

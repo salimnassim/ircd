@@ -344,6 +344,22 @@ func (r rplTopicWhoTime) rpl() string {
 	)
 }
 
+// 341 RPL_INVITING
+//
+// https://modern.ircdocs.horse/#rplinviting-341
+type rplInviting struct {
+	client  string
+	nick    string
+	channel string
+}
+
+func (r rplInviting) rpl() string {
+	return fmt.Sprintf(
+		"341 %s %s %s",
+		r.client, r.nick, r.channel,
+	)
+}
+
 // 351 RPL_VERSION
 //
 // https://modern.ircdocs.horse/#rplversion-351
@@ -614,6 +630,22 @@ func (r errNotOnChannel) rpl() string {
 	)
 }
 
+// 443 ERR_USERONCHANNEL
+//
+// https://modern.ircdocs.horse/#erruseronchannel-443
+type errUserOnChannel struct {
+	client  string
+	nick    string
+	channel string
+}
+
+func (r errUserOnChannel) rpl() string {
+	return fmt.Sprintf(
+		"443 %s %s %s :is already on channel.",
+		r.client, r.nick, r.channel,
+	)
+}
+
 // 451 ERR_NOTREGISTERED
 //
 // https://modern.ircdocs.horse/#errnotregistered-451
@@ -668,6 +700,21 @@ func (r errPasswdMismatch) rpl() string {
 	return fmt.Sprintf(
 		"464 %s :Password incorrect.",
 		r.client,
+	)
+}
+
+// 473 ERR_INVITEONLYCHAN
+//
+// https://modern.ircdocs.horse/#errinviteonlychan-473
+type errInviteOnlyChan struct {
+	client  string
+	channel string
+}
+
+func (r errInviteOnlyChan) rpl() string {
+	return fmt.Sprintf(
+		"473 %s %s :Cannot join channel (+i)",
+		r.client, r.channel,
 	)
 }
 
