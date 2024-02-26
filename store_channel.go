@@ -14,6 +14,8 @@ type ChannelStorer interface {
 	get(name string) (ch channeler, exists bool)
 	// Get which channels a client belongs to.
 	memberOf(c clienter) (chs []channeler)
+	// Get all channels.
+	all() []channeler
 }
 
 type channelStore struct {
@@ -73,6 +75,18 @@ func (s *channelStore) memberOf(c clienter) []channeler {
 		if ch.clients().isMember(c.id()) {
 			channels = append(channels, ch)
 		}
+	}
+	s.mu.RUnlock()
+
+	return channels
+}
+
+func (s *channelStore) all() []channeler {
+	channels := []channeler{}
+
+	s.mu.RLock()
+	for _, ch := range s.channels {
+		channels = append(channels, ch)
 	}
 	s.mu.RUnlock()
 
