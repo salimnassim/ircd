@@ -43,7 +43,6 @@ func matchMask(mask []byte, input string) bool {
 			return false
 		default:
 			if mask[i] != input[i] {
-				// Characters don't match.
 				return false
 			}
 		}

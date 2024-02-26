@@ -12,7 +12,7 @@ type channeler interface {
 	name() string
 	owner() clientID
 
-	clients() ChannelClientStorer
+	clients() channelClientStorer
 	count() int
 
 	password() string
@@ -23,6 +23,13 @@ type channeler interface {
 
 	topic() *topic
 	setTopic(text string, author string)
+
+	// Does prefix match any of the ban masks?
+	banned(c clienter) bool
+	// Add ban mask.
+	addBan(mask banMask) error
+	// Remove ban mask.
+	removeBan(mask banMask) error
 
 	addClient(c clienter, password string) error
 	removeClient(c clienter)
@@ -38,6 +45,8 @@ type channeler interface {
 	hasMode(mode channelMode) bool
 }
 
+type banMask string
+
 type channel struct {
 	mu *sync.RWMutex
 	// Channel name.
@@ -45,8 +54,9 @@ type channel struct {
 	// Channel topic.
 	t *topic
 	// Channel clients.
-	cs    ChannelClientStorer
+	cs    channelClientStorer
 	modes channelMode
+	bans  map[banMask]bool
 	// Channel owner.
 	o clientID
 	// Channel password.
@@ -86,7 +96,7 @@ func (ch *channel) name() string {
 	return ch.n
 }
 
-func (ch *channel) clients() ChannelClientStorer {
+func (ch *channel) clients() channelClientStorer {
 	return ch.cs
 }
 
@@ -133,6 +143,44 @@ func (ch *channel) setTopic(text string, author string) {
 	ch.t.timestamp = int(time.Now().Unix())
 	ch.t.author = author
 	ch.mu.Unlock()
+}
+
+func (ch *channel) banned(c clienter) bool {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+
+	for mask, _ := range ch.bans {
+		if matchMask([]byte(mask), c.hostname()) {
+			return true
+		}
+	}
+	return false
+}
+
+func (ch *channel) addBan(mask banMask) error {
+	ch.mu.RLock()
+	_, ok := ch.bans[mask]
+	ch.mu.RUnlock()
+	if ok {
+		return errorBanMaskAlreadyExists
+	}
+	ch.mu.Lock()
+	ch.bans[mask] = true
+	ch.mu.Unlock()
+	return nil
+}
+
+func (ch *channel) removeBan(mask banMask) error {
+	ch.mu.RLock()
+	_, ok := ch.bans[mask]
+	ch.mu.RUnlock()
+	if !ok {
+		return errorBanMaskDoesNotExist
+	}
+	ch.mu.Lock()
+	delete(ch.bans, mask)
+	ch.mu.Unlock()
+	return nil
 }
 
 // Returns current topic.

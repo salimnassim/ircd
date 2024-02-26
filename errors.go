@@ -19,3 +19,8 @@ var (
 var (
 	errorBadMaskCharadcter = errors.New("bad mask character")
 )
+
+var (
+	errorBanMaskDoesNotExist  = errors.New("ban mask does not exist")
+	errorBanMaskAlreadyExists = errors.New("ban mask is already defined")
+)
