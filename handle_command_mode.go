@@ -32,6 +32,26 @@ func handleMode(s *server, c clienter, m message) {
 			return
 		}
 
+		// client must be a member of the channel
+		if !ch.clients().isMember(c) {
+			c.sendRPL(s.name, errNotOnChannel{
+				client:  c.nickname(),
+				channel: ch.name(),
+			})
+			return
+		}
+
+		// client has to be hop or higher
+		if !ch.clients().hasMode(c, modeHalfOperator, modeOperator, modeAdmin, modeOwner) {
+			c.sendRPL(s.name, errChanoPrivsNeeded{
+				client:  c.nickname(),
+				channel: ch.name(),
+			})
+			return
+		}
+
+		before := ch.mode()
+		// parse modestring
 		add, del := parseModestring[channelMode](modestring, channelModeMap)
 		for _, a := range add {
 			switch a {
@@ -49,10 +69,35 @@ func handleMode(s *server, c clienter, m message) {
 				ch.removeMode(d)
 			}
 		}
+		after := ch.mode()
+
+		plus := []rune{'+'}
+		minus := []rune{'-'}
+		// refactor this o-no bueno
+		da, dd := diffModes[channelMode](before, after, channelModeMap)
+		for _, m := range da {
+			for r, mm := range channelModeMap {
+				if m == mm {
+					plus = append(plus, r)
+				}
+			}
+		}
+		for _, m := range dd {
+			for r, mm := range channelModeMap {
+				if m == mm {
+					minus = append(minus, r)
+				}
+			}
+		}
+
+		c.sendRPL(s.name, rplChannelModeIs{
+			client:     c.nickname(),
+			channel:    ch.name(),
+			modestring: ch.modestring(),
+			modeargs:   "",
+		})
 		return
 	}
-
-	// is user
 
 	// target has to be client
 	if target != c.nickname() {
