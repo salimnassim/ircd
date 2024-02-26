@@ -15,3 +15,7 @@ var (
 var (
 	errorCommandNotFound = errors.New("unknown command")
 )
+
+var (
+	errorBadMaskCharadcter = errors.New("bad mask character")
+)
