@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type ChannelClientStorer interface {
+type channelClientStorer interface {
 	// Number of clients on the channel.
 	count() int
 	// Add client to channel.
