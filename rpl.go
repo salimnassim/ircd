@@ -6,10 +6,11 @@ import (
 )
 
 type rpl interface {
-	format() string
+	rpl() string
 }
 
 // 001 RPL_WELCOME
+//
 // https://modern.ircdocs.horse/#rplwelcome-001
 type rplWelcome struct {
 	client   string
@@ -17,7 +18,7 @@ type rplWelcome struct {
 	hostname string
 }
 
-func (r rplWelcome) format() string {
+func (r rplWelcome) rpl() string {
 	return fmt.Sprintf(
 		"001 %s :Welcome to the %s Network, %s",
 		r.client, r.network, r.hostname,
@@ -25,6 +26,7 @@ func (r rplWelcome) format() string {
 }
 
 // 002 RPL_YOURHOST
+//
 // https://modern.ircdocs.horse/#rplyourhost-002
 type rplYourHost struct {
 	client     string
@@ -32,7 +34,7 @@ type rplYourHost struct {
 	version    string
 }
 
-func (r rplYourHost) format() string {
+func (r rplYourHost) rpl() string {
 	return fmt.Sprintf(
 		"002 %s :Your host is %s, running version %s",
 		r.client, r.serverName, r.version,
@@ -40,13 +42,14 @@ func (r rplYourHost) format() string {
 }
 
 // 005 RPL_ISUPPORT
+//
 // https://modern.ircdocs.horse/#rplisupport-005
 type rplISupport struct {
 	client string
 	tokens string
 }
 
-func (r rplISupport) format() string {
+func (r rplISupport) rpl() string {
 	return fmt.Sprintf(
 		"005 %s %s :are supported by this server.",
 		r.client, r.tokens,
@@ -54,13 +57,14 @@ func (r rplISupport) format() string {
 }
 
 // 221 RPL_UMODEIS
+//
 // https://modern.ircdocs.horse/#rplumodeis-221
 type rplUModeIs struct {
 	client     string
 	modestring string
 }
 
-func (r rplUModeIs) format() string {
+func (r rplUModeIs) rpl() string {
 	return fmt.Sprintf(
 		"221 %s %s",
 		r.client, r.modestring,
@@ -68,6 +72,7 @@ func (r rplUModeIs) format() string {
 }
 
 // 251 RPL_LUSERCLIENT.
+//
 // https://modern.ircdocs.horse/#rplluserclient-251
 type rplLuserClient struct {
 	client string
@@ -79,7 +84,7 @@ type rplLuserClient struct {
 	servers int
 }
 
-func (r rplLuserClient) format() string {
+func (r rplLuserClient) rpl() string {
 	return fmt.Sprintf(
 		"251 %s :There are %d users (%d invisible) on %d servers",
 		r.client, r.users, r.invisible, r.servers,
@@ -87,6 +92,7 @@ func (r rplLuserClient) format() string {
 }
 
 // 252 RPL_LUSEROP
+//
 // https://modern.ircdocs.horse/#rplluserop-252
 type rplLuserOp struct {
 	client string
@@ -94,7 +100,7 @@ type rplLuserOp struct {
 	ops int
 }
 
-func (r rplLuserOp) format() string {
+func (r rplLuserOp) rpl() string {
 	return fmt.Sprintf(
 		"252 %s %d :operator(s) online",
 		r.client, r.ops,
@@ -102,6 +108,7 @@ func (r rplLuserOp) format() string {
 }
 
 // 254 RPL_LUSERCHANNELS
+//
 // https://modern.ircdocs.horse/#rplluserchannels-254
 type rplLuserChannels struct {
 	client string
@@ -109,7 +116,7 @@ type rplLuserChannels struct {
 	channels int
 }
 
-func (r rplLuserChannels) format() string {
+func (r rplLuserChannels) rpl() string {
 	return fmt.Sprintf(
 		"254 %s %d :channels formed.",
 		r.client, r.channels,
@@ -117,6 +124,7 @@ func (r rplLuserChannels) format() string {
 }
 
 // 301 RPL_AWAY
+//
 // https://modern.ircdocs.horse/#rplaway-301
 type rplAway struct {
 	client  string
@@ -124,7 +132,7 @@ type rplAway struct {
 	message string
 }
 
-func (r rplAway) format() string {
+func (r rplAway) rpl() string {
 	return fmt.Sprintf(
 		"301 %s %s :%s",
 		r.client, r.nick, r.message,
@@ -132,12 +140,13 @@ func (r rplAway) format() string {
 }
 
 // 305 RPL_UNAWAY
+//
 // https://modern.ircdocs.horse/#rplunaway-305
 type rplUnAway struct {
 	client string
 }
 
-func (r rplUnAway) format() string {
+func (r rplUnAway) rpl() string {
 	return fmt.Sprintf(
 		"305 %s :You are no longer marked as being away.",
 		r.client,
@@ -145,12 +154,13 @@ func (r rplUnAway) format() string {
 }
 
 // 306 RPL_NOWAWAY
-// You are no longer marked as being away
+//
+// https://modern.ircdocs.horse/#rplnowaway-306
 type rplNowAway struct {
 	client string
 }
 
-func (r rplNowAway) format() string {
+func (r rplNowAway) rpl() string {
 	return fmt.Sprintf(
 		"306 %s :You have been marked as being away.",
 		r.client,
@@ -158,6 +168,7 @@ func (r rplNowAway) format() string {
 }
 
 // 311 RPL_WHOISUSER
+//
 // https://modern.ircdocs.horse/#rplwhoisuser-311
 type rplWhoisUser struct {
 	client   string
@@ -167,7 +178,7 @@ type rplWhoisUser struct {
 	realname string
 }
 
-func (r rplWhoisUser) format() string {
+func (r rplWhoisUser) rpl() string {
 	return fmt.Sprintf(
 		"311 %s %s %s %s * :%s",
 		r.client, r.nick, r.username, r.host, r.realname,
@@ -175,13 +186,14 @@ func (r rplWhoisUser) format() string {
 }
 
 // 315 RPL_ENDOFWHO
+//
 // https://modern.ircdocs.horse/#rplendofwho-315
 type rplEndOfWho struct {
 	client string
 	mask   string
 }
 
-func (r rplEndOfWho) format() string {
+func (r rplEndOfWho) rpl() string {
 	return fmt.Sprintf(
 		"315 %s %s :End of WHO list.",
 		r.client, r.mask,
@@ -189,6 +201,7 @@ func (r rplEndOfWho) format() string {
 }
 
 // 319 RPL_WHOISCHANNELS
+//
 // https://modern.ircdocs.horse/#rplwhoischannels-319
 type rplWhoisChannels struct {
 	client   string
@@ -196,7 +209,7 @@ type rplWhoisChannels struct {
 	channels []string
 }
 
-func (r rplWhoisChannels) format() string {
+func (r rplWhoisChannels) rpl() string {
 	channels := strings.Join(r.channels, " ")
 	return fmt.Sprintf(
 		"319 %s %s :%s",
@@ -205,13 +218,15 @@ func (r rplWhoisChannels) format() string {
 }
 
 // 320 RPL_WHOISSPECIAL
+//
+// https://modern.ircdocs.horse/#rplwhoisspecial-320
 type rplWhoisSpecial struct {
 	client string
 	nick   string
 	text   string
 }
 
-func (r rplWhoisSpecial) format() string {
+func (r rplWhoisSpecial) rpl() string {
 	return fmt.Sprintf(
 		"320 %s %s :%s",
 		r.client, r.nick, r.text,
@@ -219,12 +234,13 @@ func (r rplWhoisSpecial) format() string {
 }
 
 // 321 RPL_LISTSTART
+//
 // https://modern.ircdocs.horse/#rplliststart-321
 type rplListStart struct {
 	client string
 }
 
-func (r rplListStart) format() string {
+func (r rplListStart) rpl() string {
 	return fmt.Sprintf(
 		"321 %s Channel :Users Name",
 		r.client,
@@ -232,6 +248,7 @@ func (r rplListStart) format() string {
 }
 
 // 322 RPL_LIST
+//
 // https://modern.ircdocs.horse/#rpllist-322
 type rplList struct {
 	client  string
@@ -241,7 +258,7 @@ type rplList struct {
 	topic string
 }
 
-func (r rplList) format() string {
+func (r rplList) rpl() string {
 	return fmt.Sprintf(
 		"322 %s %s %d :%s",
 		r.client, r.channel, r.count, r.topic,
@@ -249,12 +266,13 @@ func (r rplList) format() string {
 }
 
 // 323 RPL_LISTEND
+//
 // https://modern.ircdocs.horse/#rpllistend-323
 type rplListEnd struct {
 	client string
 }
 
-func (r rplListEnd) format() string {
+func (r rplListEnd) rpl() string {
 	return fmt.Sprintf(
 		"323 %s :End of /LIST",
 		r.client,
@@ -262,6 +280,7 @@ func (r rplListEnd) format() string {
 }
 
 // 324 RPL_CHANNELMODEIS
+//
 // https://modern.ircdocs.horse/#rplchannelmodeis-324
 type rplChannelModeIs struct {
 	client     string
@@ -270,7 +289,7 @@ type rplChannelModeIs struct {
 	modeargs   string
 }
 
-func (r rplChannelModeIs) format() string {
+func (r rplChannelModeIs) rpl() string {
 	return fmt.Sprintf(
 		"324 %s %s %s %s",
 		r.client, r.channel, r.modestring, r.modeargs,
@@ -278,13 +297,14 @@ func (r rplChannelModeIs) format() string {
 }
 
 // 331 RPL_NOTOPIC
+//
 // https://modern.ircdocs.horse/#rplnotopic-331
 type rplNoTopic struct {
 	client  string
 	channel string
 }
 
-func (r rplNoTopic) format() string {
+func (r rplNoTopic) rpl() string {
 	return fmt.Sprintf(
 		"331 %s %s :No topic is set.",
 		r.client, r.channel,
@@ -292,6 +312,7 @@ func (r rplNoTopic) format() string {
 }
 
 // 331 RPL_TOPIC
+//
 // https://modern.ircdocs.horse/#rpltopic-332
 type rplTopic struct {
 	client  string
@@ -299,7 +320,7 @@ type rplTopic struct {
 	topic   string
 }
 
-func (r rplTopic) format() string {
+func (r rplTopic) rpl() string {
 	return fmt.Sprintf(
 		"332 %s %s :%s",
 		r.client, r.channel, r.topic,
@@ -307,6 +328,7 @@ func (r rplTopic) format() string {
 }
 
 // 333 RPL_TOPICWHOTIME
+//
 // https://modern.ircdocs.horse/#rpltopicwhotime-333
 type rplTopicWhoTime struct {
 	client  string
@@ -315,7 +337,7 @@ type rplTopicWhoTime struct {
 	setat   int
 }
 
-func (r rplTopicWhoTime) format() string {
+func (r rplTopicWhoTime) rpl() string {
 	return fmt.Sprintf(
 		"333 %s %s %s %d",
 		r.client, r.channel, r.nick, r.setat,
@@ -323,6 +345,7 @@ func (r rplTopicWhoTime) format() string {
 }
 
 // 351 RPL_VERSION
+//
 // https://modern.ircdocs.horse/#rplversion-351
 type rplVersion struct {
 	client   string
@@ -331,7 +354,7 @@ type rplVersion struct {
 	comments string
 }
 
-func (r rplVersion) format() string {
+func (r rplVersion) rpl() string {
 	return fmt.Sprintf(
 		"351 %s %s %s :%s",
 		r.client, r.version, r.server, r.comments,
@@ -339,6 +362,7 @@ func (r rplVersion) format() string {
 }
 
 // 352 RPL_WHOREPLY
+//
 // https://modern.ircdocs.horse/#rplwhoreply-352
 type rplWhoReply struct {
 	client   string
@@ -352,7 +376,7 @@ type rplWhoReply struct {
 	realname string
 }
 
-func (r rplWhoReply) format() string {
+func (r rplWhoReply) rpl() string {
 	return fmt.Sprintf(
 		"352 %s %s %s %s %s %s %s :%d %s",
 		r.client, r.channel, r.username, r.host, r.server, r.nick, r.flags, r.hopcount, r.realname,
@@ -360,6 +384,7 @@ func (r rplWhoReply) format() string {
 }
 
 // 353 RPL_NAMREPLY.
+//
 // https://modern.ircdocs.horse/#rplnamreply-353
 type rplNamReply struct {
 	client string
@@ -371,7 +396,7 @@ type rplNamReply struct {
 	nicks []string
 }
 
-func (r rplNamReply) format() string {
+func (r rplNamReply) rpl() string {
 	nicks := strings.Join(r.nicks, " ")
 	return fmt.Sprintf(
 		"353 %s %s %s :%s",
@@ -380,12 +405,14 @@ func (r rplNamReply) format() string {
 }
 
 // 366 RPL_ENDOFNAMES
+//
+// https://modern.ircdocs.horse/#rplendofnames-366
 type rplEndOfNames struct {
 	client  string
 	channel string
 }
 
-func (r rplEndOfNames) format() string {
+func (r rplEndOfNames) rpl() string {
 	return fmt.Sprintf(
 		"366 %s %s :End of /NAMES list.",
 		r.client, r.channel,
@@ -393,13 +420,14 @@ func (r rplEndOfNames) format() string {
 }
 
 // 372 RPL_MOTD
+//
 // https://modern.ircdocs.horse/#rplmotd-372
 type rplMotd struct {
 	client string
 	text   string
 }
 
-func (r rplMotd) format() string {
+func (r rplMotd) rpl() string {
 	return fmt.Sprintf(
 		"372 %s :%s",
 		r.client, r.text,
@@ -407,6 +435,7 @@ func (r rplMotd) format() string {
 }
 
 // 375 RPL_MOTDSTART
+//
 // https://modern.ircdocs.horse/#rplmotdstart-375
 type rplMotdStart struct {
 	client string
@@ -414,7 +443,7 @@ type rplMotdStart struct {
 	text   string
 }
 
-func (r rplMotdStart) format() string {
+func (r rplMotdStart) rpl() string {
 	return fmt.Sprintf(
 		"375 %s :- %s %s",
 		r.client, r.server, r.text,
@@ -422,12 +451,13 @@ func (r rplMotdStart) format() string {
 }
 
 // 376 RPL_ENDOFMOTD
+//
 // https://modern.ircdocs.horse/#rplendofmotd-376
 type rplEndOfMotd struct {
 	client string
 }
 
-func (r rplEndOfMotd) format() string {
+func (r rplEndOfMotd) rpl() string {
 	return fmt.Sprintf(
 		"376 %s :End of /MOTD command.",
 		r.client,
@@ -435,12 +465,13 @@ func (r rplEndOfMotd) format() string {
 }
 
 // 381 RPL_YOUREOPER
+//
 // https://modern.ircdocs.horse/#rplyoureoper-381
 type rplYoureOper struct {
 	client string
 }
 
-func (r rplYoureOper) format() string {
+func (r rplYoureOper) rpl() string {
 	return fmt.Sprintf(
 		"381 %s :You are now an IRC operator.",
 		r.client,
@@ -448,13 +479,14 @@ func (r rplYoureOper) format() string {
 }
 
 // 401 ERR_NOSUCHNICK
+//
 // https://modern.ircdocs.horse/#errnosuchnick-401
 type errNoSuchNick struct {
 	client string
 	nick   string
 }
 
-func (r errNoSuchNick) format() string {
+func (r errNoSuchNick) rpl() string {
 	return fmt.Sprintf(
 		"401 %s %s :No such nickname.",
 		r.client, r.nick,
@@ -462,13 +494,14 @@ func (r errNoSuchNick) format() string {
 }
 
 // 402 ERR_NOSUCHSERVER
+//
 // https://modern.ircdocs.horse/#errnosuchserver-402
 type errNoSuchServer struct {
 	client string
 	server string
 }
 
-func (r errNoSuchServer) format() string {
+func (r errNoSuchServer) rpl() string {
 	return fmt.Sprintf(
 		"402 %s %s :No such server or user.",
 		r.client, r.server,
@@ -476,13 +509,14 @@ func (r errNoSuchServer) format() string {
 }
 
 // 403 ERR_NOSUCHCHANNEL
+//
 // https://modern.ircdocs.horse/#errnosuchchannel-403
 type errNoSuchChannel struct {
 	client  string
 	channel string
 }
 
-func (r errNoSuchChannel) format() string {
+func (r errNoSuchChannel) rpl() string {
 	return fmt.Sprintf(
 		"403 %s %s :No such channel.",
 		r.client, r.channel,
@@ -490,12 +524,13 @@ func (r errNoSuchChannel) format() string {
 }
 
 // 431 ERR_NONICKNAMEGIVEN
+//
 // https://modern.ircdocs.horse/#errnonicknamegiven-431
 type errNoNicknameGiven struct {
 	client string
 }
 
-func (r errNoNicknameGiven) format() string {
+func (r errNoNicknameGiven) rpl() string {
 	return fmt.Sprintf(
 		"431 %s :No nickname given.",
 		r.client,
@@ -503,13 +538,14 @@ func (r errNoNicknameGiven) format() string {
 }
 
 // 432 ERR_ERRONEUSNICKNAME
+//
 // https://modern.ircdocs.horse/#errerroneusnickname-432
 type errErroneusNickname struct {
 	client string
 	nick   string
 }
 
-func (r errErroneusNickname) format() string {
+func (r errErroneusNickname) rpl() string {
 	return fmt.Sprintf(
 		"432 %s %s :Erroneus nickname.",
 		r.client, r.nick,
@@ -517,13 +553,14 @@ func (r errErroneusNickname) format() string {
 }
 
 // 433 ERR_NICKNAMEINUSE
+//
 // https://modern.ircdocs.horse/#errnicknameinuse-433
 type errNicknameInUse struct {
 	client string
 	nick   string
 }
 
-func (r errNicknameInUse) format() string {
+func (r errNicknameInUse) rpl() string {
 	return fmt.Sprintf(
 		"433 %s %s :Nickname is already in use.",
 		r.client, r.nick,
@@ -531,6 +568,7 @@ func (r errNicknameInUse) format() string {
 }
 
 // 441 ERR_USERNOTINCHANNEL
+//
 // https://modern.ircdocs.horse/#errusernotinchannel-441
 type errUserNotInChannel struct {
 	client  string
@@ -538,7 +576,7 @@ type errUserNotInChannel struct {
 	channel string
 }
 
-func (r errUserNotInChannel) format() string {
+func (r errUserNotInChannel) rpl() string {
 	return fmt.Sprintf(
 		"441 %s %s %s :They aren't on that channel.",
 		r.client, r.nick, r.channel,
@@ -546,13 +584,14 @@ func (r errUserNotInChannel) format() string {
 }
 
 // 442 ERR_NOTONCHANNEL
+//
 // https://modern.ircdocs.horse/#errnotonchannel-442
 type errNotOnChannel struct {
 	client  string
 	channel string
 }
 
-func (r errNotOnChannel) format() string {
+func (r errNotOnChannel) rpl() string {
 	return fmt.Sprintf(
 		"442 %s %s :You are not on that channel.",
 		r.client, r.channel,
@@ -560,12 +599,13 @@ func (r errNotOnChannel) format() string {
 }
 
 // 451 ERR_NOTREGISTERED
+//
 // https://modern.ircdocs.horse/#errnotregistered-451
 type errNotRegistered struct {
 	client string
 }
 
-func (r errNotRegistered) format() string {
+func (r errNotRegistered) rpl() string {
 	return fmt.Sprintf(
 		"451 %s :You have not registered.",
 		r.client,
@@ -573,13 +613,14 @@ func (r errNotRegistered) format() string {
 }
 
 // 461 ERR_NEEDMOREPARAMS
+//
 // https://modern.ircdocs.horse/#errneedmoreparams-461
 type errNeedMoreParams struct {
 	client  string
 	command string
 }
 
-func (r errNeedMoreParams) format() string {
+func (r errNeedMoreParams) rpl() string {
 	return fmt.Sprintf(
 		"461 %s %s :Not enough parameters.",
 		r.client, r.command,
@@ -587,12 +628,13 @@ func (r errNeedMoreParams) format() string {
 }
 
 // 462 ERR_ALREADYREGISTERED
+//
 // https://modern.ircdocs.horse/#erralreadyregistered-462
 type errAlreadyRegistered struct {
 	client string
 }
 
-func (r errAlreadyRegistered) format() string {
+func (r errAlreadyRegistered) rpl() string {
 	return fmt.Sprintf(
 		"462 %s :You may not reregister.",
 		r.client,
@@ -600,12 +642,13 @@ func (r errAlreadyRegistered) format() string {
 }
 
 // 464 RR_PASSWDMISMATCH
+//
 // https://modern.ircdocs.horse/#errpasswdmismatch-464
 type errPasswdMismatch struct {
 	client string
 }
 
-func (r errPasswdMismatch) format() string {
+func (r errPasswdMismatch) rpl() string {
 	return fmt.Sprintf(
 		"464 %s :Password incorrect.",
 		r.client,
@@ -613,13 +656,14 @@ func (r errPasswdMismatch) format() string {
 }
 
 // 474 ERR_BANNEDFROMCHAN
+//
 // https://modern.ircdocs.horse/#errbannedfromchan-474
 type errBannedFromChan struct {
 	client  string
 	channel string
 }
 
-func (r errBannedFromChan) format() string {
+func (r errBannedFromChan) rpl() string {
 	return fmt.Sprintf(
 		"474 %s %s :Cannot join channel (+z)",
 		r.client, r.channel,
@@ -627,13 +671,14 @@ func (r errBannedFromChan) format() string {
 }
 
 // 475 ERR_BADCHANNELKEY
+//
 // https://modern.ircdocs.horse/#errbadchannelkey-475
 type errBadChannelKey struct {
 	client  string
 	channel string
 }
 
-func (r errBadChannelKey) format() string {
+func (r errBadChannelKey) rpl() string {
 	return fmt.Sprintf(
 		"475 %s %s :Bad channel key (+k).",
 		r.client, r.channel,
@@ -641,12 +686,13 @@ func (r errBadChannelKey) format() string {
 }
 
 // 481 ERR_NOPRIVILEGES
+//
 // https://modern.ircdocs.horse/#errnoprivileges-481
 type errNoPrivileges struct {
 	client string
 }
 
-func (r errNoPrivileges) format() string {
+func (r errNoPrivileges) rpl() string {
 	return fmt.Sprintf(
 		"481 %s :Permission Denied - You're not an IRC operator.",
 		r.client,
@@ -654,13 +700,14 @@ func (r errNoPrivileges) format() string {
 }
 
 // 482 ERR_CHANOPRIVSNEEDED
+//
 // https://modern.ircdocs.horse/#errchanoprivsneeded-482
 type errChanoPrivsNeeded struct {
 	client  string
 	channel string
 }
 
-func (r errChanoPrivsNeeded) format() string {
+func (r errChanoPrivsNeeded) rpl() string {
 	return fmt.Sprintf(
 		"482 %s %s :You're not channel operator.",
 		r.client, r.channel,
@@ -668,12 +715,13 @@ func (r errChanoPrivsNeeded) format() string {
 }
 
 // 502 ERR_USERSDONTMATCH
+//
 // https://modern.ircdocs.horse/#errusersdontmatch-502
 type errUsersDontMatch struct {
 	client string
 }
 
-func (r errUsersDontMatch) format() string {
+func (r errUsersDontMatch) rpl() string {
 	return fmt.Sprintf(
 		"502 %s :Can't change mode for other users.",
 		r.client,
@@ -681,6 +729,7 @@ func (r errUsersDontMatch) format() string {
 }
 
 // 723 ERR_NOPRIVS
+//
 // https://modern.ircdocs.horse/#errnoprivs-723
 type errNoPrivs struct {
 	client string
