@@ -9,16 +9,24 @@ import (
 )
 
 type channeler interface {
+	// Channel name.
 	name() string
+	// Channel owner.
 	owner() clientID
 
+	// All channel members.
 	clients() channelClientStorer
+	// Number of channel members.
 	count() int
 
+	// Get password.
 	password() string
+	// Set channel password.
 	setPassword(password string)
 
+	// Channel topic.
 	topic() *topic
+	// Set channel topic.
 	setTopic(text string, author string)
 
 	// Does prefix match any of the ban masks?
@@ -28,19 +36,33 @@ type channeler interface {
 	// Remove ban mask.
 	removeBan(mask banMask) error
 
+	// Add client to channel.
 	addClient(c clienter, password string) error
+	// Remove client from channel.
 	removeClient(c clienter)
 
+	// Channel members in NAMES format including highest prefix.
 	names() []string
 
+	// Broadcast RPL to channel members.
+	//
+	// If skip is set to true, the source client will not receive the RPL message.
 	broadcastRPL(rpl rpl, sourceID clientID, skip bool)
+	// Broadcast command to channel members.
+	//
+	// If skip is set to true, the source client will not receive the command message.
 	broadcastCommand(cmd command, sourceID clientID, skip bool)
 
+	// Channel modestring.
 	modestring() string
 
+	// Channel modestring as a bitmask.
 	mode() (mode channelMode)
+	// Add mode to channel.
 	addMode(mode channelMode)
+	// Remove mode from chanel.
 	removeMode(mode channelMode)
+	// Does channel have mode?
 	hasMode(mode channelMode) bool
 }
 
@@ -212,7 +234,7 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 		if c.id() == sourceID && skip {
 			continue
 		}
-		c.send(rpl.format())
+		c.send(rpl.rpl())
 	}
 }
 

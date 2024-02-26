@@ -66,6 +66,7 @@ type clienter interface {
 
 	// Send RPL to client.
 	sendRPL(serverName string, rpl rpl)
+
 	// Send command to client.
 	sendCommand(command command)
 
@@ -304,7 +305,7 @@ func (c *client) hasMode(mode clientMode) bool {
 }
 
 func (c *client) sendRPL(server string, rpl rpl) {
-	c.out <- fmt.Sprintf(":%s %s", server, rpl.format())
+	c.out <- fmt.Sprintf(":%s %s", server, rpl.rpl())
 }
 
 func (c *client) sendCommand(cmd command) {
