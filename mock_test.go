@@ -47,6 +47,7 @@ type clientMock struct {
 	secure bool
 	afk    string
 	hs     bool
+	pw     bool
 	modes  clientMode
 }
 
@@ -65,6 +66,7 @@ func newMockClient(handshake bool) *clientMock {
 		secure:       false,
 		afk:          "",
 		hs:           handshake,
+		pw:           false,
 		modes:        0,
 	}
 }
@@ -140,6 +142,14 @@ func (c *clientMock) handshake() bool {
 
 func (c *clientMock) setHandshake(handshake bool) {
 	c.hs = handshake
+}
+
+func (c *clientMock) password() bool {
+	return c.pw
+}
+
+func (c *clientMock) setPassword(correct bool) {
+	c.pw = correct
 }
 
 func (c *clientMock) prefix() string {

@@ -33,9 +33,10 @@ func main() {
 	_, tlsEnabled := os.LookupEnv("TLS")
 
 	config := ircd.ServerConfig{
-		Name:    os.Getenv("SERVER_NAME"),
-		Network: os.Getenv("NETWORK_NAME"),
-		Version: os.Getenv("SERVER_VERSION"),
+		Name:     os.Getenv("SERVER_NAME"),
+		Password: os.Getenv("SERVER_PASSWORD"),
+		Network:  os.Getenv("NETWORK_NAME"),
+		Version:  os.Getenv("SERVER_VERSION"),
 		MOTD: []string{
 			"\u00034This is the message of the day.\u0003",
 			"\u00035It contains multiple lines because the lines could be long.\u0003",

@@ -27,6 +27,7 @@ services:
     environment:
       - SERVER_NAME=ircd.network.fqdn
       - SERVER_VERSION=0.1
+      - SERVER_PASSWORD=
       - PORT=6667
       - PORT_TLS=6697
       - PROMETHEUS=true

@@ -14,6 +14,12 @@ func handleUser(s *server, c clienter, m message) {
 	c.setUser(username, realname)
 
 	if !c.handshake() && c.nickname() != "" && c.username() != "" {
+		if s.password != "" && !c.password() {
+			c.sendRPL(s.name, errPasswdMismatch{
+				client: c.nickname(),
+			})
+			return
+		}
 		handleHandshake(s, c)
 	}
 }

@@ -22,10 +22,11 @@ const (
 )
 
 type ServerConfig struct {
-	Name    string
-	Network string
-	Version string
-	MOTD    []string
+	Name     string
+	Password string
+	Network  string
+	Version  string
+	MOTD     []string
 
 	TLS             bool
 	CertificateFile string
@@ -99,6 +100,7 @@ type server struct {
 	mu        *sync.RWMutex
 	router    router
 	name      string
+	password  string
 	network   string
 	version   string
 	Clients   ClientStorer
@@ -120,6 +122,7 @@ func NewServer(config ServerConfig) *server {
 	server := &server{
 		mu:             &sync.RWMutex{},
 		name:           config.Name,
+		password:       config.Password,
 		network:        config.Network,
 		version:        config.Version,
 		Clients:        NewClientStore("clients"),
@@ -183,6 +186,7 @@ func registerHandlers(s *server) {
 		return next
 	})
 
+	router.registerHandler("PASS", handlePass, middlewareNeedParams(1))
 	router.registerHandler("PING", handlePing)
 	router.registerHandler("PONG", handlePong)
 	router.registerHandler("NICK", handleNick, middlewareNeedParams(1))
