@@ -6,13 +6,10 @@ import (
 )
 
 func TestCommandOper(t *testing.T) {
-	var want []string
-
 	c := newMockClient(true)
 	s := NewServer(ServerConfig{
 		Name: "server",
 	})
-	s.Operators.add("test", "test")
 
 	m := message{
 		command: "OPER",
@@ -24,7 +21,9 @@ func TestCommandOper(t *testing.T) {
 		params:  []string{"test", "test"},
 	}
 
-	want = []string{"464 mocknick :Password incorrect."}
+	s.Operators.add("test", "test")
+
+	want := []string{"464 mocknick :Password incorrect."}
 	handleOper(s, c, m)
 	if slices.Compare(c.messagesOut, want) != 0 {
 		t.Errorf("got %v, want: %v", c.messagesOut, want)
