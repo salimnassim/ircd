@@ -17,7 +17,7 @@ var (
 )
 
 var (
-	errorBadMaskCharadcter = errors.New("bad mask character")
+	errorBadMaskCharacter = errors.New("bad mask character")
 )
 
 var (

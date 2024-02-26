@@ -14,7 +14,7 @@ func parseMask(mask string) ([]byte, error) {
 		case (char >= 0x01 && char <= 0x5B) || (char >= 0x5D && char <= 0xFF):
 			result = append(result, byte(char))
 		default:
-			return nil, errorBadMaskCharadcter
+			return nil, errorBadMaskCharacter
 		}
 	}
 

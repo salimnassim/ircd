@@ -62,6 +62,11 @@ func TestMask(t *testing.T) {
 			mask:  "",
 			want:  true,
 		},
+		{
+			input: "*@*.ru",
+			mask:  "asd!zxc@foo.ru",
+			want:  false,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -85,7 +90,7 @@ func TestBadMaskCharacter(t *testing.T) {
 	tcs := []tc{
 		{
 			input: string([]rune{0x00, 0x80}),
-			want:  errorBadMaskCharadcter,
+			want:  errorBadMaskCharacter,
 		},
 	}
 
