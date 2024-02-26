@@ -11,29 +11,33 @@ func TestCommandOper(t *testing.T) {
 		Name: "server",
 	})
 
-	m := message{
-		command: "OPER",
-		params:  []string{"wrong", "wrong"},
-	}
-
-	m2 := message{
-		command: "OPER",
-		params:  []string{"test", "test"},
-	}
-
 	s.Operators.add("test", "test")
 
-	want := []string{"464 mocknick :Password incorrect."}
-	handleOper(s, c, m)
-	if slices.Compare(c.messagesOut, want) != 0 {
-		t.Errorf("got %v, want: %v", c.messagesOut, want)
-	}
+	t.Run("bad auth", func(t *testing.T) {
+		m := message{
+			command: "OPER",
+			params:  []string{"wrong", "wrong"},
+		}
+		want := []string{"464 mocknick :Password incorrect."}
+		handleOper(s, c, m)
+		if slices.Compare(c.messagesOut, want) != 0 {
+			t.Errorf("got %v, want: %v", c.messagesOut, want)
+		}
+
+	})
 
 	c.reset()
 
-	want = []string{"MODE mocknick +o", "381 mocknick :You are now an IRC operator."}
-	handleOper(s, c, m2)
-	if slices.Compare(c.messagesOut, want) != 0 {
-		t.Errorf("got %v, want: %v", c.messagesOut, want)
-	}
+	t.Run("ok auth", func(t *testing.T) {
+		m := message{
+			command: "OPER",
+			params:  []string{"test", "test"},
+		}
+		want := []string{"MODE mocknick +o", "381 mocknick :You are now an IRC operator."}
+		handleOper(s, c, m)
+		if slices.Compare(c.messagesOut, want) != 0 {
+			t.Errorf("got %v, want: %v", c.messagesOut, want)
+		}
+	})
+
 }
