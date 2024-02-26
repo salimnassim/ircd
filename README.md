@@ -18,6 +18,7 @@ By default the server will run on port `6667` and prometheus metrics are exposed
 - [x] TOPIC
 - [x] WHO
 - [x] WHOIS
+- [x] KICK 
 - [X] LUSERS
 - [ ] PASS
 - [X] OPER (pertial, no commands)
