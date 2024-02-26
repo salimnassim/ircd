@@ -11,27 +11,9 @@ func TestCommandAway(t *testing.T) {
 		Name: "server",
 	})
 
-	c, err := newClient(&connMock{}, "test")
-	if err != nil {
-		t.Error(err)
-	}
+	c := &clientMock{}
 
 	c.setNickname("client")
-
-	go func() {
-		for {
-			select {
-			case <-c.gotPong:
-				continue
-			case <-c.in:
-				continue
-			case <-c.out:
-				continue
-			case <-c.stop:
-				return
-			}
-		}
-	}()
 
 	want := "reason"
 	m := message{
@@ -48,7 +30,6 @@ func TestCommandAway(t *testing.T) {
 	want = ""
 	m2 := message{
 		command: "AWAY",
-		params:  []string{""},
 	}
 
 	handleAway(s, c, m2)
@@ -56,6 +37,4 @@ func TestCommandAway(t *testing.T) {
 	if c.away() != "" {
 		t.Errorf("got: %s, want: %s", got, want)
 	}
-
-	c.stop <- "test"
 }
