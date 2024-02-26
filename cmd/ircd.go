@@ -59,7 +59,7 @@ func main() {
 			MaxKickLength:     32,
 			MaxList:           "b:16",
 			MaxModes:          16,
-			Network:           "network",
+			Network:           "Network",
 			MaxNickLength:     31,
 			ChannelPrefixes:   "(qaohv)~&@%+",
 			// StatusMessage:     "~&@%+",

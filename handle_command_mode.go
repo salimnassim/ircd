@@ -1,5 +1,7 @@
 package ircd
 
+import "fmt"
+
 func handleMode(s *server, c clienter, m message) {
 	target := m.params[0]
 
@@ -59,6 +61,8 @@ func handleMode(s *server, c clienter, m message) {
 				ch.addMode(a)
 			case modeChannelTLSOnly:
 				ch.addMode(a)
+			case modeChannelSecret:
+				ch.addMode(a)
 			}
 		}
 		for _, d := range del {
@@ -67,14 +71,29 @@ func handleMode(s *server, c clienter, m message) {
 				ch.removeMode(d)
 			case modeChannelTLSOnly:
 				ch.removeMode(d)
+			case modeChannelSecret:
+				ch.removeMode(d)
 			}
 		}
 		after := ch.mode()
 
-		plus := []rune{'+'}
-		minus := []rune{'-'}
-		// refactor this o-no bueno
+		plus := []rune{}
+		minus := []rune{}
+
+		// diff before and after, add +- if there are changes
 		da, dd := diffModes[channelMode](before, after, channelModeMap)
+		if len(da) == 0 && len(dd) == 0 {
+			return
+		}
+
+		if len(da) > 0 {
+			plus = append(plus, '+')
+		}
+		if len(dd) > 0 {
+			minus = append(minus, '-')
+		}
+
+		// refactor this o-no bueno
 		for _, m := range da {
 			for r, mm := range channelModeMap {
 				if m == mm {
@@ -90,12 +109,13 @@ func handleMode(s *server, c clienter, m message) {
 			}
 		}
 
-		c.sendRPL(s.name, rplChannelModeIs{
-			client:     c.nickname(),
-			channel:    ch.name(),
-			modestring: ch.modestring(),
-			modeargs:   "",
-		})
+		diff := fmt.Sprintf("%s%s", string(minus), string(plus))
+		ch.broadcastCommand(modeCommand{
+			source:     c.prefix(),
+			target:     ch.name(),
+			modestring: diff,
+			args:       "",
+		}, c.id(), false)
 		return
 	}
 

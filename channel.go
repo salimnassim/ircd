@@ -18,9 +18,6 @@ type channeler interface {
 	password() string
 	setPassword(password string)
 
-	secret() bool
-	setSecret(secret bool)
-
 	topic() *topic
 	setTopic(text string, author string)
 
@@ -63,8 +60,6 @@ type channel struct {
 	o clientID
 	// Channel password.
 	p string
-	// Is channel secret?
-	s bool
 }
 
 type topic struct {
@@ -86,7 +81,6 @@ func newChannel(channelName string, owner clientID) *channel {
 		modes: 0,
 		o:     owner,
 		p:     "",
-		s:     false,
 	}
 
 	return channel
@@ -117,18 +111,6 @@ func (ch *channel) password() string {
 func (ch *channel) setPassword(password string) {
 	ch.mu.Lock()
 	ch.p = password
-	ch.mu.Unlock()
-}
-
-func (ch *channel) secret() bool {
-	ch.mu.RLock()
-	defer ch.mu.RUnlock()
-	return ch.s
-}
-
-func (ch *channel) setSecret(secret bool) {
-	ch.mu.Lock()
-	ch.s = secret
 	ch.mu.Unlock()
 }
 

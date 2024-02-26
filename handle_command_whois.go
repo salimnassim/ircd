@@ -23,7 +23,7 @@ func handleWhois(s *server, c clienter, m message) {
 	channels := []string{}
 	memberOf := s.Channels.memberOf(who)
 	for _, c := range memberOf {
-		if !c.secret() {
+		if !c.hasMode(modeChannelSecret) {
 			channels = append(channels, c.name())
 		}
 	}
