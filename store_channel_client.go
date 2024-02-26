@@ -61,7 +61,7 @@ func (s *channelClientStore) all() []clienter {
 	clients := []clienter{}
 
 	s.mu.RLock()
-	for c, _ := range s.clients {
+	for c := range s.clients {
 		clients = append(clients, c)
 	}
 	s.mu.RUnlock()
