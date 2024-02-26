@@ -32,8 +32,10 @@ func (C *connMock) RemoteAddr() net.Addr {
 }
 
 type clientMock struct {
-	messagesIn  []string
-	messagesOut []string
+	messagesIn   []string
+	messagesOut  []string
+	messagesPong []bool
+	messagesKill []string
 
 	clientID clientID
 	addr     string
@@ -46,6 +48,33 @@ type clientMock struct {
 	afk    string
 	hs     bool
 	modes  clientMode
+}
+
+func newMockClient(handshake bool) *clientMock {
+	return &clientMock{
+		messagesIn:   []string{},
+		messagesOut:  []string{},
+		messagesPong: []bool{},
+		messagesKill: []string{},
+		clientID:     "12345",
+		addr:         "127.0.0.1",
+		nick:         "mocknick",
+		user:         "mockuser",
+		real:         "mockreal",
+		host:         "mockhost",
+		secure:       false,
+		afk:          "",
+		hs:           handshake,
+		modes:        0,
+	}
+}
+
+// Reset mock message state to empty slices.
+func (c *clientMock) reset() {
+	c.messagesIn = []string{}
+	c.messagesOut = []string{}
+	c.messagesPong = []bool{}
+	c.messagesKill = []string{}
 }
 
 func (c *clientMock) String() string {
@@ -165,9 +194,9 @@ func (c *clientMock) send(text string) {
 }
 
 func (c *clientMock) pong(pong bool) {
-
+	c.messagesPong = append(c.messagesPong, pong)
 }
 
 func (c *clientMock) kill(reason string) {
-
+	c.messagesKill = append(c.messagesKill, reason)
 }
