@@ -11,12 +11,12 @@ func parseMessage(line string) (message, error) {
 	}
 
 	if len(line) > 512 {
-		return message{}, errors.New("message too long")
+		return message{}, errorParserInputTooLong
 	}
 
 	message := message{
 		raw:     line,
-		tags:    make(map[string]interface{}),
+		tags:    make(map[string]string),
 		prefix:  "",
 		command: "",
 		params:  make([]string, 0),
@@ -29,7 +29,7 @@ func parseMessage(line string) (message, error) {
 		next = strings.IndexByte(line, ' ')
 
 		if next == -1 {
-			return message, errors.New("malformed message")
+			return message, errorParserInputMalformed
 		}
 
 		rawTags := strings.Split(line[1:next], ";")
@@ -42,9 +42,6 @@ func parseMessage(line string) (message, error) {
 			}
 
 			message.tags[pair[0]] = pair[1]
-			if len(pair) == 1 {
-				message.tags[pair[0]] = true
-			}
 		}
 
 		pos = next + 1
@@ -58,7 +55,7 @@ func parseMessage(line string) (message, error) {
 		next = strings.IndexByte(line[pos:], ' ')
 
 		if next == -1 {
-			return message, errors.New("malformed message")
+			return message, errorParserInputMalformed
 		}
 
 		message.prefix = line[pos+1 : pos+next]

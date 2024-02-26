@@ -53,7 +53,7 @@ func TestCommands(t *testing.T) {
 				modestring: "+v",
 				args:       "",
 			},
-			want: "MODE client +v ",
+			want: "MODE client +v",
 		},
 		{
 			input: modeCommand{
@@ -62,7 +62,7 @@ func TestCommands(t *testing.T) {
 				modestring: "+v",
 				args:       "",
 			},
-			want: ":server MODE client +v ",
+			want: ":server MODE client +v",
 		},
 		{
 			input: joinCommand{

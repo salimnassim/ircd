@@ -109,7 +109,9 @@ func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del [
 }
 
 // Finds differences between old and new mode bitmasks.
+//
 // Add represents modes that been added from the original list..
+//
 // Del represents modes that been removed from the original list.
 func diffModes[T ~uint16](old T, new T, m map[rune]T) (add []T, del []T) {
 	d := old ^ new

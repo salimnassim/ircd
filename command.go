@@ -80,10 +80,22 @@ type modeCommand struct {
 }
 
 func (cmd modeCommand) command() string {
+	if cmd.source == "" && cmd.args == "" {
+		return fmt.Sprintf(
+			"MODE %s %s",
+			cmd.target, cmd.modestring,
+		)
+	}
 	if cmd.source == "" {
 		return fmt.Sprintf(
 			"MODE %s %s %s",
 			cmd.target, cmd.modestring, cmd.args,
+		)
+	}
+	if cmd.args == "" {
+		return fmt.Sprintf(
+			":%s MODE %s %s",
+			cmd.source, cmd.target, cmd.modestring,
 		)
 	}
 	return fmt.Sprintf(

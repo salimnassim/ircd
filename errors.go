@@ -24,3 +24,8 @@ var (
 	errorBanMaskDoesNotExist  = errors.New("ban mask does not exist")
 	errorBanMaskAlreadyExists = errors.New("ban mask is already defined")
 )
+
+var (
+	errorParserInputTooLong   = errors.New("message is too long")
+	errorParserInputMalformed = errors.New("malformed message")
+)

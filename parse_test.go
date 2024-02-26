@@ -1,16 +1,17 @@
 package ircd
 
 import (
+	"errors"
 	"testing"
 )
 
-type test struct {
-	input string
-	want  message
-}
-
 func TestParse(t *testing.T) {
-	tests := []test{
+	type tc struct {
+		input string
+		want  message
+	}
+
+	tcs := []tc{
 		{input: "PING", want: message{command: "PING"}},
 		{input: "PING 12345", want: message{command: "PING", params: []string{"12345"}}},
 		{input: "PING LAG206400570", want: message{command: "PING", params: []string{"LAG206400570"}}},
@@ -35,9 +36,15 @@ func TestParse(t *testing.T) {
 		{input: "QUIT :reason here", want: message{command: "QUIT", params: []string{"reason", "here"}}},
 		{input: "AWAY :brb afk", want: message{command: "AWAY", params: []string{"brb", "afk"}}},
 		{input: "", want: message{command: ""}},
+		{input: "@tag1=example.com :nick!user@host PRIVMSG #channel :Hello, world!", want: message{command: "PRIVMSG", tags: map[string]string{
+			"tag1": "example.com",
+		}}},
+		{input: "@tag2= :nick!user@host PRIVMSG #channel :Hello, world!", want: message{command: "PRIVMSG", tags: map[string]string{
+			"tag1": "",
+		}}},
 	}
 
-	for _, tc := range tests {
+	for _, tc := range tcs {
 		got, err := parseMessage(tc.input)
 		if err != nil {
 			t.Error(err)
@@ -54,4 +61,30 @@ func TestParse(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestParseNegative(t *testing.T) {
+	type tc struct {
+		input string
+		want  error
+	}
+
+	tcs := []tc{
+		{
+			input: "zoniyhvvjecvsbpdthwssckgulljfbyzqppmnazrdhzlasugnqomisssjxlprwbdvalzgfxvgvijpobhuxdgbmbfytfajofljjxikvewdmwwqmjyyxauxarbmjkcztmcmiqdhzephukkqcdfipwyjmmcwlaoieemklvucvkrmdingatyrjdtgvcvqqxlvzbllwkonxqfltbdxyescdwhpwlmfxzcaasqzucmlgdgwieiojkadnzoqfmqlvmouiqwhkzvlhgarsnkiqgmwdzzlndyxpqdselamkpfitqllcfkpdstuyazjjmqndrfdmplbtdpykgtlwdngrncpmiwkpdcmeukosdypajjcdfyfoohzjdaaroxplcorhsowvvgiodbzsdvxeqocycyychxmwtlbvgbcukjxwqoukugwlfzrfhgznwxhbsiewfpzlfmwgbifavjjtyzvmdagnmqkayknavgjjzcismkrtivkfpmzzodxigfauspsyfpieqrq",
+			want:  errorParserInputTooLong,
+		},
+		{
+			input: "@faketag=",
+			want:  errorParserInputMalformed,
+		},
+	}
+
+	for _, tc := range tcs {
+		_, err := parseMessage(tc.input)
+		if !errors.Is(err, tc.want) {
+			t.Errorf("got %v, want %v", err, tc.want)
+		}
+	}
+
 }
