@@ -5,11 +5,9 @@ import (
 )
 
 func handleConnectionIn(c *client, s *server) {
-	defer func() {
-		c.stop <- "Broken pipe."
-	}()
+	defer c.kill("Broken pipe.")
 
-	for message := range c.recv {
+	for message := range c.in {
 		parsed, err := parseMessage(message)
 		if err != nil {
 			log.Error().Err(err).Msgf("unable to parse message in handler: %s", message)

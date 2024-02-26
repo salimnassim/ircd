@@ -1,10 +1,8 @@
 package ircd
 
 import (
-	"bufio"
 	"cmp"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"slices"
@@ -70,15 +68,14 @@ type clienter interface {
 	// Send command to client.
 	sendCommand(command command)
 
-	// Send message to internal channel.
+	// Receive message.
+	recv(text string)
+	// Send message.
 	send(text string)
 	// Send pong to internal channel.
 	pong(pong bool)
 	// Send stop to internal channel.
 	kill(reason string)
-
-	// Write message to client socket.
-	write(message string) (bytes int, err error)
 }
 
 type client struct {
@@ -92,17 +89,17 @@ type client struct {
 	real     string
 	host     string
 	modes    clientMode
-	secure   bool
-	afk      string
-	// Is operator?.
+	// TLS?
+	secure bool
+	afk    string
+	// Operator?.
 	o bool
 
+	// Handshake?
 	hs bool
 
-	conn   net.Conn
-	reader io.Reader
-
-	recv    chan string
+	conn    net.Conn
+	in      chan string
 	out     chan string
 	stop    chan string
 	gotPong chan bool
@@ -147,10 +144,9 @@ func newClient(connection net.Conn, id string) (*client, error) {
 
 		hs: false,
 
-		conn:   connection,
-		reader: bufio.NewReader(connection),
+		conn: connection,
 
-		recv:    make(chan string),
+		in:      make(chan string),
 		out:     make(chan string),
 		stop:    make(chan string),
 		gotPong: make(chan bool),
@@ -312,6 +308,10 @@ func (c *client) sendCommand(cmd command) {
 	c.out <- cmd.command()
 }
 
+func (c *client) recv(text string) {
+	c.in <- text
+}
+
 func (c *client) send(text string) {
 	c.out <- text
 }
@@ -322,8 +322,4 @@ func (c *client) pong(pong bool) {
 
 func (c *client) kill(reason string) {
 	c.stop <- reason
-}
-
-func (c *client) write(message string) (int, error) {
-	return c.conn.Write([]byte(message))
 }

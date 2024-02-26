@@ -37,7 +37,8 @@ func handleConnection(conn net.Conn, s *server) {
 			c.stop <- "Broken pipe."
 		}()
 
-		scanner := bufio.NewScanner(c.reader)
+		reader := bufio.NewReader(conn)
+		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {
 			if scanner.Err() != nil {
 				c.stop <- err.Error()
@@ -49,7 +50,7 @@ func handleConnection(conn net.Conn, s *server) {
 				break
 			}
 			line = strings.Trim(line, "\r\n")
-			c.recv <- line
+			c.recv(line)
 		}
 	}()
 
