@@ -13,6 +13,7 @@ type channeler interface {
 	owner() clientID
 
 	clients() ChannelClientStorer
+	count() int
 
 	password() string
 	setPassword(password string)
@@ -87,6 +88,12 @@ func (ch *channel) name() string {
 
 func (ch *channel) clients() ChannelClientStorer {
 	return ch.cs
+}
+
+func (ch *channel) count() int {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.cs.count()
 }
 
 func (ch *channel) password() string {
