@@ -89,7 +89,6 @@ func TestParseChannelModestring(t *testing.T) {
 }
 
 func TestDiffModes(t *testing.T) {
-
 	type tcg struct {
 		old clientMode
 		new clientMode
