@@ -33,6 +33,66 @@ type ServerConfig struct {
 
 	PingFrequency  int
 	PongMaxLatency int
+
+	Parameters ServerConfigParameters
+}
+
+type ServerConfigParameters struct {
+	// https://modern.ircdocs.horse/#awaylen-parameter
+	MaxAwayLength int
+	// https://modern.ircdocs.horse/#casemapping-parameter
+	CaseMapping string
+	// https://modern.ircdocs.horse/#casemapping-parameter
+	ChannelLimit string
+	// https://modern.ircdocs.horse/#chanmodes-parameter
+	ChannelModes string
+	// https://modern.ircdocs.horse/#channellen-parameter
+	MaxChannelLength int
+	// https://modern.ircdocs.horse/#chantypes-parameter
+	ChannelTypes string
+	// https://modern.ircdocs.horse/#elist-parameter
+	EList string
+	// https://modern.ircdocs.horse/#excepts-parameter
+	Excepts string
+	// https://modern.ircdocs.horse/#hostlen-parameter
+	MaxHostnameLength int
+	// https://modern.ircdocs.horse/#kicklen-parameter
+	MaxKickLength int
+	// https://modern.ircdocs.horse/#maxlist-parameter
+	MaxList string
+	// https://modern.ircdocs.horse/#modes-parameter
+	MaxModes int
+	// https://modern.ircdocs.horse/#network-parameter
+	//
+	// NOTE: Use ASCII codes for characters such as space (\x20)
+	Network string
+	// https://modern.ircdocs.horse/#nicklen-parameter
+	MaxNickLength int
+	// https://modern.ircdocs.horse/#prefix-parameter
+	ChannelPrefixes string
+	// https://modern.ircdocs.horse/#statusmsg-parameter
+	StatusMessage string
+	// https://modern.ircdocs.horse/#targmax-parameter
+	MaxTargets string
+	// https://modern.ircdocs.horse/#topiclen-parameter
+	MaxTopicLength int
+	// https://modern.ircdocs.horse/#userlen-parameter
+	MaxUserLength int
+}
+
+// https://modern.ircdocs.horse/#elist-parameter
+//
+// Returns a ELIST compatible string
+func (s ServerConfigParameters) build() string {
+	return fmt.Sprintf(
+		`AWAYLEN=%d CASEMAPPING=%s CHANLIMIT=%s CHANMODES=%s CHANTYPES=%s ELIST=%s HOSTLEN=%d KICKLEN=%d MAXLIST=%s MODES=%d NETWORK=%s NICKLEN=%d PREFIX=%s TARGMAX=%s TOPICLEN=%d USERLEN=%d`,
+		s.MaxAwayLength, s.CaseMapping, s.ChannelLimit,
+		s.ChannelModes, s.ChannelTypes, s.EList,
+		s.MaxHostnameLength, s.MaxKickLength, s.MaxList,
+		s.MaxModes, s.Network, s.MaxNickLength,
+		s.ChannelPrefixes, s.MaxTargets, s.MaxTopicLength,
+		s.MaxUserLength,
+	)
 }
 
 type server struct {
@@ -50,6 +110,8 @@ type server struct {
 	pingFrequency  int
 	pongMaxLatency int
 
+	params string
+
 	// regex cache
 	regex map[regexKey]*regexp.Regexp
 }
@@ -64,8 +126,10 @@ func NewServer(config ServerConfig) *server {
 		Channels:       NewChannelStore("channels"),
 		Operators:      NewOperatorStore(),
 		motd:           &config.MOTD,
+		ports:          []string{},
 		pingFrequency:  config.PingFrequency,
 		pongMaxLatency: config.PongMaxLatency,
+		params:         config.Parameters.build(),
 		regex:          make(map[regexKey]*regexp.Regexp),
 	}
 

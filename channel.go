@@ -40,6 +40,8 @@ type channeler interface {
 	broadcastCommand(cmd command, sourceID clientID, skip bool)
 
 	modestring() string
+
+	mode() (mode channelMode)
 	addMode(mode channelMode)
 	removeMode(mode channelMode)
 	hasMode(mode channelMode) bool
@@ -149,7 +151,7 @@ func (ch *channel) banned(c clienter) bool {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
 
-	for mask, _ := range ch.bans {
+	for mask := range ch.bans {
 		if matchMask([]byte(mask), c.hostname()) {
 			return true
 		}
@@ -254,6 +256,12 @@ func (ch *channel) modestring() string {
 		return cmp.Compare(a, b)
 	})
 	return fmt.Sprintf("+%s", string(modes))
+}
+
+func (ch *channel) mode() (mode channelMode) {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.modes
 }
 
 func (ch *channel) addMode(mode channelMode) {

@@ -46,6 +46,27 @@ func main() {
 		CertificateKey:  os.Getenv("TLS_KEY"),
 		PingFrequency:   30,
 		PongMaxLatency:  10,
+		Parameters: ircd.ServerConfigParameters{
+			MaxAwayLength:     128,
+			CaseMapping:       "ascii",
+			ChannelLimit:      "#&:64",
+			ChannelModes:      "b,f,lk,ztSsrOmMiCc",
+			MaxChannelLength:  50,
+			ChannelTypes:      "&#",
+			EList:             "",
+			Excepts:           "",
+			MaxHostnameLength: 32,
+			MaxKickLength:     32,
+			MaxList:           "b:16",
+			MaxModes:          16,
+			Network:           "network",
+			MaxNickLength:     31,
+			ChannelPrefixes:   "(qaohv)~&@%+",
+			// StatusMessage:     "~&@%+",
+			MaxTargets:     "PRIVMSG:3,WHOIS:1,JOIN:3",
+			MaxTopicLength: 128,
+			MaxUserLength:  20,
+		},
 	}
 
 	server := ircd.NewServer(config)
