@@ -24,6 +24,13 @@ func handleNick(s *server, c clienter, m message) {
 	c.setNickname(m.params[0])
 
 	if !c.handshake() && c.nickname() != "" && c.username() != "" {
+		if s.password != "" && !c.password() {
+			c.sendRPL(s.name, errPasswdMismatch{
+				client: c.nickname(),
+			})
+			c.kill("Wrong server password.")
+			return
+		}
 		handleHandshake(s, c)
 	}
 }

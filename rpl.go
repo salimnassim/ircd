@@ -657,7 +657,7 @@ func (r errAlreadyRegistered) rpl() string {
 	)
 }
 
-// 464 RR_PASSWDMISMATCH
+// 464 ERR_PASSWDMISMATCH
 //
 // https://modern.ircdocs.horse/#errpasswdmismatch-464
 type errPasswdMismatch struct {

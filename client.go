@@ -50,6 +50,11 @@ type clienter interface {
 	// Set user handshake status.
 	setHandshake(handshake bool)
 
+	// Did client send the correct password?
+	password() bool
+	// Set if password was correct.
+	setPassword(correct bool)
+
 	// Get client prefix.
 	prefix() string
 	// Get client modes as a string (e.g. +viz).
@@ -95,8 +100,10 @@ type client struct {
 	// Operator?.
 	o bool
 
-	// Handshake?
+	// Handshake done?
 	hs bool
+	// Is sent password correct?
+	pw bool
 
 	conn    net.Conn
 	in      chan string
@@ -254,6 +261,18 @@ func (c *client) handshake() bool {
 func (c *client) setHandshake(handshake bool) {
 	c.mu.Lock()
 	c.hs = handshake
+	c.mu.Unlock()
+}
+
+func (c *client) password() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.pw
+}
+
+func (c *client) setPassword(correct bool) {
+	c.mu.Lock()
+	c.pw = correct
 	c.mu.Unlock()
 }
 

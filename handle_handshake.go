@@ -68,7 +68,7 @@ func handleHandshake(s *server, c clienter) {
 			client: c.nickname(),
 			message: fmt.Sprintf(
 				"NOTICE :*** Server is listening on ports %s",
-				strings.Join(s.ports, ", "),
+				strings.Join(s.Ports(), ", "),
 			),
 		})
 
