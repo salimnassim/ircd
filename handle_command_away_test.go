@@ -5,22 +5,18 @@ import (
 )
 
 func TestCommandAway(t *testing.T) {
-	got := ""
-
 	s := NewServer(ServerConfig{
 		Name: "server",
 	})
+	c := newMockClient(false)
 
-	c := &clientMock{}
-
-	c.setNickname("client")
-
-	want := "reason"
 	m := message{
 		command: "AWAY",
 		params:  []string{"reason"},
 	}
 
+	got := ""
+	want := "reason"
 	handleAway(s, c, m)
 
 	if c.away() != want {
