@@ -15,8 +15,7 @@ func handleTopic(s *server, c clienter, m message) {
 		return
 	}
 
-	// try to get channel
-	channel, exists := s.Channels.get(target)
+	ch, exists := s.Channels.get(target)
 	if !exists {
 		c.sendRPL(s.name, errNoSuchChannel{
 			client:  c.nickname(),
@@ -25,18 +24,26 @@ func handleTopic(s *server, c clienter, m message) {
 		return
 	}
 
+	if ch.hasMode(modeChannelRestrictTopic) && !ch.clients().hasMode(c, modeHalfOperator, modeOperator, modeAdmin, modeOwner) {
+		c.sendRPL(s.name, errChanoPrivsNeeded{
+			client:  c.nickname(),
+			channel: ch.name(),
+		})
+		return
+	}
+
 	// set topic
-	remainder := strings.Join(m.params[1:len(m.params)], " ")
-	channel.setTopic(remainder, c.nickname())
+	text := strings.Join(m.params[1:len(m.params)], " ")
+	ch.setTopic(text, c.nickname())
 
 	// get topic
-	topic := channel.topic()
+	topic := ch.topic()
 
 	// broadcast new topic to clients on channel
-	channel.broadcastRPL(
+	ch.broadcastRPL(
 		rplTopic{
 			client:  c.nickname(),
-			channel: channel.name(),
+			channel: ch.name(),
 			topic:   topic.text,
 		}, c.id(), false,
 	)
