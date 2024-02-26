@@ -15,3 +15,12 @@ var (
 var (
 	errorCommandNotFound = errors.New("unknown command")
 )
+
+var (
+	errorBadMaskCharacter = errors.New("bad mask character")
+)
+
+var (
+	errorBanMaskDoesNotExist  = errors.New("ban mask does not exist")
+	errorBanMaskAlreadyExists = errors.New("ban mask is already defined")
+)
