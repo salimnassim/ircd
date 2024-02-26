@@ -126,6 +126,7 @@ func registerHandlers(s *server) {
 	router.registerHandler("LUSERS", handleLusers, middlewareNeedHandshake)
 	router.registerHandler("JOIN", handleJoin, middlewareNeedHandshake, middlewareNeedParams(1))
 	router.registerHandler("PART", handlePart, middlewareNeedHandshake, middlewareNeedParams(1))
+	router.registerHandler("KICK", handleKick, middlewareNeedHandshake, middlewareNeedParams(2))
 	router.registerHandler("TOPIC", handleTopic, middlewareNeedHandshake, middlewareNeedParams(1))
 	router.registerHandler("PRIVMSG", handlePrivmsg, middlewareNeedHandshake, middlewareNeedParams(1))
 	router.registerHandler("WHOIS", handleWhois, middlewareNeedHandshake, middlewareNeedParams(1))
