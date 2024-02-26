@@ -1,7 +1,9 @@
 package ircd
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 )
@@ -11,6 +13,7 @@ type channeler interface {
 	owner() clientID
 
 	clients() ChannelClientStorer
+	count() int
 
 	password() string
 	setPassword(password string)
@@ -85,6 +88,12 @@ func (ch *channel) name() string {
 
 func (ch *channel) clients() ChannelClientStorer {
 	return ch.cs
+}
+
+func (ch *channel) count() int {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	return ch.cs.count()
 }
 
 func (ch *channel) password() string {
@@ -193,6 +202,9 @@ func (ch *channel) modestring() string {
 			modes = append(modes, m)
 		}
 	}
+	slices.SortFunc[[]rune, rune](modes, func(a rune, b rune) int {
+		return cmp.Compare(a, b)
+	})
 	return fmt.Sprintf("+%s", string(modes))
 }
 

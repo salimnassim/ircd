@@ -2,10 +2,12 @@ package ircd
 
 import (
 	"bufio"
+	"cmp"
 	"fmt"
 	"io"
 	"net"
 	"os"
+	"slices"
 	"sync"
 )
 
@@ -271,6 +273,9 @@ func (c *client) modestring() string {
 			modes = append(modes, m)
 		}
 	}
+	slices.SortFunc[[]rune, rune](modes, func(a rune, b rune) int {
+		return cmp.Compare(a, b)
+	})
 	return fmt.Sprintf("+%s", string(modes))
 }
 
