@@ -23,7 +23,7 @@ func TestCommandAway(t *testing.T) {
 			select {
 			case <-c.gotPong:
 				continue
-			case <-c.recv:
+			case <-c.in:
 				continue
 			case <-c.out:
 				continue

@@ -22,10 +22,14 @@ func handleWhois(s *server, c clienter, m message) {
 
 	channels := []string{}
 	memberOf := s.Channels.memberOf(who)
-	for _, c := range memberOf {
-		if !c.secret() {
-			channels = append(channels, c.name())
+	for _, ch := range memberOf {
+		if ch.hasMode(modeChannelSecret) {
+			continue
 		}
+		if ch.hasMode(modeChannelPrivate) && !ch.clients().isMember(c) {
+			continue
+		}
+		channels = append(channels, ch.name())
 	}
 
 	c.sendRPL(s.name, rplWhoisChannels{

@@ -289,7 +289,7 @@ func TestRPL(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		m := tc.input.format()
+		m := tc.input.rpl()
 
 		if m != tc.want {
 			t.Errorf("got %s, want %s", m, tc.want)

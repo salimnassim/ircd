@@ -36,6 +36,7 @@ var channelModeMap = map[rune]channelMode{
 	'R': modeChannelRegisteredOnly,
 	'n': modeChannelNoExternal,
 	'z': modeChannelTLSOnly,
+	't': modeChannelRestrictTopic,
 }
 
 const (
@@ -50,6 +51,7 @@ const (
 	modeChannelRegisteredOnly
 	modeChannelNoExternal
 	modeChannelTLSOnly
+	modeChannelRestrictTopic
 )
 
 type channelMembershipMode uint16

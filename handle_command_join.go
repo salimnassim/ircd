@@ -42,6 +42,7 @@ func handleJoin(s *server, c clienter, m message) {
 
 			// set default channel modes
 			ch.addMode(modeChannelNoExternal)
+			ch.addMode(modeChannelRestrictTopic)
 
 			metrics.Channels.Inc()
 		}

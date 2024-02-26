@@ -7,7 +7,7 @@ func handleList(s *server, c clienter, m message) {
 			client: c.nickname(),
 		})
 		for _, ch := range s.Channels.all() {
-			if ch.secret() {
+			if ch.hasMode(modeChannelSecret) {
 				continue
 			}
 

@@ -16,7 +16,7 @@ func handleKick(s *server, c clienter, m message) {
 
 	if !ch.clients().isMember(c) {
 		// send 403 if channel is secret
-		if ch.secret() {
+		if ch.hasMode(modeChannelSecret) {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
 				channel: channel,

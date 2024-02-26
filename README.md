@@ -26,7 +26,7 @@ By default the server will run on port `6667` and prometheus metrics are exposed
 - [ ] INVITE
 - [X] VERSION (partial, local server only)
 - [ ] ADMIN
-- [X] MODE (partial)
+- [X] MODE (client: iortz, channel: mspnzt, member: vhoaq)
 - [X] AWAY
 - [ ] LINK
 - [ ] IRCv3

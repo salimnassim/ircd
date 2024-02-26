@@ -95,7 +95,6 @@ func handleHandshake(s *server, c clienter) {
 		})
 
 		// set default modes
-		c.addMode(modeClientInvisible)
 		c.addMode(modeClientVhost)
 
 		if c.tls() {
