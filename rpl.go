@@ -523,6 +523,22 @@ func (r errNoSuchChannel) rpl() string {
 	)
 }
 
+// 404 ERR_CANNOTSENDTOCHAN
+//
+// https://modern.ircdocs.horse/#errcannotsendtochan-404
+type errCannotSendToChan struct {
+	client  string
+	channel string
+	text    string
+}
+
+func (r errCannotSendToChan) rpl() string {
+	return fmt.Sprintf(
+		"404 %s %s :%s",
+		r.client, r.channel, r.text,
+	)
+}
+
 // 431 ERR_NONICKNAMEGIVEN
 //
 // https://modern.ircdocs.horse/#errnonicknamegiven-431
