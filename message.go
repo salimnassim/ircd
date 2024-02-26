@@ -4,7 +4,7 @@ import "strings"
 
 type message struct {
 	raw     string
-	tags    map[string]any
+	tags    map[string]string
 	prefix  string
 	command string
 	params  []string
