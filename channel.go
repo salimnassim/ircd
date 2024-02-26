@@ -203,7 +203,7 @@ func (ch *channel) addClient(c clienter, password string) error {
 
 // Remove client from channel.
 func (ch *channel) removeClient(c clienter) {
-	ch.cs.delete(c.id())
+	ch.cs.delete(c)
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY.

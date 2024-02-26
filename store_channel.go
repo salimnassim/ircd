@@ -5,12 +5,13 @@ import "sync"
 type ChannelStorer interface {
 	// Number of channels in store.
 	count() int
-	// add channel to store. ID is most likely channel name.
+	// Add channel to store.
 	add(name string, ch channeler)
+	// Delete channel.
 	delete(name string)
 	// Check if client is a member of channel.
 	isMember(c clienter, ch channeler) (ok bool)
-	// get channel by name.
+	// Get channel by name.
 	get(name string) (ch channeler, exists bool)
 	// Get which channels a client belongs to.
 	memberOf(c clienter) (chs []channeler)
@@ -64,7 +65,7 @@ func (s *channelStore) delete(name string) {
 }
 
 func (s *channelStore) isMember(c clienter, ch channeler) bool {
-	return ch.clients().isMember(c.id())
+	return ch.clients().isMember(c)
 }
 
 func (s *channelStore) memberOf(c clienter) []channeler {
@@ -72,7 +73,7 @@ func (s *channelStore) memberOf(c clienter) []channeler {
 
 	s.mu.RLock()
 	for _, ch := range s.channels {
-		if ch.clients().isMember(c.id()) {
+		if ch.clients().isMember(c) {
 			channels = append(channels, ch)
 		}
 	}

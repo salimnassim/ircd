@@ -530,6 +530,21 @@ func (r errNicknameInUse) format() string {
 	)
 }
 
+// 441 ERR_USERNOTINCHANNEL
+// https://modern.ircdocs.horse/#errusernotinchannel-441
+type errUserNotInChannel struct {
+	client  string
+	nick    string
+	channel string
+}
+
+func (r errUserNotInChannel) format() string {
+	return fmt.Sprintf(
+		"441 %s %s %s :They aren't on that channel.",
+		r.client, r.nick, r.channel,
+	)
+}
+
 // 442 ERR_NOTONCHANNEL
 // https://modern.ircdocs.horse/#errnotonchannel-442
 type errNotOnChannel struct {
@@ -635,6 +650,20 @@ func (r errNoPrivileges) format() string {
 	return fmt.Sprintf(
 		"481 %s :Permission Denied - You're not an IRC operator.",
 		r.client,
+	)
+}
+
+// 482 ERR_CHANOPRIVSNEEDED
+// https://modern.ircdocs.horse/#errchanoprivsneeded-482
+type errChanoPrivsNeeded struct {
+	client  string
+	channel string
+}
+
+func (r errChanoPrivsNeeded) format() string {
+	return fmt.Sprintf(
+		"482 %s %s :You're not channel operator.",
+		r.client, r.channel,
 	)
 }
 

@@ -103,3 +103,17 @@ func (cmd joinCommand) command() string {
 		cmd.prefix, cmd.channel,
 	)
 }
+
+type kickCommand struct {
+	prefix  string
+	channel string
+	target  string
+	reason  string
+}
+
+func (cmd kickCommand) command() string {
+	return fmt.Sprintf(
+		":%s KICK %s %s :%s",
+		cmd.prefix, cmd.channel, cmd.target, cmd.reason,
+	)
+}

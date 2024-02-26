@@ -74,10 +74,11 @@ func handleJoin(s *server, c clienter, m message) {
 
 		// chanowner
 		if ch.owner() == c.id() {
+			ch.clients().addMode(c, modeOwner)
 			ch.broadcastCommand(modeCommand{
 				source:     s.name,
 				target:     ch.name(),
-				modestring: "+o",
+				modestring: ch.clients().modestring(c),
 				args:       c.nickname(),
 			}, c.id(), false)
 		}
