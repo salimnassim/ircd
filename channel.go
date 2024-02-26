@@ -14,7 +14,7 @@ type channeler interface {
 	// Channel owner.
 	owner() clientID
 
-	// All channel members.
+	// Access client members.
 	clients() channelClientStorer
 	// Number of channel members.
 	count() int
@@ -64,6 +64,13 @@ type channeler interface {
 	removeMode(mode channelMode)
 	// Does channel have mode?
 	hasMode(mode channelMode) bool
+
+	// Has client been invited to the channel?
+	isInvited(c clienter) bool
+	// Add invite to channel
+	addInvite(clientID clientID)
+	// Remove invite from channel
+	removeInvite(clientID clientID)
 }
 
 type banMask string
@@ -75,9 +82,10 @@ type channel struct {
 	// Channel topic.
 	t *topic
 	// Channel clients.
-	cs    channelClientStorer
-	modes channelMode
-	bans  map[banMask]bool
+	cs      channelClientStorer
+	modes   channelMode
+	bans    map[banMask]bool
+	invites map[clientID]bool
 	// Channel owner.
 	o clientID
 	// Channel password.
@@ -99,10 +107,12 @@ func newChannel(channelName string, owner clientID) *channel {
 			timestamp: 0,
 			author:    "",
 		},
-		cs:    newChannelClientStore(),
-		modes: 0,
-		o:     owner,
-		p:     "",
+		cs:      newChannelClientStore(),
+		modes:   0,
+		bans:    make(map[banMask]bool),
+		invites: make(map[clientID]bool),
+		o:       owner,
+		p:       "",
 	}
 
 	return channel
@@ -292,4 +302,31 @@ func (ch *channel) hasMode(mode channelMode) bool {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
 	return ch.modes&mode != 0
+}
+
+func (ch *channel) isInvited(c clienter) bool {
+	ch.mu.RLock()
+	defer ch.mu.RUnlock()
+	// is client in the invite map?
+	iv, ok := ch.invites[c.id()]
+	if !ok {
+		return false
+	}
+	// invite has been already used
+	if iv == false {
+		return false
+	}
+	return true
+}
+
+func (ch *channel) addInvite(clientID clientID) {
+	ch.mu.Lock()
+	ch.invites[clientID] = true
+	ch.mu.Unlock()
+}
+
+func (ch *channel) removeInvite(clientID clientID) {
+	ch.mu.Lock()
+	delete(ch.invites, clientID)
+	ch.mu.Unlock()
 }
