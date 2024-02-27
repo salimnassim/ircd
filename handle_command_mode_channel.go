@@ -89,6 +89,8 @@ func handleModeChannel(s *server, c clienter, m message) {
 				ch.removeMode(d)
 			case modeChannelInviteOnly:
 				ch.removeMode(d)
+			case modeChannelKey:
+				ch.removeMode(d)
 			}
 		}
 		after := ch.mode()
@@ -142,15 +144,11 @@ func handleModeChannel(s *server, c clienter, m message) {
 		return
 	}
 
-	type tmc struct {
-		nick string
-		mode string
-	}
-
 	if modeargs != "" {
 		// split target clients from modeargs
 		tcs := strings.Split(modeargs, " ")
 
+		// todo check for a,b,c... type modes
 		addm, _ := parseModestring[channelMode](modestring, channelModeMap)
 		if slices.Contains(addm, modeChannelKey) {
 			for i, mode := range addm {
@@ -179,6 +177,11 @@ func handleModeChannel(s *server, c clienter, m message) {
 
 		// todo: client can change mode only for user that is below their bitmask
 		// todo: refactor this
+
+		type tmc struct {
+			nick string
+			mode string
+		}
 
 		// parse modestring
 		tcm := []tmc{}
