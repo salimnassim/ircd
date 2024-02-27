@@ -87,7 +87,7 @@ func handleJoin(s *server, c clienter, m message) {
 
 		// chanowner
 		if ch.owner() == c.id() {
-			ch.clients().addMode(c, modeOwner)
+			ch.clients().addMode(c, modeMemberOwner)
 			ch.broadcastCommand(modeCommand{
 				source:     s.name,
 				target:     ch.name(),

@@ -29,7 +29,7 @@ func handlePrivmsg(s *server, c clienter, m message) {
 				continue
 			}
 
-			if ch.hasMode(modeChannelModerated) && !ch.clients().hasMode(c, modeVoice, modeHalfOperator, modeOperator, modeAdmin, modeOwner) {
+			if ch.hasMode(modeChannelModerated) && !ch.clients().hasMode(c, modeMemberVoice, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
 				c.sendRPL(s.name, errCannotSendToChan{
 					client:  c.nickname(),
 					channel: ch.name(),

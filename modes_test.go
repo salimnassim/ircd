@@ -64,8 +64,8 @@ func TestParseChannelMembership(t *testing.T) {
 			input: "+v+v",
 			want: tcg{
 				add: []channelMembershipMode{
-					modeVoice,
-					modeVoice,
+					modeMemberVoice,
+					modeMemberVoice,
 				},
 				del: []channelMembershipMode{},
 			},

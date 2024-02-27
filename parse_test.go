@@ -36,6 +36,7 @@ func TestParse(t *testing.T) {
 		{input: "QUIT :reason here", want: message{command: "QUIT", params: []string{"reason", "here"}}},
 		{input: "AWAY :brb afk", want: message{command: "AWAY", params: []string{"brb", "afk"}}},
 		{input: "", want: message{command: ""}},
+		{input: "MODE #testing +v+v+v one two three", want: message{command: "MODE", params: []string{"#testing", "+v+v+V", "one", "two", "three"}}},
 		{input: "@tag1=example.com :nick!user@host PRIVMSG #channel :Hello, world!", want: message{command: "PRIVMSG", tags: map[string]string{
 			"tag1": "example.com",
 		}}},

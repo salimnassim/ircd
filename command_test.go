@@ -65,6 +65,15 @@ func TestCommands(t *testing.T) {
 			want: ":server MODE client +v",
 		},
 		{
+			input: modeCommand{
+				source:     "nick!user@host.fqdn",
+				target:     "#channel",
+				modestring: "+v+v",
+				args:       "one two",
+			},
+			want: ":nick!user@host.fqdn MODE #channel +v+v one two",
+		},
+		{
 			input: joinCommand{
 				prefix:  "nick!user@host.fqdn",
 				channel: "#testing",
