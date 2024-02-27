@@ -33,10 +33,6 @@ func handleConnection(conn net.Conn, s *server) {
 
 	// read input from client
 	go func() {
-		defer func() {
-			c.stop <- "Broken pipe."
-		}()
-
 		reader := bufio.NewReader(conn)
 		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {
@@ -51,6 +47,10 @@ func handleConnection(conn net.Conn, s *server) {
 			}
 			line = strings.Trim(line, "\r\n")
 			c.recv(line)
+		}
+
+		if !c.alive {
+			c.kill("Broken pip")
 		}
 	}()
 
