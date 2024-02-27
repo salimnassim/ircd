@@ -9,7 +9,22 @@ import (
 func handleJoin(s *server, c clienter, m message) {
 	// join can have multiple channels separated by a comma
 	targets := strings.Split(m.params[0], ",")
-	for _, target := range targets {
+
+	keys := []string{}
+	// keys set?
+	if len(m.params) >= 2 {
+		keys = strings.Split(m.params[1], ",")
+		// number of target has to match with number of keys
+		if len(targets) != len(keys) {
+			c.sendRPL(s.name, errNeedMoreParams{
+				client:  c.nickname(),
+				command: m.command,
+			})
+			return
+		}
+	}
+
+	for i, target := range targets {
 		// channels have to start with # or & and be less than 9 charaacters
 		if !m.isTargetChannel() {
 			c.sendRPL(s.name, errNoSuchChannel{
@@ -68,15 +83,26 @@ func handleJoin(s *server, c clienter, m message) {
 			ch.removeInvite(c.id())
 		}
 
-		// add client to channel
-		err := ch.addClient(c, "")
-		if err != nil {
-			c.sendRPL(s.name, errBadChannelKey{
-				client:  c.nickname(),
-				channel: ch.name(),
-			})
-			continue
+		// if channel has key, compare key
+		if ch.hasMode(modeChannelKey) {
+			if len(keys) < i+1 {
+				c.sendRPL(s.name, errBadChannelKey{
+					client:  c.nickname(),
+					channel: ch.name(),
+				})
+				continue
+			}
+			if ch.key() != keys[i] {
+				c.sendRPL(s.name, errBadChannelKey{
+					client:  c.nickname(),
+					channel: ch.name(),
+				})
+				continue
+			}
 		}
+
+		// add client to channel
+		ch.clients().add(c)
 
 		// broadcast to all clients on the channel
 		// that a client has joined
@@ -87,7 +113,7 @@ func handleJoin(s *server, c clienter, m message) {
 
 		// chanowner
 		if ch.owner() == c.id() {
-			ch.clients().addMode(c, modeOwner)
+			ch.clients().addMode(c, modeMemberOwner)
 			ch.broadcastCommand(modeCommand{
 				source:     s.name,
 				target:     ch.name(),
@@ -136,6 +162,13 @@ func handleJoin(s *server, c clienter, m message) {
 			client:  c.nickname(),
 			channel: ch.name(),
 		})
-	}
 
+		// send current channel modes to client
+		c.sendCommand(modeCommand{
+			source:     s.name,
+			target:     ch.name(),
+			modestring: ch.modestring(),
+			args:       "",
+		})
+	}
 }

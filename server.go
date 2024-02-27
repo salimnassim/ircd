@@ -233,10 +233,10 @@ func (s *server) Stats() (visible int, invisible, channels int) {
 }
 
 // Removes client from channels and client map.
-func (s *server) removeClient(c clienter) {
+func (s *server) cleanup(c clienter) {
 	memberOf := s.Channels.memberOf(c)
 	for _, ch := range memberOf {
-		ch.removeClient(c)
+		ch.clients().remove(c)
 	}
 
 	s.Clients.delete(c.id())

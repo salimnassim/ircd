@@ -24,7 +24,7 @@ func handleTopic(s *server, c clienter, m message) {
 		return
 	}
 
-	if ch.hasMode(modeChannelRestrictTopic) && !ch.clients().hasMode(c, modeHalfOperator, modeOperator, modeAdmin, modeOwner) {
+	if ch.hasMode(modeChannelRestrictTopic) && !ch.clients().hasMode(c, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
 		c.sendRPL(s.name, errChanoPrivsNeeded{
 			client:  c.nickname(),
 			channel: ch.name(),

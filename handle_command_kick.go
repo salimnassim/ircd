@@ -32,7 +32,7 @@ func handleKick(s *server, c clienter, m message) {
 	}
 
 	// user has to be halfop, op, admin or owner
-	if !ch.clients().hasMode(c, modeHalfOperator, modeOperator, modeAdmin, modeOwner) {
+	if !ch.clients().hasMode(c, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
 		c.sendRPL(s.name, errChanoPrivsNeeded{
 			client:  c.nickname(),
 			channel: ch.name(),
@@ -74,6 +74,6 @@ func handleKick(s *server, c clienter, m message) {
 			target:  tc.nickname(),
 			reason:  reason,
 		}, c.id(), false)
-		ch.clients().delete(tc)
+		ch.clients().remove(tc)
 	}
 }

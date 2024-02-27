@@ -48,6 +48,46 @@ func TestParseClientModestring(t *testing.T) {
 	}
 }
 
+func TestParseChannelMembership(t *testing.T) {
+	type tcg struct {
+		add []channelMembershipMode
+		del []channelMembershipMode
+	}
+
+	type tc struct {
+		input string
+		want  tcg
+	}
+
+	tcs := []tc{
+		{
+			input: "+v+v",
+			want: tcg{
+				add: []channelMembershipMode{
+					modeMemberVoice,
+					modeMemberVoice,
+				},
+				del: []channelMembershipMode{},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		a, d := parseModestring[channelMembershipMode](tc.input, channelMembershipModeMap)
+		for i, v := range a {
+			if v != tc.want.add[i] {
+				t.Errorf("got: %d, want: %d", v, tc.want.add[i])
+			}
+		}
+
+		for i, v := range d {
+			if v != tc.want.del[i] {
+				t.Errorf("got: %d, want: %d", v, tc.want.add[i])
+			}
+		}
+	}
+}
+
 func TestParseChannelModestring(t *testing.T) {
 	type tcg struct {
 		add []channelMode

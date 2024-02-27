@@ -57,31 +57,43 @@ const (
 type channelMembershipMode uint16
 
 var channelMembershipModeMap = map[rune]channelMembershipMode{
-	' ': modeNone,
-	'v': modeVoice,
-	'h': modeHalfOperator,
-	'o': modeOperator,
-	'a': modeAdmin,
-	'q': modeOwner,
+	'v': modeMemberVoice,
+	'h': modeMemberHalfOperator,
+	'o': modeMemberOperator,
+	'a': modeMemberAdmin,
+	'q': modeMemberOwner,
 }
 
 const (
-	// None
-	modeNone = channelMembershipMode(1) << iota
 	// Channel voiced.
-	modeVoice
+	modeMemberVoice = channelMembershipMode(1) << iota
 	// Channel half-operator.
-	modeHalfOperator
+	modeMemberHalfOperator
 	// Channel operator.
-	modeOperator
+	modeMemberOperator
 	// Channel admin.
-	modeAdmin
+	modeMemberAdmin
 	// Channel owner.
-	modeOwner
+	modeMemberOwner
 )
 
+// Get matching rune from map by T.
+func runeByMode[T ~uint16](t T, m map[rune]T) rune {
+	for r, mode := range m {
+		if t == mode {
+			return r
+		}
+	}
+	return '?'
+}
+
+// Parse modestring into add/del slices of type T.
+//
+// Example: +v-o for channelMembershipModeMap becomes [modeMemberVoice], [modeMemberOperator]
 func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del []T) {
 	q := true
+	add = []T{}
+	del = []T{}
 
 	for _, c := range modestring {
 		switch c {

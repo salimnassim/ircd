@@ -24,7 +24,7 @@ func handleInvite(s *server, c clienter, m message) {
 	}
 
 	// if channel has invite only, client has to be hop or greater
-	if ch.hasMode(modeChannelInviteOnly) && !ch.clients().hasMode(c, modeHalfOperator, modeOperator, modeAdmin, modeOwner) {
+	if ch.hasMode(modeChannelInviteOnly) && !ch.clients().hasMode(c, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
 		c.sendRPL(s.name, errChanoPrivsNeeded{
 			client:  c.nickname(),
 			channel: ch.name(),

@@ -21,7 +21,7 @@ func handleConnection(conn net.Conn, s *server) {
 	}
 
 	defer conn.Close()
-	defer s.removeClient(c)
+	defer s.cleanup(c)
 	defer metrics.Clients.Dec()
 
 	s.Clients.add(c)
