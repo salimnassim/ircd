@@ -22,8 +22,8 @@ func handleConnection(conn net.Conn, s *server) {
 
 	defer conn.Close()
 	defer s.removeClient(c)
+	defer metrics.Clients.Dec()
 
-	// add client to store
 	s.Clients.add(c)
 	metrics.Clients.Inc()
 
@@ -33,10 +33,6 @@ func handleConnection(conn net.Conn, s *server) {
 
 	// read input from client
 	go func() {
-		defer func() {
-			c.stop <- "Broken pipe."
-		}()
-
 		reader := bufio.NewReader(conn)
 		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {
@@ -44,13 +40,14 @@ func handleConnection(conn net.Conn, s *server) {
 				c.stop <- err.Error()
 				break
 			}
-			line := scanner.Text()
-			if err != nil {
-				c.stop <- err.Error()
-				break
-			}
-			line = strings.Trim(line, "\r\n")
+			line := strings.Trim(
+				scanner.Text(), "\r\n",
+			)
 			c.recv(line)
+		}
+
+		if !c.alive {
+			c.kill("Broken pipe (read)")
 		}
 	}()
 
@@ -66,23 +63,22 @@ func handleConnection(conn net.Conn, s *server) {
 					ch.broadcastCommand(partCommand{
 						prefix:  c.prefix(),
 						channel: ch.name(),
-						text:    fmt.Sprintf("Quit: %s.", e),
+						text:    fmt.Sprintf("Quit: %s", e),
 					}, c.clientID, true)
 				}
 			}
-			metrics.Clients.Dec()
-			return
-		case <-c.gotPong:
+			c.alive = false
+		case <-c.ponged:
 			timer = nil
 		case <-timer:
 			for _, ch := range s.Channels.memberOf(c) {
 				ch.broadcastCommand(partCommand{
 					prefix:  c.prefix(),
 					channel: ch.name(),
-					text:    fmt.Sprintf("Quit: Timeout after %d seconds.", s.pongMaxLatency),
+					text:    fmt.Sprintf("Quit: Timeout after %d seconds", s.pongMaxLatency),
 				}, c.clientID, true)
 			}
-			return
+			c.alive = false
 		case <-time.After(pingDuration):
 			c.sendCommand(pingCommand{
 				text: s.name,

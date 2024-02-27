@@ -10,13 +10,13 @@ var (
 	Clients = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "ircd",
 		Name:      "clients",
-		Help:      "Number of connected clients",
+		Help:      "Number of connected clients.",
 	})
 	// Number of existing channels.
 	Channels = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "ircd",
 		Name:      "channels",
-		Help:      "Number of existing channels",
+		Help:      "Number of existing channels.",
 	})
 	// Number of commands received.
 	// This is a vector where the only label is 'name'.

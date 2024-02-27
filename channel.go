@@ -313,7 +313,7 @@ func (ch *channel) isInvited(c clienter) bool {
 		return false
 	}
 	// invite has been already used
-	if iv == false {
+	if !iv {
 		return false
 	}
 	return true

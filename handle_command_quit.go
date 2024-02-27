@@ -1,6 +1,7 @@
 package ircd
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -15,7 +16,7 @@ func handleQuit(s *server, c clienter, m message) {
 		ch.broadcastCommand(partCommand{
 			prefix:  c.prefix(),
 			channel: ch.name(),
-			text:    reason,
+			text:    fmt.Sprintf("Quit: %s", reason),
 		}, c.id(), false)
 	}
 
