@@ -12,8 +12,8 @@ type channelClientStorer interface {
 	count() int
 	// Add client to channel.
 	add(c clienter)
-	// Delete client from channel.
-	delete(c clienter)
+	// Remove client from channel.
+	remove(c clienter)
 	// Get all channel clients.
 	all() []clienter
 	// Is client member of the channel?
@@ -57,7 +57,7 @@ func (s *channelClientStore) add(c clienter) {
 	s.mu.Unlock()
 }
 
-func (s *channelClientStore) delete(c clienter) {
+func (s *channelClientStore) remove(c clienter) {
 	s.mu.Lock()
 	delete(s.clients, c)
 	s.mu.Unlock()

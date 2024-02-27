@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -150,12 +151,37 @@ func handleModeChannel(s *server, c clienter, m message) {
 		// split target clients from modeargs
 		tcs := strings.Split(modeargs, " ")
 
-		tcm := []tmc{}
+		addm, _ := parseModestring[channelMode](modestring, channelModeMap)
+		if slices.Contains(addm, modeChannelKey) {
+			for i, mode := range addm {
+				if len(tcs) < i {
+					c.sendRPL(s.name, errNeedMoreParams{
+						client:  c.nickname(),
+						command: m.command,
+					})
+					return
+				}
+				switch mode {
+				case modeChannelKey:
+					ch.setKey(tcs[i])
+					ch.addMode(modeChannelKey)
+				}
+
+				ch.broadcastCommand(modeCommand{
+					source:     c.prefix(),
+					target:     ch.name(),
+					modestring: fmt.Sprintf("+%c", runeByMode[channelMode](modeChannelKey, channelModeMap)),
+					args:       tcs[i],
+				}, c.id(), false)
+			}
+			return
+		}
 
 		// todo: client can change mode only for user that is below their bitmask
 		// todo: refactor this
 
 		// parse modestring
+		tcm := []tmc{}
 		add, del := parseModestring[channelMembershipMode](modestring, channelMembershipModeMap)
 		for i, mode := range add {
 			if len(tcs) < i {
@@ -259,6 +285,10 @@ func handleModeChannel(s *server, c clienter, m message) {
 					mode: fmt.Sprintf("-%c", runeByMode[channelMembershipMode](mode, channelMembershipModeMap)),
 				})
 			}
+		}
+
+		if len(tcm) == 0 {
+			return
 		}
 
 		modeNicknames := []string{}

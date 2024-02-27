@@ -88,6 +88,8 @@ func runeByMode[T ~uint16](t T, m map[rune]T) rune {
 }
 
 // Parse modestring into add/del slices of type T.
+//
+// Example: +v-o for channelMembershipModeMap becomes [modeMemberVoice], [modeMemberOperator]
 func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del []T) {
 	q := true
 	add = []T{}

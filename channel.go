@@ -19,11 +19,6 @@ type channeler interface {
 	// Number of channel members.
 	count() int
 
-	// Get password.
-	password() string
-	// Set channel password.
-	setPassword(password string)
-
 	// Channel topic.
 	topic() *topic
 	// Set channel topic.
@@ -35,11 +30,6 @@ type channeler interface {
 	addBan(mask banMask) error
 	// Remove ban mask.
 	removeBan(mask banMask) error
-
-	// Add client to channel.
-	addClient(c clienter, password string) error
-	// Remove client from channel.
-	removeClient(c clienter)
 
 	// Channel members in NAMES format including highest prefix.
 	names() []string
@@ -71,6 +61,11 @@ type channeler interface {
 	addInvite(clientID clientID)
 	// Remove invite from channel
 	removeInvite(clientID clientID)
+
+	// Get channel key (password).
+	key() string
+	// Set channel key (password).
+	setKey(key string)
 }
 
 type banMask string
@@ -89,7 +84,7 @@ type channel struct {
 	// Channel owner.
 	o clientID
 	// Channel password.
-	p string
+	k string
 }
 
 type topic struct {
@@ -112,7 +107,7 @@ func newChannel(channelName string, owner clientID) *channel {
 		bans:    make(map[banMask]bool),
 		invites: make(map[clientID]bool),
 		o:       owner,
-		p:       "",
+		k:       "",
 	}
 
 	return channel
@@ -134,15 +129,15 @@ func (ch *channel) count() int {
 	return ch.cs.count()
 }
 
-func (ch *channel) password() string {
+func (ch *channel) key() string {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
-	return ch.p
+	return ch.k
 }
 
-func (ch *channel) setPassword(password string) {
+func (ch *channel) setKey(key string) {
 	ch.mu.Lock()
-	ch.p = password
+	ch.k = key
 	ch.mu.Unlock()
 }
 
@@ -204,22 +199,6 @@ func (ch *channel) topic() *topic {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
 	return ch.t
-}
-
-// Adds client to channel. If password does not match, an error is returned.
-func (ch *channel) addClient(c clienter, password string) error {
-	if password != "" && ch.p != password {
-		return errorBadChannelKey
-	}
-
-	ch.cs.add(c)
-
-	return nil
-}
-
-// Remove client from channel.
-func (ch *channel) removeClient(c clienter) {
-	ch.cs.delete(c)
 }
 
 // Returns channel users delimited by a space for RPL_NAMREPLY.

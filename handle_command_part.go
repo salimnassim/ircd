@@ -34,7 +34,7 @@ func handlePart(s *server, c clienter, m message) {
 		}
 
 		// remove client
-		ch.removeClient(c)
+		ch.clients().remove(c)
 
 		// broadcast that user has left the channel
 		ch.broadcastCommand(partCommand{

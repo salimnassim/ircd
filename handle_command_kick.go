@@ -74,6 +74,6 @@ func handleKick(s *server, c clienter, m message) {
 			target:  tc.nickname(),
 			reason:  reason,
 		}, c.id(), false)
-		ch.clients().delete(tc)
+		ch.clients().remove(tc)
 	}
 }
