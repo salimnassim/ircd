@@ -45,8 +45,8 @@ func main() {
 		TLS:             tlsEnabled,
 		CertificateFile: os.Getenv("TLS_CERTIFICATE"),
 		CertificateKey:  os.Getenv("TLS_KEY"),
-		PingFrequency:   60,
-		PongMaxLatency:  24,
+		PingFrequency:   30,
+		PongMaxLatency:  10,
 		Parameters: ircd.ServerConfigParameters{
 			MaxAwayLength:     128,
 			CaseMapping:       "ascii",
@@ -72,7 +72,7 @@ func main() {
 
 	server := ircd.NewServer(config)
 
-	go func(server ircd.Server, isTLS bool) {
+	go func(server ircd.Serverer, isTLS bool) {
 		log.Info().Msgf("starting irc, listening on tcp:%s", os.Getenv("PORT"))
 		listener, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT")))
 		if err != nil {
@@ -83,7 +83,7 @@ func main() {
 	}(server, false)
 
 	if config.TLS {
-		go func(server ircd.Server, isTLS bool) {
+		go func(server ircd.Serverer, isTLS bool) {
 			log.Info().Msgf("starting irc, listening on tcp:%s TLS", os.Getenv("PORT_TLS"))
 			listener, err := tls.Listen(
 				"tcp", fmt.Sprintf(":%s", os.Getenv("PORT_TLS")),

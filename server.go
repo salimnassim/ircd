@@ -10,7 +10,7 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
-type Server interface {
+type Serverer interface {
 	Run(listener net.Listener, isTLS bool)
 }
 
@@ -107,7 +107,8 @@ type server struct {
 	Channels  ChannelStorer
 	Operators OperatorStorer
 	motd      *[]string
-	ports     []string
+	// List of active ports. TLS is prefixed with a +
+	p []string
 
 	pingFrequency  int
 	pongMaxLatency int
@@ -129,7 +130,7 @@ func NewServer(config ServerConfig) *server {
 		Channels:       NewChannelStore("channels"),
 		Operators:      NewOperatorStore(),
 		motd:           &config.MOTD,
-		ports:          []string{},
+		p:              []string{},
 		pingFrequency:  config.PingFrequency,
 		pongMaxLatency: config.PongMaxLatency,
 		params:         config.Parameters.build(),
@@ -215,14 +216,14 @@ func registerHandlers(s *server) {
 
 func (s *server) addPort(port string) {
 	s.mu.Lock()
-	s.ports = append(s.ports, port)
+	s.p = append(s.p, port)
 	s.mu.Unlock()
 }
 
-func (s *server) Ports() []string {
+func (s *server) ports() []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.ports
+	return s.p
 }
 
 // Returns the number of connected clients and open channels.
