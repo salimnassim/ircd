@@ -80,8 +80,10 @@ const (
 	modeOwner
 )
 
-func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del []T) {
+func parseModestring[T ~uint16](modestring string, m map[rune]T) ([]T, []T) {
 	q := true
+	add := []T{}
+	del := []T{}
 
 	for _, c := range modestring {
 		switch c {
