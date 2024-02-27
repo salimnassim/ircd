@@ -9,8 +9,6 @@ import (
 	"sync"
 )
 
-type clientNickname string
-
 type clienter interface {
 	String() string
 
@@ -107,11 +105,11 @@ type client struct {
 	// Is sent password correct?
 	pw bool
 
-	conn    net.Conn
-	in      chan string
-	out     chan string
-	stop    chan string
-	gotPong chan bool
+	conn   net.Conn
+	in     chan string
+	out    chan string
+	stop   chan string
+	ponged chan bool
 }
 
 func newClient(connection net.Conn, id string) (*client, error) {
@@ -155,10 +153,10 @@ func newClient(connection net.Conn, id string) (*client, error) {
 
 		conn: connection,
 
-		in:      make(chan string),
-		out:     make(chan string),
-		stop:    make(chan string),
-		gotPong: make(chan bool),
+		in:     make(chan string),
+		out:    make(chan string),
+		stop:   make(chan string),
+		ponged: make(chan bool),
 	}
 
 	if port == os.Getenv("PORT_TLS") {
@@ -338,7 +336,7 @@ func (c *client) send(text string) {
 }
 
 func (c *client) pong(pong bool) {
-	c.gotPong <- pong
+	c.ponged <- pong
 }
 
 func (c *client) kill(reason string) {
