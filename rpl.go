@@ -290,6 +290,12 @@ type rplChannelModeIs struct {
 }
 
 func (r rplChannelModeIs) rpl() string {
+	if r.modeargs == "" {
+		return fmt.Sprintf(
+			"324 %s %s %s",
+			r.client, r.channel, r.modestring,
+		)
+	}
 	return fmt.Sprintf(
 		"324 %s %s %s %s",
 		r.client, r.channel, r.modestring, r.modeargs,
