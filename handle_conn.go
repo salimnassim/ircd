@@ -40,17 +40,14 @@ func handleConnection(conn net.Conn, s *server) {
 				c.stop <- err.Error()
 				break
 			}
-			line := scanner.Text()
-			if err != nil {
-				c.stop <- err.Error()
-				break
-			}
-			line = strings.Trim(line, "\r\n")
+			line := strings.Trim(
+				scanner.Text(), "\r\n",
+			)
 			c.recv(line)
 		}
 
 		if !c.alive {
-			c.kill("Broken pip")
+			c.kill("Broken pipe (read)")
 		}
 	}()
 
