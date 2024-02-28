@@ -17,8 +17,8 @@ func handleQuit(s *server, c clienter, m message) {
 			prefix:  c.prefix(),
 			channel: ch.name(),
 			text:    fmt.Sprintf("Quit: %s", reason),
-		}, c.id(), false)
+		}, c.id(), true)
 	}
 
-	c.kill("quit")
+	c.kill(reason)
 }

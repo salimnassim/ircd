@@ -209,7 +209,7 @@ func registerHandlers(s *server) {
 	router.registerHandler("INVITE", handleInvite, middlewareNeedHandshake, middlewareNeedParams(2))
 	router.registerHandler("DEBUG", func(s *server, c clienter, m message) {
 		func() {}() // breakpoint here
-	}, middlewareNeedHandshake, middlewareNeedOper)
+	}, middlewareNeedHandshake)
 
 	s.router = router
 }
@@ -234,6 +234,8 @@ func (s *server) Stats() (visible int, invisible, channels int) {
 
 // Removes client from channels and client map.
 func (s *server) cleanup(c clienter) {
+	log.Info().Msgf("cleanup for %s", c.nickname())
+
 	memberOf := s.Channels.memberOf(c)
 	for _, ch := range memberOf {
 		ch.clients().remove(c)
