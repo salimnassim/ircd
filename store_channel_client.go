@@ -44,11 +44,9 @@ func newChannelClientStore() *channelClientStore {
 }
 
 func (s *channelClientStore) count() int {
-	clients := 0
 	s.mu.RLock()
-	clients = len(s.clients)
-	s.mu.RUnlock()
-	return clients
+	defer s.mu.RUnlock()
+	return len(s.clients)
 }
 
 func (s *channelClientStore) add(c clienter) {
