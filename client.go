@@ -73,8 +73,6 @@ type clienter interface {
 	// Send command to client.
 	sendCommand(command command)
 
-	// Receive message.
-	recv(text string)
 	// Send message.
 	send(text string)
 	// Send pong to internal channel.
@@ -86,7 +84,6 @@ type clienter interface {
 type client struct {
 	mu *sync.RWMutex
 
-	alive    bool
 	clientID clientID
 	address  string
 	nick     string
@@ -110,6 +107,10 @@ type client struct {
 	out    chan string
 	stop   chan string
 	ponged chan bool
+
+	killIn   chan bool
+	killOut  chan bool
+	killPong chan bool
 }
 
 func newClient(connection net.Conn, id string) (*client, error) {
@@ -137,7 +138,6 @@ func newClient(connection net.Conn, id string) (*client, error) {
 
 	client := &client{
 		mu:       &sync.RWMutex{},
-		alive:    true,
 		clientID: clientID(id),
 		address:  host,
 		nick:     "",
@@ -155,8 +155,12 @@ func newClient(connection net.Conn, id string) (*client, error) {
 
 		in:     make(chan string),
 		out:    make(chan string),
-		stop:   make(chan string),
-		ponged: make(chan bool),
+		stop:   make(chan string, 1),
+		ponged: make(chan bool, 1),
+
+		killIn:   make(chan bool, 1),
+		killOut:  make(chan bool, 1),
+		killPong: make(chan bool, 1),
 	}
 
 	if port == os.Getenv("PORT_TLS") {
@@ -327,10 +331,6 @@ func (c *client) sendCommand(cmd command) {
 	c.out <- cmd.command()
 }
 
-func (c *client) recv(text string) {
-	c.in <- text
-}
-
 func (c *client) send(text string) {
 	c.out <- text
 }
@@ -340,5 +340,10 @@ func (c *client) pong(pong bool) {
 }
 
 func (c *client) kill(reason string) {
-	c.stop <- reason
+	go func() {
+		c.killIn <- true
+		c.killOut <- true
+		c.killPong <- true
+		c.stop <- reason
+	}()
 }
