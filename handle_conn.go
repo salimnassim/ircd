@@ -12,7 +12,7 @@ func handleConnection(conn net.Conn, s *server) {
 	id := uuid.Must(uuid.NewRandom()).String()
 	c, err := newClient(conn, id)
 	if err != nil {
-		log.Error().Err(err).Msg("unable to create client")
+		log.Error().Err(err).Msg("cant create client")
 		return
 	}
 
@@ -21,9 +21,8 @@ func handleConnection(conn net.Conn, s *server) {
 
 	// starts goroutines for procesing incoming and outgoing messages
 	go handleConnectionIn(c, s)
-	go handleConnectionOut(c, s)
+	go handleConnectionOut(c)
 	handleConnectionPong(c, s)
 
-	s.cleanup(c)
-	metrics.Clients.Dec()
+	go s.cleanup(c)
 }

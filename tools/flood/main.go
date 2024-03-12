@@ -13,24 +13,26 @@ import (
 func main() {
 	var n int
 	var f bool
+	var ch string
 
 	flag.IntVar(&n, "n", 50, "number of clients")
-	flag.BoolVar(&f, "f", false, "spam privmsg")
+	flag.BoolVar(&f, "flood", false, "flood privmsg")
+	flag.StringVar(&ch, "chan", "#testing2", "channel to join")
 	flag.Parse()
 
-	fmt.Printf("starting %d clients, spam is %t", n, f)
+	fmt.Printf("starting %d clients, flood is %t", n, f)
 
 	var wg sync.WaitGroup
-	for i := 0; i <= n; i++ {
+	for i := 0; i < n; i++ {
 		wg.Add(1)
-		go run(f)
+		go run(f, ch)
 		defer wg.Done()
 	}
 	wg.Wait()
 }
 
-func run(f bool) {
-	channels := []string{"#testing2"}
+func run(f bool, ch string) {
+	channels := []string{ch}
 	cfg := irc.NewConfig(randomString(9, "f[", "]"))
 
 	cfg.SSL = true
@@ -51,7 +53,7 @@ func run(f bool) {
 				go func(chs []string) {
 					for {
 						ch := chs[rand.Intn(len(chs))]
-						c.Privmsg(ch, randomString(32, "", ""))
+						c.Privmsg(ch, randomString(16, "", ""))
 					}
 				}(channels)
 			}

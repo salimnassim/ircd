@@ -69,9 +69,13 @@ type clienter interface {
 
 	// Send RPL to client.
 	sendRPL(serverName string, rpl rpl)
-
 	// Send command to client.
 	sendCommand(command command)
+
+	// Reason client quit the server.
+	quitReason() string
+	// Set quit reason.
+	setQuitreason(reason string)
 
 	// Send message.
 	send(text string)
@@ -101,11 +105,12 @@ type client struct {
 	hs bool
 	// Is sent password correct?
 	pw bool
+	// Quit reason
+	q string
 
 	conn   net.Conn
 	in     chan string
 	out    chan string
-	stop   chan string
 	ponged chan bool
 
 	killIn   chan bool
@@ -153,9 +158,8 @@ func newClient(connection net.Conn, id string) (*client, error) {
 
 		conn: connection,
 
-		in:     make(chan string),
-		out:    make(chan string),
-		stop:   make(chan string, 1),
+		in:     make(chan string, 1),
+		out:    make(chan string, 1),
 		ponged: make(chan bool, 1),
 
 		killIn:   make(chan bool, 1),
@@ -171,6 +175,8 @@ func newClient(connection net.Conn, id string) (*client, error) {
 }
 
 func (c *client) String() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return fmt.Sprintf("id: %s, nickname: %s, username: %s, realname: %s, hostname: %s, handshake: %t",
 		c.clientID, c.nick, c.user, c.real, c.host, c.hs)
 }
@@ -331,6 +337,18 @@ func (c *client) sendCommand(cmd command) {
 	c.out <- cmd.command()
 }
 
+func (c *client) quitReason() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.q
+}
+
+func (c *client) setQuitreason(reason string) {
+	c.mu.Lock()
+	c.q = reason
+	c.mu.Unlock()
+}
+
 func (c *client) send(text string) {
 	c.out <- text
 }
@@ -340,10 +358,11 @@ func (c *client) pong(pong bool) {
 }
 
 func (c *client) kill(reason string) {
+	c.setQuitreason(reason)
+
 	go func() {
 		c.killIn <- true
 		c.killOut <- true
 		c.killPong <- true
-		c.stop <- reason
 	}()
 }

@@ -3,8 +3,6 @@ package ircd
 import (
 	"bufio"
 	"strings"
-
-	"github.com/rs/zerolog/log"
 )
 
 func handleConnectionIn(c *client, s *server) {
@@ -15,12 +13,13 @@ func handleConnectionIn(c *client, s *server) {
 	for alive {
 		select {
 		case <-c.killIn:
-			log.Debug().Str("nick", c.nickname()).Msg("Killed in")
 			alive = false
 		default:
 			scanner.Scan()
 			if scanner.Err() != nil {
-				c.kill("EOF")
+				if c.quitReason() == "" {
+					c.kill("EOF")
+				}
 				continue
 			}
 			line := strings.Trim(

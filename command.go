@@ -25,6 +25,19 @@ func (cmd partCommand) command() string {
 	)
 }
 
+// https://modern.ircdocs.horse/#quit-message
+type quitCommand struct {
+	prefix string
+	text   string
+}
+
+func (cmd quitCommand) command() string {
+	return fmt.Sprintf(
+		":%s QUIT :%s",
+		cmd.prefix, cmd.text,
+	)
+}
+
 type privmsgCommand struct {
 	prefix string
 	target string

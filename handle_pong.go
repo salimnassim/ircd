@@ -3,8 +3,6 @@ package ircd
 import (
 	"fmt"
 	"time"
-
-	"github.com/rs/zerolog/log"
 )
 
 func handleConnectionPong(c *client, s *server) {
@@ -16,7 +14,6 @@ func handleConnectionPong(c *client, s *server) {
 	for alive {
 		select {
 		case <-c.killPong:
-			log.Debug().Str("nick", c.nickname()).Msg("Killed pong")
 			alive = false
 		case <-c.ponged:
 			timer = nil
@@ -27,6 +24,7 @@ func handleConnectionPong(c *client, s *server) {
 			timer = time.After(pongDuration)
 		case <-timer:
 			c.kill(fmt.Sprintf("Timeout after %d seconds", s.pongMaxLatency))
+			continue
 		}
 	}
 }
