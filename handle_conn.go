@@ -1,11 +1,7 @@
 package ircd
 
 import (
-	"bufio"
-	"fmt"
 	"net"
-	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -16,74 +12,17 @@ func handleConnection(conn net.Conn, s *server) {
 	id := uuid.Must(uuid.NewRandom()).String()
 	c, err := newClient(conn, id)
 	if err != nil {
-		log.Error().Err(err).Msg("unable to create client")
+		log.Error().Err(err).Msg("cant create client")
 		return
 	}
-
-	defer conn.Close()
-	defer s.cleanup(c)
-	defer metrics.Clients.Dec()
 
 	s.Clients.add(c)
 	metrics.Clients.Inc()
 
 	// starts goroutines for procesing incoming and outgoing messages
 	go handleConnectionIn(c, s)
-	go handleConnectionOut(c, s)
+	go handleConnectionOut(c)
+	handleConnectionPong(c, s)
 
-	// read input from client
-	go func() {
-		reader := bufio.NewReader(conn)
-		scanner := bufio.NewScanner(reader)
-		for scanner.Scan() {
-			if scanner.Err() != nil {
-				c.stop <- err.Error()
-				break
-			}
-			line := strings.Trim(
-				scanner.Text(), "\r\n",
-			)
-			c.recv(line)
-		}
-
-		if !c.alive {
-			c.kill("Broken pipe (read)")
-		}
-	}()
-
-	pingDuration := time.Duration(s.pingFrequency) * time.Second
-	pongDuration := time.Duration(s.pongMaxLatency) * time.Second
-
-	var timer <-chan time.Time
-	for c.alive {
-		select {
-		case e := <-c.stop:
-			if e != "quit" {
-				for _, ch := range s.Channels.memberOf(c) {
-					ch.broadcastCommand(partCommand{
-						prefix:  c.prefix(),
-						channel: ch.name(),
-						text:    fmt.Sprintf("Quit: %s", e),
-					}, c.clientID, true)
-				}
-			}
-			c.alive = false
-		case <-c.ponged:
-			timer = nil
-		case <-timer:
-			for _, ch := range s.Channels.memberOf(c) {
-				ch.broadcastCommand(partCommand{
-					prefix:  c.prefix(),
-					channel: ch.name(),
-					text:    fmt.Sprintf("Quit: Timeout after %d seconds", s.pongMaxLatency),
-				}, c.clientID, true)
-			}
-			c.alive = false
-		case <-time.After(pingDuration):
-			c.sendCommand(pingCommand{
-				text: s.name,
-			})
-			timer = time.After(pongDuration)
-		}
-	}
+	go s.cleanup(c)
 }

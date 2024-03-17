@@ -49,6 +49,7 @@ type clientMock struct {
 	hs     bool
 	pw     bool
 	modes  clientMode
+	q      string
 }
 
 func newMockClient(handshake bool) *clientMock {
@@ -195,8 +196,12 @@ func (c *clientMock) sendCommand(command command) {
 	c.messagesOut = append(c.messagesOut, command.command())
 }
 
-func (c *clientMock) recv(text string) {
-	c.messagesIn = append(c.messagesIn, text)
+func (c *clientMock) quitReason() string {
+	return c.q
+}
+
+func (c *clientMock) setQuitreason(reason string) {
+	c.q = reason
 }
 
 func (c *clientMock) send(text string) {

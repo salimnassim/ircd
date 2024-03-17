@@ -9,8 +9,6 @@ type ChannelStorer interface {
 	add(name string, ch channeler)
 	// Delete channel.
 	delete(name string)
-	// Check if client is a member of channel.
-	isMember(c clienter, ch channeler) (ok bool)
 	// Get channel by name.
 	get(name string) (ch channeler, exists bool)
 	// Get which channels a client belongs to.
@@ -34,12 +32,10 @@ func NewChannelStore(id string) *channelStore {
 }
 
 func (s *channelStore) count() int {
-	channels := 0
 	s.mu.RLock()
-	channels = len(s.channels)
-	s.mu.RUnlock()
+	defer s.mu.RUnlock()
 
-	return channels
+	return len(s.channels)
 }
 
 func (s *channelStore) get(name string) (channeler, bool) {
@@ -62,10 +58,6 @@ func (s *channelStore) delete(name string) {
 	s.mu.Lock()
 	delete(s.channels, name)
 	s.mu.Unlock()
-}
-
-func (s *channelStore) isMember(c clienter, ch channeler) bool {
-	return ch.clients().isMember(c)
 }
 
 func (s *channelStore) memberOf(c clienter) []channeler {

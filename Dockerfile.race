@@ -1,6 +1,6 @@
 FROM golang:latest as builder
 WORKDIR /app
-COPY go.* ./
+COPY . ./
 RUN go mod download
 COPY . ./
 RUN CGO_ENABLED=1 GOOS=linux go build -race -v -o ./ircd ./cmd

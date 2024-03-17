@@ -160,7 +160,6 @@ func (s *server) Run(listener net.Listener, isTLS bool) {
 			log.Error().Err(err).Msg("unable to accept connection")
 			continue
 		}
-		log.Info().Msgf("accepted connection from %s", connection.RemoteAddr())
 		go handleConnection(connection, s)
 	}
 }
@@ -209,7 +208,7 @@ func registerHandlers(s *server) {
 	router.registerHandler("INVITE", handleInvite, middlewareNeedHandshake, middlewareNeedParams(2))
 	router.registerHandler("DEBUG", func(s *server, c clienter, m message) {
 		func() {}() // breakpoint here
-	}, middlewareNeedHandshake, middlewareNeedOper)
+	}, middlewareNeedHandshake)
 
 	s.router = router
 }
@@ -234,12 +233,16 @@ func (s *server) Stats() (visible int, invisible, channels int) {
 
 // Removes client from channels and client map.
 func (s *server) cleanup(c clienter) {
-	memberOf := s.Channels.memberOf(c)
-	for _, ch := range memberOf {
+	// Send QUIT to all channels that the client is a member of.
+	for _, ch := range s.Channels.memberOf(c) {
+		ch.broadcastCommand(quitCommand{
+			prefix: c.prefix(),
+			text:   fmt.Sprintf("Quit: %s", c.quitReason()),
+		}, c.id(), true)
 		ch.clients().remove(c)
 	}
-
 	s.Clients.delete(c.id())
+	metrics.Clients.Dec()
 }
 
 func (s *server) MOTD() []string {

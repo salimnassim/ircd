@@ -21,7 +21,7 @@ func handlePrivmsg(s *server, c clienter, m message) {
 			}
 
 			// is user a member of the channel?
-			if !s.Channels.isMember(c, ch) {
+			if !ch.clients().isMember(c) {
 				c.sendRPL(s.name, errNotOnChannel{
 					client:  c.nickname(),
 					channel: ch.name(),
@@ -29,7 +29,8 @@ func handlePrivmsg(s *server, c clienter, m message) {
 				continue
 			}
 
-			if ch.hasMode(modeChannelModerated) && !ch.clients().hasMode(c, modeMemberVoice, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
+			if ch.hasMode(modeChannelModerated) && !ch.clients().hasMode(
+				c, modeMemberVoice, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
 				c.sendRPL(s.name, errCannotSendToChan{
 					client:  c.nickname(),
 					channel: ch.name(),

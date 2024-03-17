@@ -206,11 +206,7 @@ func (ch *channel) names() []string {
 	var names []string
 
 	for _, c := range ch.cs.all() {
-		if ch.o == c.id() {
-			names = append(names, fmt.Sprintf("@%s", c.nickname()))
-		} else {
-			names = append(names, c.nickname())
-		}
+		names = append(names, c.nickname())
 	}
 
 	return names
@@ -220,6 +216,10 @@ func (ch *channel) names() []string {
 // If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 	for _, c := range ch.cs.all() {
+		// Do not broadcast to clients that are quitting.
+		if c.quitReason() != "" {
+			continue
+		}
 		if c.id() == sourceID && skip {
 			continue
 		}
@@ -231,6 +231,10 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 // If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastCommand(cmd command, sourceID clientID, skip bool) {
 	for _, c := range ch.cs.all() {
+		// Do not broadcast to clients that are quitting.
+		if c.quitReason() != "" {
+			continue
+		}
 		if c.id() == sourceID && skip {
 			continue
 		}

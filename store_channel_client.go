@@ -18,7 +18,6 @@ type channelClientStorer interface {
 	all() []clienter
 	// Is client member of the channel?
 	isMember(c clienter) bool
-
 	// Add channel membership mode to client.
 	addMode(c clienter, m channelMembershipMode)
 	// Remove channel membership mode from client.
@@ -44,11 +43,9 @@ func newChannelClientStore() *channelClientStore {
 }
 
 func (s *channelClientStore) count() int {
-	clients := 0
 	s.mu.RLock()
-	clients = len(s.clients)
-	s.mu.RUnlock()
-	return clients
+	defer s.mu.RUnlock()
+	return len(s.clients)
 }
 
 func (s *channelClientStore) add(c clienter) {
@@ -64,13 +61,15 @@ func (s *channelClientStore) remove(c clienter) {
 }
 
 func (s *channelClientStore) all() []clienter {
-	clients := []clienter{}
-
 	s.mu.RLock()
-	for c := range s.clients {
-		clients = append(clients, c)
+	defer s.mu.RUnlock()
+
+	clients := make([]clienter, len(s.clients))
+	i := 0
+	for k := range s.clients {
+		clients[i] = k
+		i++
 	}
-	s.mu.RUnlock()
 
 	return clients
 }
