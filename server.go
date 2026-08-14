@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"regexp"
@@ -173,6 +174,8 @@ func (srv *Server) Serve(ctx context.Context, listener net.Listener, isTLS bool)
 
 	acceptLoop(ctx, listener, isTLS, srv.sessionDeps())
 }
+
+var errServerShutdown = errors.New("Server shutting down")
 
 func (srv *Server) Shutdown(timeout time.Duration) {
 	for _, h := range srv.clients.all() {

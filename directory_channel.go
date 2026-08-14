@@ -2,8 +2,11 @@ package ircd
 
 import (
 	"context"
+	"errors"
 	"sync"
 )
+
+var errChannelNotFound = errors.New("channel not found")
 
 type channelDirectory struct {
 	mu sync.Mutex

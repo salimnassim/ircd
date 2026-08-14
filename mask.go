@@ -1,5 +1,9 @@
 package ircd
 
+import "errors"
+
+var errorBadMaskCharacter = errors.New("bad mask character")
+
 func parseMask(mask string) ([]byte, error) {
 	var result []byte
 

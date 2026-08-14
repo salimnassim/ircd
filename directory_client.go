@@ -1,6 +1,11 @@
 package ircd
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
+
+var errNickInUse = errors.New("nickname is already in use")
 
 type clientID string
 

@@ -18,6 +18,12 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var (
+	errSendQExceeded    = errors.New("SendQ exceeded")
+	errExcessFlood      = errors.New("Quit: Excess Flood")
+	errConnectionClosed = errors.New("Quit: EOF")
+)
+
 type sessionSnapshot struct {
 	id            clientID
 	nick          string

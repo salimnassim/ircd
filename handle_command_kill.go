@@ -1,9 +1,12 @@
 package ircd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
+
+var errKilled = errors.New("killed")
 
 type killError struct {
 	byNick string

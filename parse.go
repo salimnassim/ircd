@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+var (
+	errorParserInputTooLong   = errors.New("message is too long")
+	errorParserInputMalformed = errors.New("malformed message")
+)
+
 func parseMessage(line string) (message, error) {
 	if len(line) == 0 {
 		return message{}, nil
