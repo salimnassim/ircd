@@ -286,6 +286,10 @@ func (s *session) readLoop(ctx context.Context, conn net.Conn) {
 		}
 		s.dispatch(ctx, parsed)
 	}
+
+	if err := scanner.Err(); err != nil {
+		s.handle.terminate(fmt.Errorf("Quit: %w", err))
+	}
 }
 
 func (s *session) cleanup(cause error) {
