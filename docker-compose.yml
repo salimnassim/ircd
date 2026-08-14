@@ -17,5 +17,5 @@ services:
       - PORT_TLS=6697
       - PROMETHEUS=true
       - TLS=true
-      - TLS_CERTIFICATE=/app/tls/server.crt
-      - TLS_KEY=/app/tls/server.key
+      - TLS_CERTIFICATE=
+      - TLS_KEY=
