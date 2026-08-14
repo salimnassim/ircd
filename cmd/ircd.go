@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,14 +23,15 @@ func main() {
 
 	_, prometheusEnabled := os.LookupEnv("PROMETHEUS")
 	if prometheusEnabled {
-		http.Handle("/metrics", promhttp.Handler())
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		go func() {
+			log.Info().Msg("starting http, listening on :2112")
+			if err := http.ListenAndServe(":2112", mux); err != nil {
+				log.Error().Err(err).Msg("metrics http server stopped")
+			}
+		}()
 	}
-	go func() {
-		log.Info().Msg("starting http, listening on :2112")
-		if err := http.ListenAndServe(":2112", nil); err != nil {
-			log.Error().Err(err).Msg("metrics http server stopped")
-		}
-	}()
 
 	_, tlsEnabled := os.LookupEnv("TLS")
 
