@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -20,14 +22,15 @@ import (
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
+	_, prometheusEnabled := os.LookupEnv("PROMETHEUS")
+	if prometheusEnabled {
+		http.Handle("/metrics", promhttp.Handler())
+	}
 	go func() {
 		log.Info().Msg("starting http, listening on :2112")
-
-		_, ok := os.LookupEnv("PROMETHEUS")
-		if ok {
-			http.Handle("/metrics", promhttp.Handler())
+		if err := http.ListenAndServe(":2112", nil); err != nil {
+			log.Error().Err(err).Msg("metrics http server stopped")
 		}
-		http.ListenAndServe(":2112", nil)
 	}()
 
 	_, tlsEnabled := os.LookupEnv("TLS")
@@ -38,8 +41,8 @@ func main() {
 		Network:  os.Getenv("NETWORK_NAME"),
 		Version:  os.Getenv("SERVER_VERSION"),
 		MOTD: []string{
-			"\u00034This is the message of the day.\u0003",
-			"\u00035It contains multiple lines because the lines could be long.\u0003",
+			"4This is the message of the day.",
+			"5It contains multiple lines because the lines could be long.",
 			"🍩🍫🍡🍦🍬🍮",
 		},
 		TLS:             tlsEnabled,
@@ -72,39 +75,47 @@ func main() {
 
 	server := ircd.NewServer(config)
 
-	go func(server ircd.Serverer, isTLS bool) {
-		log.Info().Msgf("starting irc, listening on tcp:%s", os.Getenv("PORT"))
-		listener, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT")))
-		if err != nil {
-			log.Fatal().Err(err).Msg("cant listen")
-		}
-		server.Run(listener, isTLS)
-		defer listener.Close()
-	}(server, false)
+	ctx, cancel := context.WithCancel(context.Background())
 
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT")))
+	if err != nil {
+		log.Fatal().Err(err).Msg("cant listen")
+	}
+	go func() {
+		log.Info().Msgf("starting irc, listening on tcp:%s", os.Getenv("PORT"))
+		server.Serve(ctx, listener, false)
+	}()
+
+	var tlsListener net.Listener
 	if config.TLS {
-		go func(server ircd.Serverer, isTLS bool) {
+		tlsListener, err = tls.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT_TLS")),
+			&tls.Config{
+				GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+					cert, err := tls.LoadX509KeyPair(config.CertificateFile, config.CertificateKey)
+					if err != nil {
+						return nil, err
+					}
+					return &cert, nil
+				},
+			})
+		if err != nil {
+			log.Fatal().Err(err).Msg("cant listen tls")
+		}
+		go func() {
 			log.Info().Msgf("starting irc, listening on tcp:%s TLS", os.Getenv("PORT_TLS"))
-			listener, err := tls.Listen(
-				"tcp", fmt.Sprintf(":%s", os.Getenv("PORT_TLS")),
-				&tls.Config{
-					GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-						cert, err := tls.LoadX509KeyPair(config.CertificateFile, config.CertificateKey)
-						if err != nil {
-							return nil, err
-						}
-						return &cert, nil
-					},
-				})
-			if err != nil {
-				log.Fatal().Err(err).Msg("cant listen tls")
-			}
-			server.Run(listener, isTLS)
-			defer listener.Close()
-		}(server, true)
+			server.Serve(ctx, tlsListener, true)
+		}()
 	}
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
+
+	log.Info().Msg("shutting down")
+	cancel()
+	listener.Close()
+	if tlsListener != nil {
+		tlsListener.Close()
+	}
+	server.Shutdown(10 * time.Second)
 }

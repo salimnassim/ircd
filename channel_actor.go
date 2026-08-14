@@ -12,6 +12,8 @@ import (
 	"github.com/salimnassim/ircd/metrics"
 )
 
+type banMask string
+
 type channelMember struct {
 	handle *sessionHandle
 	modes  channelMembershipMode

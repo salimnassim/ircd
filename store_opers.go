@@ -2,11 +2,6 @@ package ircd
 
 import "sync"
 
-type OperatorStorer interface {
-	add(user string, password string)
-	auth(user string, password string) bool
-}
-
 type OperatorStore struct {
 	mu *sync.RWMutex
 

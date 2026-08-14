@@ -2,6 +2,8 @@ package ircd
 
 import "sync"
 
+type clientID string
+
 type clientDirectory struct {
 	mu sync.Mutex
 
