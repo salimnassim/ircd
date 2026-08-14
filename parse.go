@@ -69,6 +69,10 @@ func parseMessage(line string) (message, error) {
 		}
 	}
 
+	if pos >= len(line) {
+		return message, nil
+	}
+
 	if line[pos] == ':' {
 		message.params = append(message.params, line[pos+1:])
 		return message, nil
@@ -86,7 +90,7 @@ func parseMessage(line string) (message, error) {
 		return message, errors.New("malformed message")
 	}
 
-	message.command = line[pos : pos+next]
+	message.command = strings.ToUpper(line[pos : pos+next])
 	pos += next + 1
 
 	for pos < len(line) {

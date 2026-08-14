@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -62,6 +63,62 @@ func TestParse(t *testing.T) {
 			}
 		}
 	}
+}
+
+func FuzzParseMessage(f *testing.F) {
+	seeds := []string{
+		"",
+		" ",
+		"  ",
+		":",
+		"@",
+		"@ ",
+		":a ",
+		"@a=b ",
+		"@a=b :a ",
+		"PING",
+		"PING 12345",
+		"CAP LS",
+		"NICK salami",
+		"USER salami salami localhost :salami",
+		"JOIN #foo",
+		":salami1!salami@localhost JOIN #foo",
+		":salami1!salami@localhost PART #foo #baz",
+		"PRIVMSG #test :hey",
+		"PRIVMSG 123 :PING 1688102122 530516",
+		"MODE salami +i",
+		"MODE #testing2",
+		"QUIT :reason here",
+		"AWAY :brb afk",
+		"@tag1=example.com :nick!user@host PRIVMSG #channel :Hello, world!",
+		"@tag2= :nick!user@host PRIVMSG #channel :Hello, world!",
+		"@faketag=",
+		":",
+		"::",
+		": ",
+		":  ",
+		"@=",
+		"@=;=",
+		"@;",
+		strings.Repeat("a", 513),
+		strings.Repeat(" ", 512),
+		":" + strings.Repeat(" ", 10),
+		"PRIVMSG #test :\x00\x01\x02",
+		"NICK \tsalami",
+	}
+	for _, seed := range seeds {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		got, err := parseMessage(input)
+		if err != nil {
+			return
+		}
+		if got.command != strings.ToUpper(got.command) {
+			t.Errorf("parseMessage(%q) command %q is not uppercase", input, got.command)
+		}
+	})
 }
 
 func TestParseNegative(t *testing.T) {
