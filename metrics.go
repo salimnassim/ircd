@@ -1,4 +1,4 @@
-package metrics
+package ircd
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -6,19 +6,19 @@ import (
 )
 
 var (
-	Clients = promauto.NewGauge(prometheus.GaugeOpts{
+	clientGauge = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "ircd",
 		Name:      "clients",
 		Help:      "Number of connected clients.",
 	})
 
-	Channels = promauto.NewGauge(prometheus.GaugeOpts{
+	channelGauge = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "ircd",
 		Name:      "channels",
 		Help:      "Number of existing channels.",
 	})
 
-	Command = promauto.NewCounterVec(prometheus.CounterOpts{
+	commandCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "ircd",
 		Name:      "command",
 		Help:      "Number of commands received.",

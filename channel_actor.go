@@ -8,8 +8,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
-
-	"github.com/salimnassim/ircd/metrics"
 )
 
 type banMask string
@@ -80,7 +78,7 @@ func newChannelActor(name string, owner clientID, directory *channelDirectory, c
 		serverName: serverName,
 	}
 	ch.publishSnapshot()
-	metrics.Channels.Inc()
+	channelGauge.Inc()
 	return ch
 }
 func (ch *channelActor) run(ctx context.Context) {
@@ -95,7 +93,7 @@ func (ch *channelActor) run(ctx context.Context) {
 			ch.handle(ev)
 			ch.directory.doneProcessing(ch.name)
 			if len(ch.members) == 0 && ch.directory.removeIfIdle(ch.name, ch) {
-				metrics.Channels.Dec()
+				channelGauge.Dec()
 				return
 			}
 		}

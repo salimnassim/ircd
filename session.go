@@ -15,7 +15,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/salimnassim/ircd/metrics"
 	"golang.org/x/time/rate"
 )
 
@@ -194,7 +193,7 @@ func runSession(parent context.Context, conn net.Conn, id clientID, isTLS bool, 
 	sess.publishSnapshot()
 
 	deps.clients.register(handle)
-	metrics.Clients.Inc()
+	clientGauge.Inc()
 
 	go runWriter(ctx, conn, handle.outbox, terminate)
 	go runPingPong(ctx, deps.serverName, handle.deliver, sess.ponged, deps.pingFrequency, deps.pongMaxLatency, terminate)
@@ -301,11 +300,11 @@ func (s *session) cleanup(cause error) {
 
 	s.deps.clients.unregister(s.id)
 
-	metrics.Clients.Dec()
+	clientGauge.Dec()
 }
 
 func (s *session) dispatch(ctx context.Context, m message) {
-	metrics.Command.WithLabelValues(m.command).Inc()
+	commandCounter.WithLabelValues(m.command).Inc()
 
 	switch m.command {
 	case "PASS":

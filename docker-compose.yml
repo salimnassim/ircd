@@ -1,19 +1,4 @@
 services:
-  prometheus:
-    image: "prom/prometheus"
-    restart: unless-stopped
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    environment:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-  grafana:
-    image: grafana/grafana-enterprise
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
   ircd:
     image: ircd:latest
     restart: on-failure
@@ -34,6 +19,3 @@ services:
       - TLS=true
       - TLS_CERTIFICATE=/app/tls/server.crt
       - TLS_KEY=/app/tls/server.key
-volumes:
-  prometheus_data:
-    external: false
