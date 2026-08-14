@@ -13,6 +13,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// ServerConfig holds the settings NewServer needs to construct a Server.
 type ServerConfig struct {
 	Name     string
 	Password string
@@ -34,6 +35,7 @@ type ServerConfig struct {
 	Parameters ServerConfigParameters
 }
 
+// ServerConfigParameters are the RPL_ISUPPORT limits and capabilities advertised to clients.
 type ServerConfigParameters struct {
 	MaxAwayLength int
 
@@ -91,6 +93,7 @@ var (
 	channelRegex = regexp.MustCompile(`[#!&][^\x00\x07\x0a\x0d\x20\x2C\x3A]{1,50}`)
 )
 
+// Server is a running IRC server: its configuration plus the client and channel state it manages.
 type Server struct {
 	config   ServerConfig
 	isupport string
@@ -102,6 +105,7 @@ type Server struct {
 	ports atomic.Pointer[[]string]
 }
 
+// NewServer constructs a Server from config. Call Serve to begin accepting connections.
 func NewServer(config ServerConfig) *Server {
 	return &Server{
 		config:    config,
@@ -131,6 +135,7 @@ func deref(p *[]string) []string {
 	return *p
 }
 
+// Ports returns the addresses the server is currently listening on, TLS ports prefixed with "+".
 func (srv *Server) Ports() []string {
 	return deref(srv.ports.Load())
 }
@@ -161,6 +166,7 @@ func (srv *Server) sessionDeps() sessionDeps {
 	}
 }
 
+// Serve registers listener's port and accepts connections on it until ctx is canceled.
 func (srv *Server) Serve(ctx context.Context, listener net.Listener, isTLS bool) {
 	_, port, err := net.SplitHostPort(listener.Addr().String())
 	if err != nil {
@@ -177,6 +183,7 @@ func (srv *Server) Serve(ctx context.Context, listener net.Listener, isTLS bool)
 
 var errServerShutdown = errors.New("Server shutting down")
 
+// Shutdown terminates all connected clients and blocks until they disconnect or timeout elapses.
 func (srv *Server) Shutdown(timeout time.Duration) {
 	for _, h := range srv.clients.all() {
 		h.terminate(errServerShutdown)

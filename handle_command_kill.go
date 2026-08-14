@@ -13,10 +13,12 @@ type killError struct {
 	reason string
 }
 
+// Error formats the KILL reason shown to the terminated client.
 func (e *killError) Error() string {
 	return fmt.Sprintf("Killed by %s (%s)", e.byNick, e.reason)
 }
 
+// Is reports whether target is errKilled, so errors.Is matches any killError.
 func (e *killError) Is(target error) bool {
 	return target == errKilled
 }
