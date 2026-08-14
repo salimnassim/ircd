@@ -87,5 +87,4 @@ func TestParseNegative(t *testing.T) {
 			t.Errorf("got %v, want %v", err, tc.want)
 		}
 	}
-
 }

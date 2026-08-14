@@ -1,12 +1,10 @@
-FROM golang:latest as builder
+FROM golang:1.26.6 AS builder
 WORKDIR /app
-COPY . ./
+COPY go.* ./
 RUN go mod download
 COPY . ./
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o ./ircd ./cmd
+RUN CGO_ENABLED=0 go build -o ./ircd ./cmd
 
 FROM scratch
-COPY --from=builder /app/tls/server.crt /app/tls/server.crt
-COPY --from=builder /app/tls/server.key /app/tls/server.key
 COPY --from=builder /app/ircd /app/ircd
 CMD ["/app/ircd"]

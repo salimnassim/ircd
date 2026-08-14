@@ -1,6 +1,5 @@
 package ircd
 
-// client modes
 type clientMode uint16
 
 var clientModeMap = map[rune]clientMode{
@@ -21,7 +20,6 @@ const (
 	modeClientTLS
 )
 
-// channel modes
 type channelMode uint16
 
 var channelModeMap = map[rune]channelMode{
@@ -65,19 +63,17 @@ var channelMembershipModeMap = map[rune]channelMembershipMode{
 }
 
 const (
-	// Channel voiced.
 	modeMemberVoice = channelMembershipMode(1) << iota
-	// Channel half-operator.
+
 	modeMemberHalfOperator
-	// Channel operator.
+
 	modeMemberOperator
-	// Channel admin.
+
 	modeMemberAdmin
-	// Channel owner.
+
 	modeMemberOwner
 )
 
-// Get matching rune from map by T.
 func runeByMode[T ~uint16](t T, m map[rune]T) rune {
 	for r, mode := range m {
 		if t == mode {
@@ -87,9 +83,6 @@ func runeByMode[T ~uint16](t T, m map[rune]T) rune {
 	return '?'
 }
 
-// Parse modestring into add/del slices of type T.
-//
-// Example: +v-o for channelMembershipModeMap becomes [modeMemberVoice], [modeMemberOperator]
 func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del []T) {
 	q := true
 	add = []T{}
@@ -120,11 +113,6 @@ func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del [
 	return add, del
 }
 
-// Finds differences between old and new mode bitmasks.
-//
-// Add represents modes that been added from the original list..
-//
-// Del represents modes that been removed from the original list.
 func diffModes[T ~uint16](old T, new T, m map[rune]T) (add []T, del []T) {
 	d := old ^ new
 

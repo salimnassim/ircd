@@ -1,5 +1,9 @@
 package ircd
 
+import "errors"
+
+var errorBadMaskCharacter = errors.New("bad mask character")
+
 func parseMask(mask string) ([]byte, error) {
 	var result []byte
 
@@ -30,7 +34,7 @@ func matchMask(mask []byte, input string) bool {
 		return false
 	}
 
-	for i := 0; i < len(mask); i++ {
+	for i := range len(mask) {
 		switch mask[i] {
 		case '?':
 			continue

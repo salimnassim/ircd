@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+var (
+	errorParserInputTooLong   = errors.New("message is too long")
+	errorParserInputMalformed = errors.New("malformed message")
+)
+
 func parseMessage(line string) (message, error) {
 	if len(line) == 0 {
 		return message{}, nil
@@ -32,9 +37,7 @@ func parseMessage(line string) (message, error) {
 			return message, errorParserInputMalformed
 		}
 
-		rawTags := strings.Split(line[1:next], ";")
-
-		for _, tag := range rawTags {
+		for tag := range strings.SplitSeq(line[1:next], ";") {
 			pair := strings.SplitN(tag, "=", 2)
 
 			if len(pair) != 2 {
