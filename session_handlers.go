@@ -33,7 +33,7 @@ func (s *session) cmdPong() {
 	}
 }
 
-func (s *session) cmdNick(m message) {
+func (s *session) cmdNick(ctx context.Context, m message) {
 	nick := m.params[0]
 
 	if !s.deps.nickRegex.MatchString(nick) {
@@ -54,7 +54,7 @@ func (s *session) cmdNick(m message) {
 
 	if wasRegistered {
 		for name := range s.memberOf {
-			s.deps.channels.dispatch(context.Background(), s.channelDeps(), name,
+			s.deps.channels.dispatch(ctx, s.channelDeps(), name,
 				evMemberRenamed{id: s.id, oldPrefix: oldPrefix, newNick: nick}, false, "")
 		}
 		return
@@ -66,7 +66,7 @@ func (s *session) cmdNick(m message) {
 			s.handle.terminate(errors.New("Quit: Wrong server password."))
 			return
 		}
-		s.completeHandshake(context.Background())
+		s.completeHandshake(ctx)
 	}
 }
 

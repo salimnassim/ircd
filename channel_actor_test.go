@@ -6,7 +6,7 @@ import (
 )
 
 func newTestChannelActor(name string, owner clientID, cd *clientDirectory) *channelActor {
-	return newChannelActor(name, owner, newChannelDirectory(), cd, "test.server")
+	return newChannelActor(name, owner, newChannelDirectory(), channelActorDeps{serverName: "test.server", clients: cd})
 }
 
 func TestChannelActorJoinBasic(t *testing.T) {

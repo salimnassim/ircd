@@ -1,3 +1,6 @@
+// Package ircd implements a subset of the IRC protocol (RFC 1459) as a
+// standalone server: client sessions, channels, modes, and the commands
+// needed to connect, join, and converse.
 package ircd
 
 import (
@@ -181,7 +184,7 @@ func (srv *Server) Serve(ctx context.Context, listener net.Listener, isTLS bool)
 	acceptLoop(ctx, listener, isTLS, srv.sessionDeps())
 }
 
-var errServerShutdown = errors.New("Server shutting down")
+var errServerShutdown = errors.New("server shutting down")
 
 // Shutdown terminates all connected clients and blocks until they disconnect or timeout elapses.
 func (srv *Server) Shutdown(timeout time.Duration) {

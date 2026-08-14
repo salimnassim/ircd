@@ -23,12 +23,12 @@ func TestSessionNickClaimAndCollision(t *testing.T) {
 	b, bTH := newTestSession("b", deps)
 	cd.register(bTH.sessionHandle)
 
-	a.cmdNick(message{params: []string{"alice"}})
+	a.cmdNick(context.Background(), message{params: []string{"alice"}})
 	if a.nick != "alice" {
 		t.Fatalf("expected alice to claim her nick, got %q", a.nick)
 	}
 
-	b.cmdNick(message{params: []string{"alice"}})
+	b.cmdNick(context.Background(), message{params: []string{"alice"}})
 	if b.nick == "alice" {
 		t.Fatal("expected bob to be rejected claiming an in-use nick")
 	}
@@ -36,7 +36,7 @@ func TestSessionNickClaimAndCollision(t *testing.T) {
 		t.Error("expected ERR_NICKNAMEINUSE")
 	}
 
-	b.cmdNick(message{params: []string{"bob"}})
+	b.cmdNick(context.Background(), message{params: []string{"bob"}})
 	if b.nick != "bob" {
 		t.Fatalf("expected bob to claim his own nick, got %q", b.nick)
 	}
@@ -50,7 +50,7 @@ func TestSessionHandshakeCompletesOnNickAndUser(t *testing.T) {
 	s, th := newTestSession("a", deps)
 	cd.register(th.sessionHandle)
 
-	s.cmdNick(message{params: []string{"alice"}})
+	s.cmdNick(context.Background(), message{params: []string{"alice"}})
 	if s.handshakeDone {
 		t.Fatal("handshake should not complete until USER is also set")
 	}
@@ -77,7 +77,7 @@ func TestSessionUserTwiceRejected(t *testing.T) {
 
 	s, th := newTestSession("a", deps)
 	cd.register(th.sessionHandle)
-	s.cmdNick(message{params: []string{"alice"}})
+	s.cmdNick(context.Background(), message{params: []string{"alice"}})
 	s.cmdUser(context.Background(), message{params: []string{"u", "0", "0", "R"}})
 	th.drain()
 

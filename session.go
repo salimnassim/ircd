@@ -203,7 +203,14 @@ func runSession(parent context.Context, conn net.Conn, id clientID, isTLS bool, 
 	clientGauge.Inc()
 
 	go runWriter(ctx, conn, handle.outbox, terminate)
-	go runPingPong(ctx, deps.serverName, handle.deliver, sess.ponged, deps.pingFrequency, deps.pongMaxLatency, terminate)
+	go runPingPong(ctx, pingPongDeps{
+		serverName:     deps.serverName,
+		deliver:        handle.deliver,
+		ponged:         sess.ponged,
+		pingFrequency:  deps.pingFrequency,
+		pongMaxLatency: deps.pongMaxLatency,
+		terminate:      terminate,
+	})
 
 	sess.readLoop(ctx, conn)
 
@@ -229,10 +236,21 @@ func runWriter(ctx context.Context, conn net.Conn, outbox <-chan string, termina
 	}
 }
 
-func runPingPong(ctx context.Context, serverName string, deliver func(string), ponged <-chan struct{}, pingFrequency, pongMaxLatency time.Duration, terminate func(error)) {
+type pingPongDeps struct {
+	serverName     string
+	deliver        func(string)
+	ponged         <-chan struct{}
+	pingFrequency  time.Duration
+	pongMaxLatency time.Duration
+	terminate      func(error)
+}
+
+func runPingPong(ctx context.Context, deps pingPongDeps) {
+	pingFrequency := deps.pingFrequency
 	if pingFrequency <= 0 {
 		pingFrequency = 30 * time.Second
 	}
+	pongMaxLatency := deps.pongMaxLatency
 	if pongMaxLatency <= 0 {
 		pongMaxLatency = 10 * time.Second
 	}
@@ -245,7 +263,7 @@ func runPingPong(ctx context.Context, serverName string, deliver func(string), p
 		select {
 		case <-ctx.Done():
 			return
-		case <-ponged:
+		case <-deps.ponged:
 			timeout = nil
 			if !pingTimer.Stop() {
 				select {
@@ -255,10 +273,10 @@ func runPingPong(ctx context.Context, serverName string, deliver func(string), p
 			}
 			pingTimer.Reset(pingFrequency)
 		case <-pingTimer.C:
-			deliver(pingCommand{text: serverName}.command())
+			deps.deliver(pingCommand{text: deps.serverName}.command())
 			timeout = time.After(pongMaxLatency)
 		case <-timeout:
-			terminate(fmt.Errorf("Quit: Timeout after %d seconds", int(pongMaxLatency.Seconds())))
+			deps.terminate(fmt.Errorf("Quit: Timeout after %d seconds", int(pongMaxLatency.Seconds())))
 			return
 		}
 	}
@@ -335,7 +353,7 @@ func (s *session) dispatch(ctx context.Context, m message) {
 		if !s.requireParams(m, 1) {
 			return
 		}
-		s.cmdNick(m)
+		s.cmdNick(ctx, m)
 	case "USER":
 		if !s.requireParams(m, 4) {
 			return

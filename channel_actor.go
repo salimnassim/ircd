@@ -64,7 +64,7 @@ type channelActor struct {
 	serverName string
 }
 
-func newChannelActor(name string, owner clientID, directory *channelDirectory, clients *clientDirectory, serverName string) *channelActor {
+func newChannelActor(name string, owner clientID, directory *channelDirectory, deps channelActorDeps) *channelActor {
 	ch := &channelActor{
 		name:       name,
 		owner:      owner,
@@ -74,8 +74,8 @@ func newChannelActor(name string, owner clientID, directory *channelDirectory, c
 		modes:      modeChannelNoExternal | modeChannelRestrictTopic,
 		inbox:      make(chan channelEvent, 64),
 		directory:  directory,
-		clients:    clients,
-		serverName: serverName,
+		clients:    deps.clients,
+		serverName: deps.serverName,
 	}
 	ch.publishSnapshot()
 	channelGauge.Inc()

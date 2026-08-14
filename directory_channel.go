@@ -36,7 +36,7 @@ func (d *channelDirectory) dispatch(ctx context.Context, deps channelActorDeps, 
 			d.mu.Unlock()
 			return errChannelNotFound
 		}
-		ch = newChannelActor(name, owner, d, deps.clients, deps.serverName)
+		ch = newChannelActor(name, owner, d, deps)
 		d.byName[name] = ch
 		go ch.run(ctx)
 	}
