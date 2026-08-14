@@ -11,7 +11,6 @@ func handleWhois(s *server, c clienter, m message) {
 		return
 	}
 
-	// https://modern.ircdocs.horse/#rplwhoisuser-311
 	c.sendRPL(s.name, rplWhoisUser{
 		client:   c.nickname(),
 		nick:     who.nickname(),

@@ -1,7 +1,6 @@
 package ircd
 
 func handleList(s *server, c clienter, m message) {
-	// if no params, list all channels
 	if len(m.params) == 0 {
 		c.sendRPL(s.name, rplListStart{
 			client: c.nickname(),

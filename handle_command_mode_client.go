@@ -8,7 +8,6 @@ func handleModeClient(s *server, c clienter, m message) {
 		modestring = m.params[1]
 	}
 
-	// target has to be client
 	if target != c.nickname() {
 		c.sendRPL(s.name, errUsersDontMatch{
 			client: c.nickname(),
@@ -16,7 +15,6 @@ func handleModeClient(s *server, c clienter, m message) {
 		return
 	}
 
-	// send modes if modestring is not set
 	if modestring == "" {
 		c.sendRPL(s.name, rplUModeIs{
 			client:     c.nickname(),

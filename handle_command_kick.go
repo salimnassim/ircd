@@ -15,7 +15,6 @@ func handleKick(s *server, c clienter, m message) {
 	}
 
 	if !ch.clients().isMember(c) {
-		// send 403 if channel is secret
 		if ch.hasMode(modeChannelSecret) {
 			c.sendRPL(s.name, errNoSuchChannel{
 				client:  c.nickname(),
@@ -31,7 +30,6 @@ func handleKick(s *server, c clienter, m message) {
 		return
 	}
 
-	// user has to be halfop, op, admin or owner
 	if !ch.clients().hasMode(c, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
 		c.sendRPL(s.name, errChanoPrivsNeeded{
 			client:  c.nickname(),
@@ -43,7 +41,7 @@ func handleKick(s *server, c clienter, m message) {
 	targets := strings.Split(m.params[1], ",")
 	for _, target := range targets {
 		tc, ok := s.Clients.get(target)
-		// no matching client found
+
 		if !ok {
 			c.sendRPL(s.name, errUserNotInChannel{
 				client:  c.nickname(),
@@ -53,7 +51,6 @@ func handleKick(s *server, c clienter, m message) {
 			continue
 		}
 
-		// client must be in channel
 		if !ch.clients().isMember(c) {
 			c.sendRPL(s.name, errUserNotInChannel{
 				client:  c.nickname(),

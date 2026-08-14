@@ -23,7 +23,6 @@ func handlePart(s *server, c clienter, m message) {
 			continue
 		}
 
-		// try to get ch
 		ch, exists := s.Channels.get(target)
 		if !exists {
 			c.sendRPL(s.name, errNoSuchChannel{
@@ -33,10 +32,8 @@ func handlePart(s *server, c clienter, m message) {
 			continue
 		}
 
-		// remove client
 		ch.clients().remove(c)
 
-		// broadcast that user has left the channel
 		ch.broadcastCommand(partCommand{
 			prefix:  c.prefix(),
 			channel: ch.name(),

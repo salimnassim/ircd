@@ -100,5 +100,4 @@ func TestBadMaskCharacter(t *testing.T) {
 			t.Errorf("got %s, want %s", err, tc.want)
 		}
 	}
-
 }

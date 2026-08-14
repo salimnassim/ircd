@@ -3,17 +3,16 @@ package ircd
 import "sync"
 
 type ChannelStorer interface {
-	// Number of channels in store.
 	count() int
-	// Add channel to store.
+
 	add(name string, ch channeler)
-	// Delete channel.
+
 	delete(name string)
-	// Get channel by name.
+
 	get(name string) (ch channeler, exists bool)
-	// Get which channels a client belongs to.
+
 	memberOf(c clienter) (chs []channeler)
-	// Get all channels.
+
 	all() []channeler
 }
 

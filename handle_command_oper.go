@@ -4,7 +4,6 @@ func handleOper(s *server, c clienter, m message) {
 	user := m.params[0]
 	password := m.params[1]
 
-	// if not successful
 	if !s.Operators.auth(user, password) {
 		c.sendRPL(s.name, errPasswdMismatch{
 			client: c.nickname(),

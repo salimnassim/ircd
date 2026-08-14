@@ -20,7 +20,7 @@ func handleModeChannel(s *server, c clienter, m message) {
 	}
 
 	ch, ok := s.Channels.get(target)
-	// does it exist?
+
 	if !ok {
 		c.sendRPL(s.name, errNoSuchChannel{
 			client:  c.nickname(),
@@ -29,7 +29,6 @@ func handleModeChannel(s *server, c clienter, m message) {
 		return
 	}
 
-	// return modes if modestring is not set
 	if modestring == "" {
 		c.sendRPL(s.name, rplChannelModeIs{
 			client:     c.nickname(),
@@ -40,7 +39,6 @@ func handleModeChannel(s *server, c clienter, m message) {
 		return
 	}
 
-	// client must be a member of the channel
 	if !ch.clients().isMember(c) {
 		c.sendRPL(s.name, errNotOnChannel{
 			client:  c.nickname(),
@@ -49,7 +47,6 @@ func handleModeChannel(s *server, c clienter, m message) {
 		return
 	}
 
-	// client has to be hop or higher
 	if !ch.clients().hasMode(c, modeMemberHalfOperator, modeMemberOperator, modeMemberAdmin, modeMemberOwner) {
 		c.sendRPL(s.name, errChanoPrivsNeeded{
 			client:  c.nickname(),
@@ -58,10 +55,9 @@ func handleModeChannel(s *server, c clienter, m message) {
 		return
 	}
 
-	// settings channel mode
 	if modeargs == "" {
 		before := ch.mode()
-		// parse modestring
+
 		add, del := parseModestring[channelMode](modestring, channelModeMap)
 		for _, a := range add {
 			switch a {
@@ -98,7 +94,6 @@ func handleModeChannel(s *server, c clienter, m message) {
 		plus := []rune{}
 		minus := []rune{}
 
-		// diff before and after, add +- if there are changes
 		da, dd := diffModes[channelMode](before, after, channelModeMap)
 		if len(da) == 0 && len(dd) == 0 {
 			return
@@ -111,7 +106,6 @@ func handleModeChannel(s *server, c clienter, m message) {
 			minus = append(minus, '-')
 		}
 
-		// refactor this o-no bueno
 		for _, m := range da {
 			for r, mm := range channelModeMap {
 				if m == mm {
@@ -145,10 +139,8 @@ func handleModeChannel(s *server, c clienter, m message) {
 	}
 
 	if modeargs != "" {
-		// split target clients from modeargs
 		tcs := strings.Split(modeargs, " ")
 
-		// todo check for a,b,c... type modes
 		addm, _ := parseModestring[channelMode](modestring, channelModeMap)
 		if slices.Contains(addm, modeChannelKey) {
 			for i, mode := range addm {
@@ -175,15 +167,11 @@ func handleModeChannel(s *server, c clienter, m message) {
 			return
 		}
 
-		// todo: client can change mode only for user that is below their bitmask
-		// todo: refactor this
-
 		type tmc struct {
 			nick string
 			mode string
 		}
 
-		// parse modestring
 		tcm := []tmc{}
 		add, del := parseModestring[channelMembershipMode](modestring, channelMembershipModeMap)
 		for i, mode := range add {
@@ -308,9 +296,5 @@ func handleModeChannel(s *server, c clienter, m message) {
 			modestring: strings.Join(modeModes, ""),
 			args:       strings.Join(modeNicknames, " "),
 		}, c.id(), false)
-		// for i, d := range del {
-
-		// }
 	}
-
 }

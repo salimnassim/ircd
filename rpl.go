@@ -9,9 +9,6 @@ type rpl interface {
 	rpl() string
 }
 
-// 001 RPL_WELCOME
-//
-// https://modern.ircdocs.horse/#rplwelcome-001
 type rplWelcome struct {
 	client   string
 	network  string
@@ -25,9 +22,6 @@ func (r rplWelcome) rpl() string {
 	)
 }
 
-// 002 RPL_YOURHOST
-//
-// https://modern.ircdocs.horse/#rplyourhost-002
 type rplYourHost struct {
 	client     string
 	serverName string
@@ -41,9 +35,6 @@ func (r rplYourHost) rpl() string {
 	)
 }
 
-// 005 RPL_ISUPPORT
-//
-// https://modern.ircdocs.horse/#rplisupport-005
 type rplISupport struct {
 	client string
 	tokens string
@@ -56,9 +47,6 @@ func (r rplISupport) rpl() string {
 	)
 }
 
-// 221 RPL_UMODEIS
-//
-// https://modern.ircdocs.horse/#rplumodeis-221
 type rplUModeIs struct {
 	client     string
 	modestring string
@@ -71,16 +59,13 @@ func (r rplUModeIs) rpl() string {
 	)
 }
 
-// 251 RPL_LUSERCLIENT.
-//
-// https://modern.ircdocs.horse/#rplluserclient-251
 type rplLuserClient struct {
 	client string
-	// Number of clients.
+
 	users int
-	// Number of invisible clients.
+
 	invisible int
-	// Number of servers.
+
 	servers int
 }
 
@@ -91,12 +76,9 @@ func (r rplLuserClient) rpl() string {
 	)
 }
 
-// 252 RPL_LUSEROP
-//
-// https://modern.ircdocs.horse/#rplluserop-252
 type rplLuserOp struct {
 	client string
-	// Number of operators.
+
 	ops int
 }
 
@@ -107,12 +89,9 @@ func (r rplLuserOp) rpl() string {
 	)
 }
 
-// 254 RPL_LUSERCHANNELS
-//
-// https://modern.ircdocs.horse/#rplluserchannels-254
 type rplLuserChannels struct {
 	client string
-	// Number of channels.
+
 	channels int
 }
 
@@ -123,9 +102,6 @@ func (r rplLuserChannels) rpl() string {
 	)
 }
 
-// 301 RPL_AWAY
-//
-// https://modern.ircdocs.horse/#rplaway-301
 type rplAway struct {
 	client  string
 	nick    string
@@ -139,9 +115,6 @@ func (r rplAway) rpl() string {
 	)
 }
 
-// 305 RPL_UNAWAY
-//
-// https://modern.ircdocs.horse/#rplunaway-305
 type rplUnAway struct {
 	client string
 }
@@ -153,9 +126,6 @@ func (r rplUnAway) rpl() string {
 	)
 }
 
-// 306 RPL_NOWAWAY
-//
-// https://modern.ircdocs.horse/#rplnowaway-306
 type rplNowAway struct {
 	client string
 }
@@ -167,9 +137,6 @@ func (r rplNowAway) rpl() string {
 	)
 }
 
-// 311 RPL_WHOISUSER
-//
-// https://modern.ircdocs.horse/#rplwhoisuser-311
 type rplWhoisUser struct {
 	client   string
 	nick     string
@@ -185,9 +152,6 @@ func (r rplWhoisUser) rpl() string {
 	)
 }
 
-// 315 RPL_ENDOFWHO
-//
-// https://modern.ircdocs.horse/#rplendofwho-315
 type rplEndOfWho struct {
 	client string
 	mask   string
@@ -200,9 +164,6 @@ func (r rplEndOfWho) rpl() string {
 	)
 }
 
-// 319 RPL_WHOISCHANNELS
-//
-// https://modern.ircdocs.horse/#rplwhoischannels-319
 type rplWhoisChannels struct {
 	client   string
 	nick     string
@@ -217,9 +178,6 @@ func (r rplWhoisChannels) rpl() string {
 	)
 }
 
-// 320 RPL_WHOISSPECIAL
-//
-// https://modern.ircdocs.horse/#rplwhoisspecial-320
 type rplWhoisSpecial struct {
 	client string
 	nick   string
@@ -233,9 +191,6 @@ func (r rplWhoisSpecial) rpl() string {
 	)
 }
 
-// 321 RPL_LISTSTART
-//
-// https://modern.ircdocs.horse/#rplliststart-321
 type rplListStart struct {
 	client string
 }
@@ -247,13 +202,10 @@ func (r rplListStart) rpl() string {
 	)
 }
 
-// 322 RPL_LIST
-//
-// https://modern.ircdocs.horse/#rpllist-322
 type rplList struct {
 	client  string
 	channel string
-	// Number of clients on server.
+
 	count int
 	topic string
 }
@@ -265,9 +217,6 @@ func (r rplList) rpl() string {
 	)
 }
 
-// 323 RPL_LISTEND
-//
-// https://modern.ircdocs.horse/#rpllistend-323
 type rplListEnd struct {
 	client string
 }
@@ -279,9 +228,6 @@ func (r rplListEnd) rpl() string {
 	)
 }
 
-// 324 RPL_CHANNELMODEIS
-//
-// https://modern.ircdocs.horse/#rplchannelmodeis-324
 type rplChannelModeIs struct {
 	client     string
 	channel    string
@@ -302,9 +248,6 @@ func (r rplChannelModeIs) rpl() string {
 	)
 }
 
-// 331 RPL_NOTOPIC
-//
-// https://modern.ircdocs.horse/#rplnotopic-331
 type rplNoTopic struct {
 	client  string
 	channel string
@@ -317,9 +260,6 @@ func (r rplNoTopic) rpl() string {
 	)
 }
 
-// 331 RPL_TOPIC
-//
-// https://modern.ircdocs.horse/#rpltopic-332
 type rplTopic struct {
 	client  string
 	channel string
@@ -333,9 +273,6 @@ func (r rplTopic) rpl() string {
 	)
 }
 
-// 333 RPL_TOPICWHOTIME
-//
-// https://modern.ircdocs.horse/#rpltopicwhotime-333
 type rplTopicWhoTime struct {
 	client  string
 	channel string
@@ -350,9 +287,6 @@ func (r rplTopicWhoTime) rpl() string {
 	)
 }
 
-// 341 RPL_INVITING
-//
-// https://modern.ircdocs.horse/#rplinviting-341
 type rplInviting struct {
 	client  string
 	nick    string
@@ -366,9 +300,6 @@ func (r rplInviting) rpl() string {
 	)
 }
 
-// 351 RPL_VERSION
-//
-// https://modern.ircdocs.horse/#rplversion-351
 type rplVersion struct {
 	client   string
 	version  string
@@ -383,9 +314,6 @@ func (r rplVersion) rpl() string {
 	)
 }
 
-// 352 RPL_WHOREPLY
-//
-// https://modern.ircdocs.horse/#rplwhoreply-352
 type rplWhoReply struct {
 	client   string
 	channel  string
@@ -405,16 +333,13 @@ func (r rplWhoReply) rpl() string {
 	)
 }
 
-// 353 RPL_NAMREPLY.
-//
-// https://modern.ircdocs.horse/#rplnamreply-353
 type rplNamReply struct {
 	client string
-	// Channel symbol. = public, @ secret, * private.
+
 	symbol string
-	// Reply channel.
+
 	channel string
-	// List of nicknames on channel prefixed by their mode (e.g. +user).
+
 	nicks []string
 }
 
@@ -426,9 +351,6 @@ func (r rplNamReply) rpl() string {
 	)
 }
 
-// 366 RPL_ENDOFNAMES
-//
-// https://modern.ircdocs.horse/#rplendofnames-366
 type rplEndOfNames struct {
 	client  string
 	channel string
@@ -441,9 +363,6 @@ func (r rplEndOfNames) rpl() string {
 	)
 }
 
-// 372 RPL_MOTD
-//
-// https://modern.ircdocs.horse/#rplmotd-372
 type rplMotd struct {
 	client string
 	text   string
@@ -456,9 +375,6 @@ func (r rplMotd) rpl() string {
 	)
 }
 
-// 375 RPL_MOTDSTART
-//
-// https://modern.ircdocs.horse/#rplmotdstart-375
 type rplMotdStart struct {
 	client string
 	server string
@@ -472,9 +388,6 @@ func (r rplMotdStart) rpl() string {
 	)
 }
 
-// 376 RPL_ENDOFMOTD
-//
-// https://modern.ircdocs.horse/#rplendofmotd-376
 type rplEndOfMotd struct {
 	client string
 }
@@ -486,9 +399,6 @@ func (r rplEndOfMotd) rpl() string {
 	)
 }
 
-// 381 RPL_YOUREOPER
-//
-// https://modern.ircdocs.horse/#rplyoureoper-381
 type rplYoureOper struct {
 	client string
 }
@@ -500,9 +410,6 @@ func (r rplYoureOper) rpl() string {
 	)
 }
 
-// 401 ERR_NOSUCHNICK
-//
-// https://modern.ircdocs.horse/#errnosuchnick-401
 type errNoSuchNick struct {
 	client string
 	nick   string
@@ -515,9 +422,6 @@ func (r errNoSuchNick) rpl() string {
 	)
 }
 
-// 402 ERR_NOSUCHSERVER
-//
-// https://modern.ircdocs.horse/#errnosuchserver-402
 type errNoSuchServer struct {
 	client string
 	server string
@@ -530,9 +434,6 @@ func (r errNoSuchServer) rpl() string {
 	)
 }
 
-// 403 ERR_NOSUCHCHANNEL
-//
-// https://modern.ircdocs.horse/#errnosuchchannel-403
 type errNoSuchChannel struct {
 	client  string
 	channel string
@@ -545,9 +446,6 @@ func (r errNoSuchChannel) rpl() string {
 	)
 }
 
-// 404 ERR_CANNOTSENDTOCHAN
-//
-// https://modern.ircdocs.horse/#errcannotsendtochan-404
 type errCannotSendToChan struct {
 	client  string
 	channel string
@@ -561,9 +459,6 @@ func (r errCannotSendToChan) rpl() string {
 	)
 }
 
-// 431 ERR_NONICKNAMEGIVEN
-//
-// https://modern.ircdocs.horse/#errnonicknamegiven-431
 type errNoNicknameGiven struct {
 	client string
 }
@@ -575,9 +470,6 @@ func (r errNoNicknameGiven) rpl() string {
 	)
 }
 
-// 432 ERR_ERRONEUSNICKNAME
-//
-// https://modern.ircdocs.horse/#errerroneusnickname-432
 type errErroneusNickname struct {
 	client string
 	nick   string
@@ -590,9 +482,6 @@ func (r errErroneusNickname) rpl() string {
 	)
 }
 
-// 433 ERR_NICKNAMEINUSE
-//
-// https://modern.ircdocs.horse/#errnicknameinuse-433
 type errNicknameInUse struct {
 	client string
 	nick   string
@@ -605,9 +494,6 @@ func (r errNicknameInUse) rpl() string {
 	)
 }
 
-// 441 ERR_USERNOTINCHANNEL
-//
-// https://modern.ircdocs.horse/#errusernotinchannel-441
 type errUserNotInChannel struct {
 	client  string
 	nick    string
@@ -621,9 +507,6 @@ func (r errUserNotInChannel) rpl() string {
 	)
 }
 
-// 442 ERR_NOTONCHANNEL
-//
-// https://modern.ircdocs.horse/#errnotonchannel-442
 type errNotOnChannel struct {
 	client  string
 	channel string
@@ -636,9 +519,6 @@ func (r errNotOnChannel) rpl() string {
 	)
 }
 
-// 443 ERR_USERONCHANNEL
-//
-// https://modern.ircdocs.horse/#erruseronchannel-443
 type errUserOnChannel struct {
 	client  string
 	nick    string
@@ -652,9 +532,6 @@ func (r errUserOnChannel) rpl() string {
 	)
 }
 
-// 451 ERR_NOTREGISTERED
-//
-// https://modern.ircdocs.horse/#errnotregistered-451
 type errNotRegistered struct {
 	client string
 }
@@ -666,9 +543,6 @@ func (r errNotRegistered) rpl() string {
 	)
 }
 
-// 461 ERR_NEEDMOREPARAMS
-//
-// https://modern.ircdocs.horse/#errneedmoreparams-461
 type errNeedMoreParams struct {
 	client  string
 	command string
@@ -681,9 +555,6 @@ func (r errNeedMoreParams) rpl() string {
 	)
 }
 
-// 462 ERR_ALREADYREGISTERED
-//
-// https://modern.ircdocs.horse/#erralreadyregistered-462
 type errAlreadyRegistered struct {
 	client string
 }
@@ -695,9 +566,6 @@ func (r errAlreadyRegistered) rpl() string {
 	)
 }
 
-// 464 ERR_PASSWDMISMATCH
-//
-// https://modern.ircdocs.horse/#errpasswdmismatch-464
 type errPasswdMismatch struct {
 	client string
 }
@@ -709,9 +577,6 @@ func (r errPasswdMismatch) rpl() string {
 	)
 }
 
-// 473 ERR_INVITEONLYCHAN
-//
-// https://modern.ircdocs.horse/#errinviteonlychan-473
 type errInviteOnlyChan struct {
 	client  string
 	channel string
@@ -724,9 +589,6 @@ func (r errInviteOnlyChan) rpl() string {
 	)
 }
 
-// 474 ERR_BANNEDFROMCHAN
-//
-// https://modern.ircdocs.horse/#errbannedfromchan-474
 type errBannedFromChan struct {
 	client  string
 	channel string
@@ -739,9 +601,6 @@ func (r errBannedFromChan) rpl() string {
 	)
 }
 
-// 475 ERR_BADCHANNELKEY
-//
-// https://modern.ircdocs.horse/#errbadchannelkey-475
 type errBadChannelKey struct {
 	client  string
 	channel string
@@ -754,9 +613,6 @@ func (r errBadChannelKey) rpl() string {
 	)
 }
 
-// 481 ERR_NOPRIVILEGES
-//
-// https://modern.ircdocs.horse/#errnoprivileges-481
 type errNoPrivileges struct {
 	client string
 }
@@ -768,9 +624,6 @@ func (r errNoPrivileges) rpl() string {
 	)
 }
 
-// 482 ERR_CHANOPRIVSNEEDED
-//
-// https://modern.ircdocs.horse/#errchanoprivsneeded-482
 type errChanoPrivsNeeded struct {
 	client  string
 	channel string
@@ -783,9 +636,6 @@ func (r errChanoPrivsNeeded) rpl() string {
 	)
 }
 
-// 502 ERR_USERSDONTMATCH
-//
-// https://modern.ircdocs.horse/#errusersdontmatch-502
 type errUsersDontMatch struct {
 	client string
 }
@@ -796,18 +646,3 @@ func (r errUsersDontMatch) rpl() string {
 		r.client,
 	)
 }
-
-// 723 ERR_NOPRIVS
-//
-// https://modern.ircdocs.horse/#errnoprivs-723
-// type errNoPrivs struct {
-// 	client string
-// 	priv   string
-// }
-
-// func (r errNoPrivs) format() string {
-// 	return fmt.Sprintf(
-// 		"723 %s %s :Insufficient oper privileges.",
-// 		r.client, r.priv,
-// 	)
-// }

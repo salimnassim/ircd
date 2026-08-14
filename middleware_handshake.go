@@ -1,6 +1,5 @@
 package ircd
 
-// Require client handhake for commands using this middleware.
 func middlewareNeedHandshake(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 	if !c.handshake() {
 		c.sendRPL(s.name, errNotRegistered{

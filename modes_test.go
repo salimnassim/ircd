@@ -176,5 +176,4 @@ func TestDiffModes(t *testing.T) {
 			t.Errorf("del slices do not match")
 		}
 	}
-
 }

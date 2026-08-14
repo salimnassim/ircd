@@ -25,3 +25,16 @@ var (
 	errorParserInputTooLong   = errors.New("message is too long")
 	errorParserInputMalformed = errors.New("malformed message")
 )
+
+var (
+	errNickInUse       = errors.New("nickname is already in use")
+	errChannelNotFound = errors.New("channel not found")
+)
+
+var (
+	errSendQExceeded    = errors.New("SendQ exceeded")
+	errExcessFlood      = errors.New("Quit: Excess Flood")
+	errConnectionClosed = errors.New("Quit: EOF")
+
+	errKilled = errors.New("killed")
+)

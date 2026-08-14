@@ -5,13 +5,12 @@ import "sync"
 type clientID string
 
 type ClientStorer interface {
-	// Number of clients in store.
 	count() (visible int, invisible int)
-	// add client to store.
+
 	add(c clienter)
-	// Remove client from store.
+
 	delete(id clientID)
-	// Get client from store by nickname.
+
 	get(nickname string) (c clienter, exists bool)
 }
 
@@ -29,7 +28,6 @@ func NewClientStore(id string) *clientStore {
 	}
 }
 
-// Get number of clients in store.
 func (s *clientStore) count() (visible int, invisible int) {
 	s.mu.RLock()
 	for _, c := range s.clients {
@@ -44,7 +42,6 @@ func (s *clientStore) count() (visible int, invisible int) {
 	return visible, invisible
 }
 
-// get client from store by nickname.
 func (s *clientStore) get(nickname string) (clienter, bool) {
 	var client clienter
 
@@ -64,14 +61,12 @@ func (s *clientStore) get(nickname string) (clienter, bool) {
 	return client, true
 }
 
-// add client to store.
 func (s *clientStore) add(c clienter) {
 	s.mu.Lock()
 	s.clients[c.id()] = c
 	s.mu.Unlock()
 }
 
-// delete client from store.
 func (s *clientStore) delete(id clientID) {
 	s.mu.Lock()
 	delete(s.clients, id)

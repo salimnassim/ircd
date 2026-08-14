@@ -9,62 +9,48 @@ import (
 )
 
 type channeler interface {
-	// Channel name.
 	name() string
-	// Channel owner.
+
 	owner() clientID
 
-	// Access client members.
 	clients() channelClientStorer
-	// Number of channel members.
+
 	count() int
 
-	// Channel topic.
 	topic() *topic
-	// Set channel topic.
+
 	setTopic(text string, author string)
 
-	// Does prefix match any of the ban masks?
 	banned(c clienter) bool
-	// Add ban mask.
+
 	addBan(mask banMask) error
-	// Remove ban mask.
+
 	removeBan(mask banMask) error
 
-	// Channel members in NAMES format including highest prefix.
 	names() []string
 
-	// Broadcast RPL to channel members.
-	//
-	// If skip is set to true, the source client will not receive the RPL message.
 	broadcastRPL(rpl rpl, sourceID clientID, skip bool)
-	// Broadcast command to channel members.
-	//
-	// If skip is set to true, the source client will not receive the command message.
+
 	broadcastCommand(cmd command, sourceID clientID, skip bool)
 
-	// Channel modestring.
 	modestring() string
 
-	// Channel modestring as a bitmask.
 	mode() (mode channelMode)
-	// Add mode to channel.
+
 	addMode(mode channelMode)
-	// Remove mode from chanel.
+
 	removeMode(mode channelMode)
-	// Does channel have mode?
+
 	hasMode(mode channelMode) bool
 
-	// Has client been invited to the channel?
 	isInvited(c clienter) bool
-	// Add invite to channel
+
 	addInvite(clientID clientID)
-	// Remove invite from channel
+
 	removeInvite(clientID clientID)
 
-	// Get channel key (password).
 	key() string
-	// Set channel key (password).
+
 	setKey(key string)
 }
 
@@ -72,18 +58,18 @@ type banMask string
 
 type channel struct {
 	mu *sync.RWMutex
-	// Channel name.
+
 	n string
-	// Channel topic.
+
 	t *topic
-	// Channel clients.
+
 	cs      channelClientStorer
 	modes   channelMode
 	bans    map[banMask]bool
 	invites map[clientID]bool
-	// Channel owner.
+
 	o clientID
-	// Channel password.
+
 	k string
 }
 
@@ -147,7 +133,6 @@ func (ch *channel) owner() clientID {
 	return ch.o
 }
 
-// Sets channel topic.
 func (ch *channel) setTopic(text string, author string) {
 	ch.mu.Lock()
 	ch.t.text = text
@@ -194,14 +179,12 @@ func (ch *channel) removeBan(mask banMask) error {
 	return nil
 }
 
-// Returns current topic.
 func (ch *channel) topic() *topic {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
 	return ch.t
 }
 
-// Returns channel users delimited by a space for RPL_NAMREPLY.
 func (ch *channel) names() []string {
 	var names []string
 
@@ -212,11 +195,8 @@ func (ch *channel) names() []string {
 	return names
 }
 
-// Send RPL to all clients on the channel.
-// If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 	for _, c := range ch.cs.all() {
-		// Do not broadcast to clients that are quitting.
 		if c.quitReason() != "" {
 			continue
 		}
@@ -227,11 +207,8 @@ func (ch *channel) broadcastRPL(rpl rpl, sourceID clientID, skip bool) {
 	}
 }
 
-// Send command to all clients on the channel.
-// If skip is true, the client in source will not receive the message.
 func (ch *channel) broadcastCommand(cmd command, sourceID clientID, skip bool) {
 	for _, c := range ch.cs.all() {
-		// Do not broadcast to clients that are quitting.
 		if c.quitReason() != "" {
 			continue
 		}
@@ -290,12 +267,12 @@ func (ch *channel) hasMode(mode channelMode) bool {
 func (ch *channel) isInvited(c clienter) bool {
 	ch.mu.RLock()
 	defer ch.mu.RUnlock()
-	// is client in the invite map?
+
 	iv, ok := ch.invites[c.id()]
 	if !ok {
 		return false
 	}
-	// invite has been already used
+
 	if !iv {
 		return false
 	}

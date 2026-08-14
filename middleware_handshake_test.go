@@ -29,5 +29,4 @@ func TestMiddlewareHandshake(t *testing.T) {
 			t.Errorf("got: %v, want: %v", c.messagesOut, want)
 		}
 	})
-
 }

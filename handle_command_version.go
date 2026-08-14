@@ -11,7 +11,6 @@ func handleVersion(s *server, c clienter, m message) {
 			comments: "",
 		})
 
-		// todo: get tokens from config state and actually enforce them
 		c.sendRPL(s.name, rplISupport{
 			client: c.nickname(),
 			tokens: "AWAYLEN=128 CASEMAPPING=ascii CHANLIMIT=#&:64 CHANNELLEN=50 CHANTYPES=#& HOSTLEN=128 KICKLEN=128 MODES=24 NICKLEN=31 PREFIX=(qaohv)~&@%+ TOPICLEN=307 USERLEN=18",
@@ -19,7 +18,6 @@ func handleVersion(s *server, c clienter, m message) {
 		return
 	}
 
-	// todo: VERSION clients or other servers
 	c.sendRPL(s.name, errNoSuchServer{
 		client: c.nickname(),
 		server: m.params[0],

@@ -63,7 +63,7 @@ func main() {
 			Network:           "Network",
 			MaxNickLength:     31,
 			ChannelPrefixes:   "(qaohv)~&@%+",
-			// StatusMessage:     "~&@%+",
+
 			MaxTargets:     "PRIVMSG:3,WHOIS:1,JOIN:3",
 			MaxTopicLength: 128,
 			MaxUserLength:  20,

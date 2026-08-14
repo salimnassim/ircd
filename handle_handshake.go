@@ -8,7 +8,6 @@ import (
 
 func handleHandshake(s *server, c clienter) {
 	if !c.handshake() {
-		// send handshake preamble
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
 			message: fmt.Sprintf("AUTH :*** Your ID is: %s", c.id()),
@@ -24,11 +23,8 @@ func handleHandshake(s *server, c clienter) {
 			message: "AUTH :*** Looking up your hostname...",
 		})
 
-		// lookup address
-		// todo: resolver
 		addr, err := net.LookupAddr(c.ip())
 		if err != nil {
-			// if it cant be resolved use ip
 			c.setHostname(c.ip())
 		} else {
 			c.setHostname(addr[0])
@@ -46,7 +42,6 @@ func handleHandshake(s *server, c clienter) {
 			version:    s.version,
 		})
 
-		// ipv4 or ipv6 connection for cloaking mask
 		prefix := 4
 		if strings.Count(c.ip(), ":") > 1 {
 			prefix = 6
@@ -57,7 +52,6 @@ func handleHandshake(s *server, c clienter) {
 			tls = "tls"
 		}
 
-		// cloak
 		c.setHostname(fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tls, c.id()))
 		c.sendCommand(noticeCommand{
 			client:  c.nickname(),
@@ -94,7 +88,6 @@ func handleHandshake(s *server, c clienter) {
 			tokens: s.params,
 		})
 
-		// set default modes
 		c.addMode(modeClientVhost)
 
 		if c.tls() {

@@ -3,7 +3,6 @@ package ircd
 import "strings"
 
 func handleAway(s *server, c clienter, m message) {
-	// unaway
 	if len(m.params) == 0 {
 		if c.away() != "" {
 			c.setAway("")
@@ -14,7 +13,6 @@ func handleAway(s *server, c clienter, m message) {
 		return
 	}
 
-	// away
 	text := strings.Join(m.params[0:len(m.params)], " ")
 	c.setAway(text)
 

@@ -23,7 +23,6 @@ func TestCommandOper(t *testing.T) {
 		if slices.Compare(c.messagesOut, want) != 0 {
 			t.Errorf("got %v, want: %v", c.messagesOut, want)
 		}
-
 	})
 
 	c.reset()
@@ -39,5 +38,4 @@ func TestCommandOper(t *testing.T) {
 			t.Errorf("got %v, want: %v", c.messagesOut, want)
 		}
 	})
-
 }

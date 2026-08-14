@@ -12,76 +12,62 @@ import (
 type clienter interface {
 	String() string
 
-	// Get client ID.
 	id() clientID
-	// Get client IP.
+
 	ip() string
 
-	// Get client nickname.
 	nickname() string
-	// Set client nickname.
+
 	setNickname(nickname string)
 
-	// Get client username.
 	username() string
 
-	// Get client realname.
 	realname() string
-	// Set client username.
+
 	setUser(username string, realname string)
 
-	// Get client hostname.
 	hostname() string
-	// Set client hostname.
+
 	setHostname(hostname string)
 
-	// Is client using TLS?
 	tls() bool
-	// Set client TLS.
+
 	setTLS(tls bool)
 
-	// Get client away message.
 	away() string
-	// Set client away message.
+
 	setAway(text string)
 
-	// Get user handshake status.
 	handshake() bool
-	// Set user handshake status.
+
 	setHandshake(handshake bool)
 
-	// Did client send the correct password?
 	password() bool
-	// Set if password was correct.
+
 	setPassword(correct bool)
 
-	// Get client prefix.
 	prefix() string
-	// Get client modes as a string (e.g. +viz).
+
 	modestring() string
 
-	// Add mode to client bitmask.
 	addMode(mode clientMode)
-	// Remove mode from client bitmask.
+
 	removeMode(mode clientMode)
-	// Does user have mode in bitmask?
+
 	hasMode(mode clientMode) bool
 
-	// Send RPL to client.
 	sendRPL(serverName string, rpl rpl)
-	// Send command to client.
+
 	sendCommand(command command)
 
-	// Reason client quit the server.
 	quitReason() string
-	// Set quit reason.
+
 	setQuitreason(reason string)
 
-	// Send message.
 	send(text string)
-	// Send pong to internal channel.
+
 	pong(pong bool)
-	// Send stop to internal channel.
+
 	kill(reason string)
 }
 
@@ -95,17 +81,16 @@ type client struct {
 	real     string
 	host     string
 	modes    clientMode
-	// TLS?
+
 	secure bool
 	afk    string
-	// Operator?.
+
 	o bool
 
-	// Handshake done?
 	hs bool
-	// Is sent password correct?
+
 	pw bool
-	// Quit reason
+
 	q string
 
 	conn   net.Conn

@@ -19,7 +19,6 @@ func handleConnection(conn net.Conn, s *server) {
 	s.Clients.add(c)
 	metrics.Clients.Inc()
 
-	// starts goroutines for procesing incoming and outgoing messages
 	go handleConnectionIn(c, s)
 	go handleConnectionOut(c)
 	handleConnectionPong(c, s)

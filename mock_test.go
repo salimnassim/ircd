@@ -72,7 +72,6 @@ func newMockClient(handshake bool) *clientMock {
 	}
 }
 
-// Reset mock message state to empty slices.
 func (c *clientMock) reset() {
 	c.messagesIn = []string{}
 	c.messagesOut = []string{}

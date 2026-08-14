@@ -5,7 +5,6 @@ func handlePass(s *server, c clienter, m message) {
 		return
 	}
 
-	// handshaked clients cant PASS
 	if c.handshake() {
 		c.sendRPL(s.name, errAlreadyRegistered{
 			client: c.nickname(),

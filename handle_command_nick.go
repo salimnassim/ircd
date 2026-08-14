@@ -1,7 +1,6 @@
 package ircd
 
 func handleNick(s *server, c clienter, m message) {
-	// validate nickname
 	ok := s.regex[regexNick].MatchString(m.params[0])
 	if !ok {
 		c.sendRPL(s.name, errErroneusNickname{
@@ -11,7 +10,6 @@ func handleNick(s *server, c clienter, m message) {
 		return
 	}
 
-	// check if nick is already in use
 	_, exists := s.Clients.get(m.params[0])
 	if exists {
 		c.sendRPL(s.name, errNicknameInUse{

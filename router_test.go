@@ -5,7 +5,6 @@ import (
 )
 
 func TestRouter(t *testing.T) {
-
 	s := NewServer(ServerConfig{
 		Name: "mock",
 	})
@@ -116,7 +115,6 @@ func TestRouter(t *testing.T) {
 		router := NewCommandRouter(s)
 
 		router.registerHandler("TEST", func(s *server, c clienter, m message) {
-			// nothing
 		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = m.params[0]
 			return next
@@ -141,7 +139,6 @@ func TestRouter(t *testing.T) {
 		router := NewCommandRouter(s)
 
 		router.registerHandler("TEST", func(s *server, c clienter, m message) {
-			// nothing
 		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			got = "exit here"
 			return nil
@@ -174,7 +171,6 @@ func TestRouter(t *testing.T) {
 		})
 
 		router.registerHandler("TEST", func(s *server, c clienter, m message) {
-			// nothing
 		}, func(s *server, c clienter, m message, next handlerFunc) handlerFunc {
 			return next
 		})

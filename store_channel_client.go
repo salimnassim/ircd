@@ -8,25 +8,22 @@ import (
 )
 
 type channelClientStorer interface {
-	// Number of clients on the channel.
 	count() int
-	// Add client to channel.
+
 	add(c clienter)
-	// Remove client from channel.
+
 	remove(c clienter)
-	// Get all channel clients.
+
 	all() []clienter
-	// Is client member of the channel?
+
 	isMember(c clienter) bool
-	// Add channel membership mode to client.
+
 	addMode(c clienter, m channelMembershipMode)
-	// Remove channel membership mode from client.
+
 	removeMode(c clienter, m channelMembershipMode)
-	// Does client have any of the roles in m?
-	//
-	// Can be used to match against multiple membership modes.
+
 	hasMode(c clienter, m ...channelMembershipMode) bool
-	// Channel membership modestring for client.
+
 	modestring(c clienter) string
 }
 

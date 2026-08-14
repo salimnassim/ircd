@@ -39,51 +39,45 @@ type ServerConfig struct {
 }
 
 type ServerConfigParameters struct {
-	// https://modern.ircdocs.horse/#awaylen-parameter
 	MaxAwayLength int
-	// https://modern.ircdocs.horse/#casemapping-parameter
+
 	CaseMapping string
-	// https://modern.ircdocs.horse/#casemapping-parameter
+
 	ChannelLimit string
-	// https://modern.ircdocs.horse/#chanmodes-parameter
+
 	ChannelModes string
-	// https://modern.ircdocs.horse/#channellen-parameter
+
 	MaxChannelLength int
-	// https://modern.ircdocs.horse/#chantypes-parameter
+
 	ChannelTypes string
-	// https://modern.ircdocs.horse/#elist-parameter
+
 	EList string
-	// https://modern.ircdocs.horse/#excepts-parameter
+
 	Excepts string
-	// https://modern.ircdocs.horse/#hostlen-parameter
+
 	MaxHostnameLength int
-	// https://modern.ircdocs.horse/#kicklen-parameter
+
 	MaxKickLength int
-	// https://modern.ircdocs.horse/#maxlist-parameter
+
 	MaxList string
-	// https://modern.ircdocs.horse/#modes-parameter
+
 	MaxModes int
-	// https://modern.ircdocs.horse/#network-parameter
-	//
-	// NOTE: Use ASCII codes for characters such as space (\x20)
+
 	Network string
-	// https://modern.ircdocs.horse/#nicklen-parameter
+
 	MaxNickLength int
-	// https://modern.ircdocs.horse/#prefix-parameter
+
 	ChannelPrefixes string
-	// https://modern.ircdocs.horse/#statusmsg-parameter
+
 	StatusMessage string
-	// https://modern.ircdocs.horse/#targmax-parameter
+
 	MaxTargets string
-	// https://modern.ircdocs.horse/#topiclen-parameter
+
 	MaxTopicLength int
-	// https://modern.ircdocs.horse/#userlen-parameter
+
 	MaxUserLength int
 }
 
-// https://modern.ircdocs.horse/#elist-parameter
-//
-// Returns a ELIST compatible string
 func (s ServerConfigParameters) build() string {
 	return fmt.Sprintf(
 		`AWAYLEN=%d CASEMAPPING=%s CHANLIMIT=%s CHANMODES=%s CHANTYPES=%s ELIST=%s HOSTLEN=%d KICKLEN=%d MAXLIST=%s MODES=%d NETWORK=%s NICKLEN=%d PREFIX=%s TARGMAX=%s TOPICLEN=%d USERLEN=%d`,
@@ -107,7 +101,7 @@ type server struct {
 	Channels  ChannelStorer
 	Operators OperatorStorer
 	motd      *[]string
-	// List of active ports. TLS is prefixed with a +
+
 	p []string
 
 	pingFrequency  int
@@ -115,7 +109,6 @@ type server struct {
 
 	params string
 
-	// regex cache
 	regex map[regexKey]*regexp.Regexp
 }
 
@@ -164,7 +157,6 @@ func (s *server) Run(listener net.Listener, isTLS bool) {
 	}
 }
 
-// Compiles expressions and caches them to a map.
 func compileRegexp(s *server) {
 	rgxNick, err := regexp.Compile(`([a-zA-Z0-9\[\]\{\}\\\|]{2,31})`)
 	if err != nil {
@@ -207,7 +199,7 @@ func registerHandlers(s *server) {
 	router.registerHandler("LIST", handleList, middlewareNeedHandshake)
 	router.registerHandler("INVITE", handleInvite, middlewareNeedHandshake, middlewareNeedParams(2))
 	router.registerHandler("DEBUG", func(s *server, c clienter, m message) {
-		func() {}() // breakpoint here
+		func() {}()
 	}, middlewareNeedHandshake)
 
 	s.router = router
@@ -225,15 +217,12 @@ func (s *server) ports() []string {
 	return s.p
 }
 
-// Returns the number of connected clients and open channels.
 func (s *server) Stats() (visible int, invisible, channels int) {
 	visible, invisible = s.Clients.count()
 	return visible, invisible, s.Channels.count()
 }
 
-// Removes client from channels and client map.
 func (s *server) cleanup(c clienter) {
-	// Send QUIT to all channels that the client is a member of.
 	for _, ch := range s.Channels.memberOf(c) {
 		ch.broadcastCommand(quitCommand{
 			prefix: c.prefix(),

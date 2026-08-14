@@ -32,14 +32,11 @@ func handleTopic(s *server, c clienter, m message) {
 		return
 	}
 
-	// set topic
 	text := strings.Join(m.params[1:len(m.params)], " ")
 	ch.setTopic(text, c.nickname())
 
-	// get topic
 	topic := ch.topic()
 
-	// broadcast new topic to clients on channel
 	ch.broadcastRPL(
 		rplTopic{
 			client:  c.nickname(),
