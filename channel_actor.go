@@ -472,7 +472,7 @@ func (ch *channelActor) handleSetMode(ev evSetMode) {
 		return
 	}
 
-	add, _ := parseModestring[channelMode](ev.modestring, channelModeMap)
+	add, _ := parseModestring(ev.modestring, channelModeMap)
 	if slices.Contains(add, modeChannelKey) {
 		ch.applyKeyChange(ev.by, add, tcs)
 		return
@@ -484,7 +484,7 @@ func (ch *channelActor) handleSetMode(ev evSetMode) {
 func (ch *channelActor) applyChannelModeChange(by *sessionHandle, modestring string) {
 	before := ch.modes
 
-	add, del := parseModestring[channelMode](modestring, channelModeMap)
+	add, del := parseModestring(modestring, channelModeMap)
 	for _, a := range add {
 		switch a {
 		case modeChannelModerated, modeChannelTLSOnly, modeChannelSecret, modeChannelRestrictTopic, modeChannelInviteOnly:
@@ -502,7 +502,7 @@ func (ch *channelActor) applyChannelModeChange(by *sessionHandle, modestring str
 	}
 
 	after := ch.modes
-	da, dd := diffModes[channelMode](before, after, channelModeMap)
+	da, dd := diffModes(before, after, channelModeMap)
 	if len(da) == 0 && len(dd) == 0 {
 		return
 	}
@@ -511,14 +511,14 @@ func (ch *channelActor) applyChannelModeChange(by *sessionHandle, modestring str
 	if len(dd) > 0 {
 		minus := []rune{'-'}
 		for _, m := range dd {
-			minus = append(minus, runeByMode[channelMode](m, channelModeMap))
+			minus = append(minus, runeByMode(m, channelModeMap))
 		}
 		diff += string(minus)
 	}
 	if len(da) > 0 {
 		plus := []rune{'+'}
 		for _, m := range da {
-			plus = append(plus, runeByMode[channelMode](m, channelModeMap))
+			plus = append(plus, runeByMode(m, channelModeMap))
 		}
 		diff += string(plus)
 	}
@@ -544,7 +544,7 @@ func (ch *channelActor) applyKeyChange(by *sessionHandle, addModes []channelMode
 		ch.broadcastCommand(modeCommand{
 			source:     snap.prefix(),
 			target:     ch.name,
-			modestring: fmt.Sprintf("+%c", runeByMode[channelMode](modeChannelKey, channelModeMap)),
+			modestring: fmt.Sprintf("+%c", runeByMode(modeChannelKey, channelModeMap)),
 			args:       tcs[i],
 		}, "", false)
 	}
@@ -578,7 +578,7 @@ func (ch *channelActor) applyMembershipModeChange(by *sessionHandle, modestring 
 		return h, m, true
 	}
 
-	add, del := parseModestring[channelMembershipMode](modestring, channelMembershipModeMap)
+	add, del := parseModestring(modestring, channelMembershipModeMap)
 
 	for i, mode := range add {
 		if !isSettableMembershipMode(mode) {
@@ -591,7 +591,7 @@ func (ch *channelActor) applyMembershipModeChange(by *sessionHandle, modestring 
 		m.modes |= mode
 		changes = append(changes, change{
 			nick: h.snapshot.Load().nick,
-			mode: fmt.Sprintf("+%c", runeByMode[channelMembershipMode](mode, channelMembershipModeMap)),
+			mode: fmt.Sprintf("+%c", runeByMode(mode, channelMembershipModeMap)),
 		})
 	}
 
@@ -606,7 +606,7 @@ func (ch *channelActor) applyMembershipModeChange(by *sessionHandle, modestring 
 		m.modes &^= mode
 		changes = append(changes, change{
 			nick: h.snapshot.Load().nick,
-			mode: fmt.Sprintf("-%c", runeByMode[channelMembershipMode](mode, channelMembershipModeMap)),
+			mode: fmt.Sprintf("-%c", runeByMode(mode, channelMembershipModeMap)),
 		})
 	}
 

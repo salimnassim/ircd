@@ -26,7 +26,7 @@ func (s *session) cmdPing(m message) {
 	s.handle.deliver(strings.Replace(m.raw, "PING", "PONG", 1))
 }
 
-func (s *session) cmdPong(m message) {
+func (s *session) cmdPong() {
 	select {
 	case s.ponged <- struct{}{}:
 	default:
@@ -142,7 +142,7 @@ func (s *session) completeHandshake(ctx context.Context) {
 	s.publishSnapshot()
 }
 
-func (s *session) cmdLusers(m message) {
+func (s *session) cmdLusers() {
 	visible, invisible := 0, 0
 	for _, h := range s.deps.clients.all() {
 		snap := h.snapshot.Load()
@@ -229,8 +229,7 @@ func (s *session) cmdKick(ctx context.Context, m message) {
 		reason = strings.Join(m.params[2:], " ")
 	}
 
-	targets := strings.Split(m.params[1], ",")
-	for _, target := range targets {
+	for target := range strings.SplitSeq(m.params[1], ",") {
 		tc, ok := s.deps.clients.lookupNick(target)
 		if !ok {
 			s.handle.deliver(s.formatRPL(errUserNotInChannel{client: s.nick, nick: target, channel: channel}))
@@ -391,7 +390,7 @@ func (s *session) cmdModeClient(m message) {
 		return
 	}
 
-	add, del := parseModestring[clientMode](modestring, clientModeMap)
+	add, del := parseModestring(modestring, clientModeMap)
 	for _, a := range add {
 		switch a {
 		case modeClientInvisible, modeClientWallops:

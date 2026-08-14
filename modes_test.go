@@ -32,7 +32,7 @@ func TestParseClientModestring(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		a, d := parseModestring[clientMode](tc.input, clientModeMap)
+		a, d := parseModestring(tc.input, clientModeMap)
 
 		for i, v := range a {
 			if v != tc.want.add[i] {
@@ -73,7 +73,7 @@ func TestParseChannelMembership(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		a, d := parseModestring[channelMembershipMode](tc.input, channelMembershipModeMap)
+		a, d := parseModestring(tc.input, channelMembershipModeMap)
 		for i, v := range a {
 			if v != tc.want.add[i] {
 				t.Errorf("got: %d, want: %d", v, tc.want.add[i])
@@ -112,7 +112,7 @@ func TestParseChannelModestring(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		a, d := parseModestring[channelMode](tc.input, channelModeMap)
+		a, d := parseModestring(tc.input, channelModeMap)
 
 		for i, v := range a {
 			if v != tc.want.add[i] {
@@ -168,7 +168,7 @@ func TestDiffModes(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		a, d := diffModes[clientMode](tc.input.old, tc.input.new, clientModeMap)
+		a, d := diffModes(tc.input.old, tc.input.new, clientModeMap)
 		if slices.Compare(a, tc.want.add) != 0 {
 			t.Errorf("add slices do not match")
 		}

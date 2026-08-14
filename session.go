@@ -330,7 +330,7 @@ func (s *session) dispatch(ctx context.Context, m message) {
 	case "PING":
 		s.cmdPing(m)
 	case "PONG":
-		s.cmdPong(m)
+		s.cmdPong()
 	case "NICK":
 		if !s.requireParams(m, 1) {
 			return
@@ -345,7 +345,7 @@ func (s *session) dispatch(ctx context.Context, m message) {
 		if !s.requireHandshake() {
 			return
 		}
-		s.cmdLusers(m)
+		s.cmdLusers()
 	case "JOIN":
 		if !s.requireHandshake() || !s.requireParams(m, 1) {
 			return
