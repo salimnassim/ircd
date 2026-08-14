@@ -2,9 +2,16 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
 	"log/slog"
+	"math/big"
 	"net"
 	"net/http"
 	"os"
@@ -16,6 +23,55 @@ import (
 
 	"github.com/salimnassim/ircd"
 )
+
+// selfSignedCertificate generates an ephemeral ECDSA self-signed certificate,
+// used as a fallback when no TLS certificate/key pair is configured. The
+// subject and DNS SAN are set to fqdn (the configured server name), falling
+// back to "localhost" when it's empty.
+func selfSignedCertificate(fqdn string) (tls.Certificate, error) {
+	if fqdn == "" {
+		fqdn = "localhost"
+	}
+
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	serialNumber, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName: fqdn,
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+		DNSNames:              []string{fqdn},
+		IPAddresses:           []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+	}
+
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	keyBytes, err := x509.MarshalECPrivateKey(priv)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyBytes})
+
+	return tls.X509KeyPair(certPEM, keyPEM)
+}
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -88,9 +144,23 @@ func main() {
 
 	var tlsListener net.Listener
 	if config.TLS {
+		var fallbackCert *tls.Certificate
+		if config.CertificateFile == "" || config.CertificateKey == "" {
+			cert, err := selfSignedCertificate(config.Name)
+			if err != nil {
+				slog.Error("cant generate self-signed certificate", "err", err)
+				os.Exit(1)
+			}
+			fallbackCert = &cert
+			slog.Warn("no TLS certificate/key configured, using a generated self-signed certificate")
+		}
+
 		tlsListener, err = tls.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT_TLS")),
 			&tls.Config{
 				GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+					if fallbackCert != nil {
+						return fallbackCert, nil
+					}
 					cert, err := tls.LoadX509KeyPair(config.CertificateFile, config.CertificateKey)
 					if err != nil {
 						return nil, err
