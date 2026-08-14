@@ -2,11 +2,11 @@ package ircd
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/rs/zerolog/log"
 )
 
 func acceptLoop(ctx context.Context, listener net.Listener, isTLS bool, deps sessionDeps) {
@@ -24,7 +24,7 @@ func acceptLoop(ctx context.Context, listener net.Listener, isTLS bool, deps ses
 			} else if backoff *= 2; backoff > time.Second {
 				backoff = time.Second
 			}
-			log.Error().Err(err).Dur("backoff", backoff).Msg("unable to accept connection")
+			slog.Error("unable to accept connection", "err", err, "backoff", backoff)
 			time.Sleep(backoff)
 			continue
 		}

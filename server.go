@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"regexp"
 	"sync/atomic"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	"golang.org/x/time/rate"
 )
 
@@ -164,7 +164,7 @@ func (srv *Server) sessionDeps() sessionDeps {
 func (srv *Server) Serve(ctx context.Context, listener net.Listener, isTLS bool) {
 	_, port, err := net.SplitHostPort(listener.Addr().String())
 	if err != nil {
-		log.Error().Err(err).Msg("cant split net host port")
+		slog.Error("cant split net host port", "err", err)
 	}
 	if isTLS {
 		srv.addPort(fmt.Sprintf("+%s", port))
@@ -189,5 +189,5 @@ func (srv *Server) Shutdown(timeout time.Duration) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	log.Warn().Msg("shutdown timed out waiting for sessions to drain")
+	slog.Warn("shutdown timed out waiting for sessions to drain")
 }

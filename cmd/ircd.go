@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -13,22 +14,20 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/salimnassim/ircd"
 )
 
 func main() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
 	_, prometheusEnabled := os.LookupEnv("PROMETHEUS")
 	if prometheusEnabled {
 		mux := http.NewServeMux()
 		mux.Handle("/metrics", promhttp.Handler())
 		go func() {
-			log.Info().Msg("starting http, listening on :2112")
+			slog.Info("starting http, listening on :2112")
 			if err := http.ListenAndServe(":2112", mux); err != nil {
-				log.Error().Err(err).Msg("metrics http server stopped")
+				slog.Error("metrics http server stopped", "err", err)
 			}
 		}()
 	}
@@ -79,10 +78,11 @@ func main() {
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", os.Getenv("PORT")))
 	if err != nil {
-		log.Fatal().Err(err).Msg("cant listen")
+		slog.Error("cant listen", "err", err)
+		os.Exit(1)
 	}
 	go func() {
-		log.Info().Msgf("starting irc, listening on tcp:%s", os.Getenv("PORT"))
+		slog.Info(fmt.Sprintf("starting irc, listening on tcp:%s", os.Getenv("PORT")))
 		server.Serve(ctx, listener, false)
 	}()
 
@@ -99,10 +99,11 @@ func main() {
 				},
 			})
 		if err != nil {
-			log.Fatal().Err(err).Msg("cant listen tls")
+			slog.Error("cant listen tls", "err", err)
+			os.Exit(1)
 		}
 		go func() {
-			log.Info().Msgf("starting irc, listening on tcp:%s TLS", os.Getenv("PORT_TLS"))
+			slog.Info(fmt.Sprintf("starting irc, listening on tcp:%s TLS", os.Getenv("PORT_TLS")))
 			server.Serve(ctx, tlsListener, true)
 		}()
 	}
@@ -111,7 +112,7 @@ func main() {
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	<-sig
 
-	log.Info().Msg("shutting down")
+	slog.Info("shutting down")
 	cancel()
 	listener.Close()
 	if tlsListener != nil {
