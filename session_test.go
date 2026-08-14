@@ -1,6 +1,7 @@
 package ircd
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 func TestSessionNickClaimAndCollision(t *testing.T) {
@@ -355,6 +358,67 @@ func TestRunSessionPingTimeoutDisconnects(t *testing.T) {
 	case <-done:
 	case <-time.After(2 * time.Second):
 		t.Fatal("expected a ping timeout to terminate the session")
+	}
+}
+
+func TestRunSessionRateLimitThrottlesThenDisconnects(t *testing.T) {
+	serverConn, clientConn := net.Pipe()
+	defer clientConn.Close()
+	drainDiscard(clientConn)
+
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+	deps.rateLimit = rate.Every(time.Hour)
+	deps.rateBurst = 1
+	deps.rateGrace = 50 * time.Millisecond
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan struct{})
+	go func() {
+		runSession(ctx, serverConn, "rl1", false, deps)
+		close(done)
+	}()
+
+	h := waitForRegistration(t, cd, "rl1")
+
+	w := bufio.NewWriter(clientConn)
+	clientConn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+	w.WriteString("NICK alice\r\n")
+	if err := w.Flush(); err != nil {
+		t.Fatalf("write first line: %v", err)
+	}
+
+	deadline := time.After(500 * time.Millisecond)
+	for {
+		if snap := h.snapshot.Load(); snap != nil && snap.nick == "alice" {
+			break
+		}
+		select {
+		case <-deadline:
+			t.Fatal("expected the first line, within the burst, to be processed")
+		case <-time.After(2 * time.Millisecond):
+		}
+	}
+
+	select {
+	case <-done:
+		t.Fatal("session terminated immediately after exceeding its burst; expected throttling before disconnect")
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	clientConn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+	w.WriteString("NICK bob\r\n")
+	if err := w.Flush(); err != nil {
+		t.Fatalf("write second line: %v", err)
+	}
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected a sustained rate violation past the grace window to terminate the session")
 	}
 }
 

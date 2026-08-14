@@ -72,6 +72,7 @@ type sessionDeps struct {
 
 	rateLimit  rate.Limit
 	rateBurst  int
+	rateGrace  time.Duration
 	outboxSize int
 
 	clients   *clientDirectory
@@ -272,12 +273,16 @@ func (s *session) readLoop(ctx context.Context, conn net.Conn) {
 	if rateBurst <= 0 {
 		rateBurst = 10
 	}
+	rateGrace := s.deps.rateGrace
+	if rateGrace <= 0 {
+		rateGrace = 10 * time.Second
+	}
 	limiter := rate.NewLimiter(rateLimit, rateBurst)
 
 	scanner := bufio.NewScanner(bufio.NewReader(conn))
 
 	for scanner.Scan() {
-		waitCtx, cancelWait := context.WithTimeout(ctx, 10*time.Second)
+		waitCtx, cancelWait := context.WithTimeout(ctx, rateGrace)
 		err := limiter.Wait(waitCtx)
 		cancelWait()
 		if err != nil {
