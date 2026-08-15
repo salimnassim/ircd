@@ -73,6 +73,23 @@ func selfSignedCertificate(fqdn string) (tls.Certificate, error) {
 	return tls.X509KeyPair(certPEM, keyPEM)
 }
 
+// loadCloakSecret returns the HMAC key used to derive cloaked hostnames from
+// CLOAK_SECRET, generating an ephemeral one when unset. An ephemeral secret
+// means cloaks (and any bans matched against them) won't survive a restart.
+func loadCloakSecret() []byte {
+	if secret, ok := os.LookupEnv("CLOAK_SECRET"); ok && secret != "" {
+		return []byte(secret)
+	}
+
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		slog.Error("unable to generate cloak secret", "err", err)
+		os.Exit(1)
+	}
+	slog.Warn("CLOAK_SECRET not set, generated an ephemeral secret: cloaked hostnames and bans against them will not survive a restart")
+	return secret
+}
+
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
@@ -91,10 +108,11 @@ func main() {
 	_, tlsEnabled := os.LookupEnv("TLS")
 
 	config := ircd.ServerConfig{
-		Name:     os.Getenv("SERVER_NAME"),
-		Password: os.Getenv("SERVER_PASSWORD"),
-		Network:  os.Getenv("NETWORK_NAME"),
-		Version:  os.Getenv("SERVER_VERSION"),
+		Name:        os.Getenv("SERVER_NAME"),
+		Password:    os.Getenv("SERVER_PASSWORD"),
+		CloakSecret: loadCloakSecret(),
+		Network:     os.Getenv("NETWORK_NAME"),
+		Version:     os.Getenv("SERVER_VERSION"),
 		MOTD: []string{
 			"4This is the message of the day.",
 			"5It contains multiple lines because the lines could be long.",

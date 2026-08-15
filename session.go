@@ -59,13 +59,14 @@ func (h *sessionHandle) deliver(line string) {
 }
 
 type sessionDeps struct {
-	serverName string
-	network    string
-	version    string
-	password   string
-	motd       []string
-	isupport   string
-	ports      func() []string
+	serverName  string
+	network     string
+	version     string
+	password    string
+	motd        []string
+	isupport    string
+	ports       func() []string
+	cloakSecret []byte
 
 	pingFrequency  time.Duration
 	pongMaxLatency time.Duration

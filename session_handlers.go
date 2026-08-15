@@ -114,11 +114,7 @@ func (s *session) completeHandshake(ctx context.Context) {
 	if strings.Count(s.address, ":") > 1 {
 		prefix = 6
 	}
-	tlsLabel := "plain"
-	if s.tls {
-		tlsLabel = "tls"
-	}
-	s.host = fmt.Sprintf("ipv%d-%s-%s.vhost", prefix, tlsLabel, s.id)
+	s.host = fmt.Sprintf("ipv%d-%s.vhost", prefix, cloakHost(s.deps.cloakSecret, s.address))
 	s.handle.deliver(noticeCommand{client: s.nick, message: fmt.Sprintf("AUTH :*** Your hostname has been cloaked to %s", s.host)}.command())
 	s.handle.deliver(noticeCommand{
 		client:  s.nick,

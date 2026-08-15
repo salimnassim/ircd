@@ -21,6 +21,7 @@ func testSessionDeps(cd *clientDirectory, chd *channelDirectory) sessionDeps {
 		version:        "0.0.0-test",
 		isupport:       "TEST=1",
 		motd:           []string{"line one"},
+		cloakSecret:    []byte("test-cloak-secret"),
 		ports:          func() []string { return []string{"6667"} },
 		pingFrequency:  30 * time.Second,
 		pongMaxLatency: 10 * time.Second,

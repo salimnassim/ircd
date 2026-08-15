@@ -98,6 +98,7 @@ The server is configured entirely through environment variables:
 | `TLS` | Enables the TLS listener (presence enables it, value is ignored) | `true` |
 | `TLS_CERTIFICATE` | Path to a TLS certificate; if unset (with `TLS` on), a self-signed certificate is generated | `<empty>` (self-signed fallback) |
 | `TLS_KEY` | Path to the matching TLS key; same fallback behavior as above | `<empty>` (self-signed fallback) |
+| `CLOAK_SECRET` | HMAC key used to derive cloaked hostnames from client IPs; set a stable value so cloaks (and bans against them) survive restarts | `<empty>` (ephemeral secret generated at startup) |
 
 ```
 SERVER_NAME=foo SERVER_VERSION=0.1 NETWORK_NAME=Network SERVER_PASSWORD= \
