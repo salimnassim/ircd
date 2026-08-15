@@ -308,6 +308,51 @@ func TestChannelActorKeySetAndCleared(t *testing.T) {
 	}
 }
 
+func TestChannelActorBanSetAndCleared(t *testing.T) {
+	cd := newClientDirectory()
+	op := newTestHandle("op", "alice", "user", "host", false)
+	registerAndClaim(cd, op)
+
+	ch := newTestChannelActor("#chan", "", cd)
+	ch.handleJoin(evJoin{who: op.sessionHandle})
+	ch.members["op"].modes |= modeMemberOperator
+	op.drain()
+
+	ch.handleSetMode(evSetMode{by: op.sessionHandle, modestring: "+b", args: "mallory!*@*"})
+	if !ch.bans["mallory!*@*"] {
+		t.Fatal("expected +b to set the ban mask")
+	}
+	if !containsLine(op.drain(), "MODE #chan +b mallory!*@*") {
+		t.Error("expected a MODE +b broadcast")
+	}
+
+	ch.handleSetMode(evSetMode{by: op.sessionHandle, modestring: "-b", args: "mallory!*@*"})
+	if ch.bans["mallory!*@*"] {
+		t.Fatal("expected -b to clear the ban mask")
+	}
+	if !containsLine(op.drain(), "MODE #chan -b mallory!*@*") {
+		t.Error("expected a MODE -b broadcast")
+	}
+}
+
+func TestChannelActorJoinRejectsBannedMask(t *testing.T) {
+	cd := newClientDirectory()
+	joiner := newTestHandle("j1", "alice", "user", "host", false)
+	registerAndClaim(cd, joiner)
+
+	ch := newTestChannelActor("#chan", "owner-id", cd)
+	ch.bans["alice!*@*"] = true
+
+	ch.handleJoin(evJoin{who: joiner.sessionHandle})
+
+	if _, ok := ch.members["j1"]; ok {
+		t.Fatal("expected join to be rejected for a banned mask")
+	}
+	if !containsLine(joiner.drain(), "474") {
+		t.Error("expected ERR_BANNEDFROMCHAN")
+	}
+}
+
 func TestChannelActorBroadcastModeratedRequiresVoice(t *testing.T) {
 	cd := newClientDirectory()
 	speaker := newTestHandle("s", "alice", "user", "host", false)
