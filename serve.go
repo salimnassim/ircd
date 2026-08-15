@@ -2,6 +2,7 @@ package ircd
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net"
 	"time"
@@ -30,7 +31,31 @@ func acceptLoop(ctx context.Context, listener net.Listener, isTLS bool, deps ses
 		}
 		backoff = 0
 
+		ip := remoteHost(conn)
+		if ok, reason := deps.limiter.acquire(ip); !ok {
+			connectionsRejectedCounter.WithLabelValues(reason).Inc()
+			rejectConnection(conn, reason)
+			continue
+		}
+
 		id := clientID(uuid.Must(uuid.NewRandom()).String())
 		go runSession(ctx, conn, id, isTLS, deps)
+	}
+}
+
+func rejectConnection(conn net.Conn, reason string) {
+	conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+	_, _ = io.WriteString(conn, errorCommand{text: rejectionMessage(reason)}.command()+"\r\n")
+	conn.Close()
+}
+
+func rejectionMessage(reason string) string {
+	switch reason {
+	case "global":
+		return "server is at its connection limit"
+	case "rate":
+		return "connecting too quickly, try again shortly"
+	default: // "per_ip"
+		return "too many connections from your host"
 	}
 }

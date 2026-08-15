@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -73,6 +74,19 @@ func selfSignedCertificate(fqdn string) (tls.Certificate, error) {
 	return tls.X509KeyPair(certPEM, keyPEM)
 }
 
+func envIntDefault(key string, def int) int {
+	v, ok := os.LookupEnv(key)
+	if !ok {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		slog.Warn("invalid int env value, using default", "key", key, "value", v, "default", def)
+		return def
+	}
+	return n
+}
+
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
@@ -105,6 +119,11 @@ func main() {
 		CertificateKey:  os.Getenv("TLS_KEY"),
 		PingFrequency:   30,
 		PongMaxLatency:  10,
+
+		MaxConnectionsGlobal: envIntDefault("MAX_CONNECTIONS_GLOBAL", 1000),
+		MaxConnectionsPerIP:  envIntDefault("MAX_CONNECTIONS_PER_IP", 10),
+		MaxConnectRatePerIP:  envIntDefault("MAX_CONNECT_RATE_PER_IP", 6),
+		MaxConnectBurstPerIP: envIntDefault("MAX_CONNECT_BURST_PER_IP", 3),
 		Parameters: ircd.ServerConfigParameters{
 			MaxAwayLength:     128,
 			CaseMapping:       "ascii",

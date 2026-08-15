@@ -20,8 +20,13 @@ func testServerConfig() ServerConfig {
 
 func startTestServerObj(t *testing.T) (*Server, string) {
 	t.Helper()
+	return startTestServerWithConfig(t, testServerConfig())
+}
 
-	srv := NewServer(testServerConfig())
+func startTestServerWithConfig(t *testing.T, config ServerConfig) (*Server, string) {
+	t.Helper()
+
+	srv := NewServer(config)
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
