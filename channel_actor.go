@@ -151,7 +151,11 @@ func (ch *channelActor) names() []string {
 	names := make([]string, 0, len(ch.members))
 	for _, m := range ch.members {
 		if snap := m.handle.snapshot.Load(); snap != nil {
-			names = append(names, snap.nick)
+			if prefix := membershipPrefix(m.modes); prefix != 0 {
+				names = append(names, string(prefix)+snap.nick)
+			} else {
+				names = append(names, snap.nick)
+			}
 		}
 	}
 	return names

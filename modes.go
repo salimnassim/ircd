@@ -74,6 +74,30 @@ const (
 	modeMemberOwner
 )
 
+// membershipPrefixOrder lists membership modes from highest
+// to lowest privilege.
+var membershipPrefixOrder = []struct {
+	mode   channelMembershipMode
+	prefix rune
+}{
+	{modeMemberOwner, '~'},
+	{modeMemberAdmin, '&'},
+	{modeMemberOperator, '@'},
+	{modeMemberHalfOperator, '%'},
+	{modeMemberVoice, '+'},
+}
+
+// membershipPrefix returns the symbol for the highest-privilege mode set in
+// modes, or 0 if none apply.
+func membershipPrefix(modes channelMembershipMode) rune {
+	for _, p := range membershipPrefixOrder {
+		if modes&p.mode != 0 {
+			return p.prefix
+		}
+	}
+	return 0
+}
+
 func runeByMode[T ~uint16](t T, m map[rune]T) rune {
 	for r, mode := range m {
 		if t == mode {
