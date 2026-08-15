@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 	"regexp"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -34,6 +35,11 @@ type ServerConfig struct {
 	RateLimit  rate.Limit
 	RateBurst  int
 	OutboxSize int
+
+	MaxConnectionsGlobal int
+	MaxConnectionsPerIP  int
+	MaxConnectRatePerIP  int // new connections allowed per IP per minute, 0 = unlimited
+	MaxConnectBurstPerIP int
 
 	Parameters ServerConfigParameters
 }
@@ -104,18 +110,32 @@ type Server struct {
 	clients   *clientDirectory
 	channels  *channelDirectory
 	operators *OperatorStore
+	limiter   *connLimiter
 
 	ports atomic.Pointer[[]string]
+
+	sweepOnce sync.Once
 }
 
 // NewServer constructs a Server from config. Call Serve to begin accepting connections.
 func NewServer(config ServerConfig) *Server {
+	connRate := rate.Limit(0)
+	if config.MaxConnectRatePerIP > 0 {
+		connRate = rate.Limit(float64(config.MaxConnectRatePerIP) / 60.0)
+	}
+
 	return &Server{
 		config:    config,
 		isupport:  config.Parameters.build(),
 		clients:   newClientDirectory(),
 		channels:  newChannelDirectory(),
 		operators: NewOperatorStore(),
+		limiter: newConnLimiter(
+			config.MaxConnectionsGlobal,
+			config.MaxConnectionsPerIP,
+			connRate,
+			config.MaxConnectBurstPerIP,
+		),
 	}
 }
 
@@ -163,6 +183,7 @@ func (srv *Server) sessionDeps() sessionDeps {
 		clients:   srv.clients,
 		channels:  srv.channels,
 		operators: srv.operators,
+		limiter:   srv.limiter,
 
 		nickRegex:    nickRegex,
 		channelRegex: channelRegex,
@@ -180,6 +201,8 @@ func (srv *Server) Serve(ctx context.Context, listener net.Listener, isTLS bool)
 	} else {
 		srv.addPort(port)
 	}
+
+	srv.sweepOnce.Do(func() { go srv.limiter.runSweeper(ctx) })
 
 	acceptLoop(ctx, listener, isTLS, srv.sessionDeps())
 }
