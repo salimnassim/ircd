@@ -23,4 +23,10 @@ var (
 		Name:      "command",
 		Help:      "Number of commands received.",
 	}, []string{"name"})
+
+	connectionsRejectedCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "ircd",
+		Name:      "connections_rejected",
+		Help:      "Number of connections rejected before session start.",
+	}, []string{"reason"})
 )
