@@ -144,3 +144,36 @@ func TestIntegrationJoinPrivmsgQuitKill(t *testing.T) {
 	alice.expect("Quit: goodbye")
 	alice.expectClosed()
 }
+
+func TestIntegrationChannelBanSetListAndEnforced(t *testing.T) {
+	_, addr := startTestServerObj(t)
+
+	alice := dialTestClient(t, addr)
+	defer alice.conn.Close()
+	alice.register("alice")
+
+	alice.send("JOIN #test")
+	alice.expect("JOIN #test")
+
+	alice.send("MODE #test +b mallory!*@*")
+	alice.expect("MODE #test +b mallory!*@*")
+
+	alice.send("MODE #test b")
+	alice.expect("367 alice #test mallory!*@*")
+	alice.expect("368")
+
+	mallory := dialTestClient(t, addr)
+	defer mallory.conn.Close()
+	mallory.send("NICK mallory")
+	mallory.send("USER mallory 0 0 :Mallory")
+	mallory.expect("376")
+
+	mallory.send("JOIN #test")
+	mallory.expect("474")
+
+	alice.send("MODE #test -b mallory!*@*")
+	alice.expect("MODE #test -b mallory!*@*")
+
+	mallory.send("JOIN #test")
+	mallory.expect("JOIN #test")
+}
