@@ -426,6 +426,19 @@ func (s *session) cmdModeChannel(ctx context.Context, m message) {
 		return
 	}
 
+	if (modestring == "b" || modestring == "+b") && len(m.params) < 3 {
+		snap, ok := s.deps.channels.snapshot(target)
+		if !ok {
+			s.handle.deliver(s.formatRPL(errNoSuchChannel{client: s.nick, channel: target}))
+			return
+		}
+		for _, mask := range snap.bans {
+			s.handle.deliver(s.formatRPL(rplBanList{client: s.nick, channel: target, mask: mask}))
+		}
+		s.handle.deliver(s.formatRPL(rplEndOfBanList{client: s.nick, channel: target}))
+		return
+	}
+
 	if _, ok := s.deps.channels.get(target); !ok {
 		s.handle.deliver(s.formatRPL(errNoSuchChannel{client: s.nick, channel: target}))
 		return

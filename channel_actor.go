@@ -44,6 +44,7 @@ type channelSnapshot struct {
 	owner       clientID
 	members     []channelMemberSnapshot
 	count       int
+	bans        []string
 }
 
 type channelActor struct {
@@ -204,6 +205,12 @@ func (ch *channelActor) publishSnapshot() {
 			modes:    m.modes,
 		})
 	}
+	bans := make([]string, 0, len(ch.bans))
+	for mask := range ch.bans {
+		bans = append(bans, string(mask))
+	}
+	slices.Sort(bans)
+
 	ch.snapshot.Store(&channelSnapshot{
 		name:        ch.name,
 		topicText:   ch.topic.text,
@@ -215,7 +222,21 @@ func (ch *channelActor) publishSnapshot() {
 		owner:       ch.owner,
 		members:     members,
 		count:       len(ch.members),
+		bans:        bans,
 	})
+}
+
+func (ch *channelActor) banned(prefix string) bool {
+	for mask := range ch.bans {
+		parsed, err := parseMask(string(mask))
+		if err != nil {
+			continue
+		}
+		if matchMask(parsed, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 const privsMask = modeMemberHalfOperator | modeMemberOperator | modeMemberAdmin | modeMemberOwner
@@ -227,6 +248,11 @@ func (ch *channelActor) handleJoin(ev evJoin) {
 	}
 
 	if _, already := ch.members[ev.who.id]; already {
+		return
+	}
+
+	if ch.banned(snap.prefix()) {
+		ev.who.deliver(ch.formatRPL(errBannedFromChan{client: snap.nick, channel: ch.name}))
 		return
 	}
 
@@ -476,6 +502,11 @@ func (ch *channelActor) handleSetMode(ev evSetMode) {
 		return
 	}
 
+	if strings.ContainsRune(ev.modestring, 'b') {
+		ch.applyBanChange(ev.by, ev.modestring, tcs)
+		return
+	}
+
 	add, _ := parseModestring(ev.modestring, channelModeMap)
 	if slices.Contains(add, modeChannelKey) {
 		ch.applyKeyChange(ev.by, add, tcs)
@@ -552,6 +583,73 @@ func (ch *channelActor) applyKeyChange(by *sessionHandle, addModes []channelMode
 			args:       tcs[i],
 		}, "", false)
 	}
+	ch.publishSnapshot()
+}
+
+func (ch *channelActor) applyBanChange(by *sessionHandle, modestring string, tcs []string) {
+	snap := by.snapshot.Load()
+
+	var plusMasks, minusMasks []string
+	adding := true
+	ti := 0
+	for _, c := range modestring {
+		switch c {
+		case '+':
+			adding = true
+		case '-':
+			adding = false
+		case 'b':
+			if ti >= len(tcs) {
+				by.deliver(ch.formatRPL(errNeedMoreParams{client: snap.nick, command: "MODE"}))
+				return
+			}
+			if adding {
+				plusMasks = append(plusMasks, tcs[ti])
+			} else {
+				minusMasks = append(minusMasks, tcs[ti])
+			}
+			ti++
+		}
+	}
+
+	var removed, added []string
+	for _, mask := range minusMasks {
+		m := banMask(mask)
+		if !ch.bans[m] {
+			continue
+		}
+		delete(ch.bans, m)
+		removed = append(removed, mask)
+	}
+	for _, mask := range plusMasks {
+		m := banMask(mask)
+		if ch.bans[m] {
+			continue
+		}
+		ch.bans[m] = true
+		added = append(added, mask)
+	}
+
+	if len(removed) == 0 && len(added) == 0 {
+		return
+	}
+
+	var diff strings.Builder
+	var args []string
+	if len(removed) > 0 {
+		diff.WriteByte('-')
+		diff.WriteString(strings.Repeat("b", len(removed)))
+		args = append(args, removed...)
+	}
+	if len(added) > 0 {
+		diff.WriteByte('+')
+		diff.WriteString(strings.Repeat("b", len(added)))
+		args = append(args, added...)
+	}
+
+	ch.broadcastCommand(modeCommand{
+		source: snap.prefix(), target: ch.name, modestring: diff.String(), args: strings.Join(args, " "),
+	}, "", false)
 	ch.publishSnapshot()
 }
 
