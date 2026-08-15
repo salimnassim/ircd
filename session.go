@@ -78,6 +78,7 @@ type sessionDeps struct {
 	clients   *clientDirectory
 	channels  *channelDirectory
 	operators *OperatorStore
+	limiter   *connLimiter
 
 	nickRegex    *regexp.Regexp
 	channelRegex *regexp.Regexp
@@ -332,6 +333,7 @@ func (s *session) cleanup(cause error) {
 	}
 
 	s.deps.clients.unregister(s.id)
+	s.deps.limiter.release(s.address)
 
 	clientGauge.Dec()
 }
