@@ -117,6 +117,8 @@ func (ch *channelActor) handle(ev channelEvent) {
 		ch.handleBroadcast(e)
 	case evInvite:
 		ch.handleInvite(e)
+	case evNames:
+		ch.handleNames(e)
 	case evQuit:
 		ch.handleQuit(e)
 	case evMemberRenamed:
@@ -401,6 +403,15 @@ func (ch *channelActor) handleInvite(ev evInvite) {
 	ev.target.deliver(inviteCommand{prefix: bySnap.prefix(), target: targetSnap.nick, channel: ch.name}.command())
 }
 
+func (ch *channelActor) handleNames(ev evNames) {
+	snap := ev.who.snapshot.Load()
+	if snap == nil {
+		return
+	}
+	ev.who.deliver(ch.formatRPL(rplNamReply{client: snap.nick, symbol: "=", channel: ch.name, nicks: ch.names()}))
+	ev.who.deliver(ch.formatRPL(rplEndOfNames{client: snap.nick, channel: ch.name}))
+}
+
 type channelMessageCommand struct {
 	prefix string
 	verb   string
@@ -417,12 +428,16 @@ func (ch *channelActor) handleBroadcast(ev evBroadcast) {
 
 	m, isMember := ch.members[ev.by.id]
 	if !isMember {
-		ev.by.deliver(ch.formatRPL(errNotOnChannel{client: snap.nick, channel: ch.name}))
+		if ev.kind != broadcastNotice {
+			ev.by.deliver(ch.formatRPL(errNotOnChannel{client: snap.nick, channel: ch.name}))
+		}
 		return
 	}
 
 	if ch.modes&modeChannelModerated != 0 && m.modes&(modeMemberVoice|privsMask) == 0 {
-		ev.by.deliver(ch.formatRPL(errCannotSendToChan{client: snap.nick, channel: ch.name, text: "Channel is moderated."}))
+		if ev.kind != broadcastNotice {
+			ev.by.deliver(ch.formatRPL(errCannotSendToChan{client: snap.nick, channel: ch.name, text: "Channel is moderated."}))
+		}
 		return
 	}
 

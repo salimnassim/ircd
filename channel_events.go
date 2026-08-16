@@ -70,6 +70,12 @@ type evQuit struct {
 
 func (evQuit) isChannelEvent() {}
 
+type evNames struct {
+	who *sessionHandle
+}
+
+func (evNames) isChannelEvent() {}
+
 type evMemberRenamed struct {
 	id        clientID
 	oldPrefix string

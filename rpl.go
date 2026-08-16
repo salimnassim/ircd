@@ -671,3 +671,27 @@ func (r errUsersDontMatch) rpl() string {
 		r.client,
 	)
 }
+
+type errUnknownCommand struct {
+	client  string
+	command string
+}
+
+func (r errUnknownCommand) rpl() string {
+	return fmt.Sprintf(
+		"421 %s %s :Unknown command.",
+		r.client, r.command,
+	)
+}
+
+type errTooManyChannels struct {
+	client  string
+	channel string
+}
+
+func (r errTooManyChannels) rpl() string {
+	return fmt.Sprintf(
+		"405 %s %s :You have joined too many channels.",
+		r.client, r.channel,
+	)
+}

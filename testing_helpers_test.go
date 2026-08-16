@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -115,4 +116,25 @@ func containsLine(lines []string, substr string) bool {
 		}
 	}
 	return false
+}
+
+// drainUntil polls th's outbox, accumulating lines, until one contains
+// substr or the deadline elapses. Useful for asserting on replies that
+// arrive asynchronously via a channel actor's goroutine.
+func drainUntil(t *testing.T, th *testHandle, substr string) []string {
+	t.Helper()
+	var out []string
+	deadline := time.After(2 * time.Second)
+	for {
+		out = append(out, th.drain()...)
+		if containsLine(out, substr) {
+			return out
+		}
+		select {
+		case <-deadline:
+			t.Fatalf("timed out waiting for a line containing %q, got %v", substr, out)
+			return out
+		case <-time.After(2 * time.Millisecond):
+		}
+	}
 }

@@ -301,6 +301,20 @@ func TestRPL(t *testing.T) {
 				client: "client",
 			},
 		},
+		{
+			want: "421 client BOGUS :Unknown command.",
+			input: errUnknownCommand{
+				client:  "client",
+				command: "BOGUS",
+			},
+		},
+		{
+			want: "405 client #channel :You have joined too many channels.",
+			input: errTooManyChannels{
+				client:  "client",
+				channel: "#channel",
+			},
+		},
 	}
 
 	for _, tc := range tcs {

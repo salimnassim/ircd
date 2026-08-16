@@ -121,11 +121,7 @@ func (s *session) completeHandshake(ctx context.Context) {
 		message: fmt.Sprintf("NOTICE :*** Server is listening on ports %s", strings.Join(s.deps.ports(), ", ")),
 	}.command())
 
-	s.handle.deliver(s.formatRPL(rplMotdStart{client: s.nick, server: s.deps.serverName, text: "MOTD -"}))
-	for _, line := range s.deps.motd {
-		s.handle.deliver(s.formatRPL(rplMotd{client: s.nick, text: line}))
-	}
-	s.handle.deliver(s.formatRPL(rplEndOfMotd{client: s.nick}))
+	s.sendMotd()
 	s.handle.deliver(s.formatRPL(rplISupport{client: s.nick, tokens: s.deps.isupport}))
 
 	s.modes |= modeClientVhost
@@ -136,6 +132,14 @@ func (s *session) completeHandshake(ctx context.Context) {
 
 	s.handshakeDone = true
 	s.publishSnapshot()
+}
+
+func (s *session) sendMotd() {
+	s.handle.deliver(s.formatRPL(rplMotdStart{client: s.nick, server: s.deps.serverName, text: "MOTD -"}))
+	for _, line := range s.deps.motd {
+		s.handle.deliver(s.formatRPL(rplMotd{client: s.nick, text: line}))
+	}
+	s.handle.deliver(s.formatRPL(rplEndOfMotd{client: s.nick}))
 }
 
 func (s *session) cmdLusers() {
@@ -180,10 +184,22 @@ func (s *session) cmdJoin(ctx context.Context, m message) {
 			key = keys[i]
 		}
 
+		if s.deps.channelLimit > 0 && len(s.memberOf) >= s.deps.channelLimit {
+			s.handle.deliver(s.formatRPL(errTooManyChannels{client: s.nick, channel: target}))
+			channelsRejectedCounter.WithLabelValues("chanlimit").Inc()
+			continue
+		}
+
 		s.memberOf[target] = struct{}{}
 		s.publishSnapshot()
 
-		s.deps.channels.dispatch(ctx, s.channelDeps(), target, evJoin{who: s.handle, key: key}, true, s.id)
+		if err := s.deps.channels.dispatch(ctx, s.channelDeps(), target, evJoin{who: s.handle, key: key}, true, s.id); err != nil {
+			delete(s.memberOf, target)
+			s.publishSnapshot()
+			s.handle.deliver(s.formatRPL(errTooManyChannels{client: s.nick, channel: target}))
+			channelsRejectedCounter.WithLabelValues("max_channels").Inc()
+			continue
+		}
 	}
 }
 
@@ -288,6 +304,70 @@ func (s *session) cmdPrivmsg(ctx context.Context, m message) {
 		}
 
 		tc.deliver(privmsgCommand{prefix: s.nick, target: tsnap.nick, text: text}.command())
+	}
+}
+
+func (s *session) cmdNotice(ctx context.Context, m message) {
+	targets := strings.Split(m.params[0], ",")
+
+	text := ""
+	if len(m.params) >= 2 {
+		text = strings.Join(m.params[1:], " ")
+	}
+
+	for _, target := range targets {
+		if isChannelName(target) {
+			if _, ok := s.deps.channels.get(target); !ok {
+				continue
+			}
+			s.deps.channels.dispatch(ctx, s.channelDeps(), target, evBroadcast{by: s.handle, text: text, kind: broadcastNotice}, false, "")
+			continue
+		}
+
+		tc, ok := s.deps.clients.lookupNick(target)
+		if !ok {
+			continue
+		}
+
+		tsnap := tc.snapshot.Load()
+		if tsnap == nil {
+			continue
+		}
+
+		tc.deliver(channelMessageCommand{prefix: s.nick, verb: "NOTICE", target: tsnap.nick, text: text}.command())
+	}
+}
+
+func (s *session) cmdWallops(m message) {
+	if s.modes&modeClientOperator == 0 {
+		s.handle.deliver(s.formatRPL(errNoPrivileges{client: s.nick}))
+		return
+	}
+
+	text := strings.Join(m.params, " ")
+
+	for _, h := range s.deps.clients.all() {
+		snap := h.snapshot.Load()
+		if snap == nil || snap.modes&modeClientWallops == 0 {
+			continue
+		}
+		h.deliver(wallopsCommand{prefix: s.nick, text: text}.command())
+	}
+}
+
+func (s *session) cmdNames(ctx context.Context, m message) {
+	if len(m.params) == 0 {
+		s.handle.deliver(s.formatRPL(rplEndOfNames{client: s.nick, channel: "*"}))
+		return
+	}
+
+	for _, target := range strings.Split(m.params[0], ",") {
+		if !isChannelName(target) {
+			continue
+		}
+		if err := s.deps.channels.dispatch(ctx, s.channelDeps(), target, evNames{who: s.handle}, false, ""); err != nil {
+			s.handle.deliver(s.formatRPL(errNoSuchChannel{client: s.nick, channel: target}))
+		}
 	}
 }
 
@@ -492,7 +572,7 @@ func (s *session) cmdVersion(m message) {
 		s.handle.deliver(s.formatRPL(rplVersion{client: s.nick, version: fmt.Sprintf("ircd-%s", s.deps.version), server: s.deps.serverName, comments: ""}))
 		s.handle.deliver(s.formatRPL(rplISupport{
 			client: s.nick,
-			tokens: "AWAYLEN=128 CASEMAPPING=ascii CHANLIMIT=#&:64 CHANNELLEN=50 CHANTYPES=#& HOSTLEN=128 KICKLEN=128 MODES=24 NICKLEN=31 PREFIX=(qaohv)~&@%+ TOPICLEN=307 USERLEN=18",
+			tokens: s.deps.isupport,
 		}))
 		return
 	}

@@ -29,4 +29,10 @@ var (
 		Name:      "connections_rejected",
 		Help:      "Number of connections rejected before session start.",
 	}, []string{"reason"})
+
+	channelsRejectedCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "ircd",
+		Name:      "channels_rejected",
+		Help:      "Number of channel joins rejected before creation or membership.",
+	}, []string{"reason"})
 )

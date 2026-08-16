@@ -33,6 +33,50 @@ func TestChannelActorJoinBasic(t *testing.T) {
 	}
 }
 
+func TestChannelActorHandleNamesRepliesToRequester(t *testing.T) {
+	cd := newClientDirectory()
+	alice := newTestHandle("j1", "alice", "user", "host", false)
+	bob := newTestHandle("j2", "bob", "user", "host", false)
+	registerAndClaim(cd, alice)
+	registerAndClaim(cd, bob)
+
+	ch := newTestChannelActor("#chan", "owner-id", cd)
+	ch.handleJoin(evJoin{who: alice.sessionHandle})
+	ch.handleJoin(evJoin{who: bob.sessionHandle})
+	alice.drain()
+	bob.drain()
+
+	requester := newTestHandle("j3", "carol", "user", "host", false)
+	registerAndClaim(cd, requester)
+
+	ch.handleNames(evNames{who: requester.sessionHandle})
+
+	lines := requester.drain()
+	if !containsLine(lines, "353") {
+		t.Fatalf("expected RPL_NAMREPLY, got %v", lines)
+	}
+	if !containsLine(lines, "366") {
+		t.Fatalf("expected RPL_ENDOFNAMES, got %v", lines)
+	}
+	if !containsLine(lines, "alice") || !containsLine(lines, "bob") {
+		t.Errorf("expected both members' nicks in the NAMES reply, got %v", lines)
+	}
+}
+
+func TestChannelActorHandleBroadcastNoticeSuppressesErrorReplies(t *testing.T) {
+	cd := newClientDirectory()
+	sender := newTestHandle("j1", "alice", "user", "host", false)
+	registerAndClaim(cd, sender)
+
+	ch := newTestChannelActor("#chan", "owner-id", cd)
+
+	ch.handleBroadcast(evBroadcast{by: sender.sessionHandle, text: "hi", kind: broadcastNotice})
+
+	if lines := sender.drain(); len(lines) != 0 {
+		t.Errorf("expected no reply lines for a NOTICE from a non-member, got %v", lines)
+	}
+}
+
 func TestChannelActorJoinTLSOnlyRejectsPlaintext(t *testing.T) {
 	cd := newClientDirectory()
 	joiner := newTestHandle("j1", "alice", "user", "host", false)
