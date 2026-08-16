@@ -86,6 +86,8 @@ func (ch *channelActor) run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			ch.directory.forceRemove(ch.name, ch)
+			channelGauge.Dec()
 			return
 		case ev, ok := <-ch.inbox:
 			if !ok {

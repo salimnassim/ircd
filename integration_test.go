@@ -145,6 +145,32 @@ func TestIntegrationJoinPrivmsgQuitKill(t *testing.T) {
 	alice.expectClosed()
 }
 
+func TestIntegrationChannelSurvivesCreatorHardDisconnect(t *testing.T) {
+	for range 10 {
+		addr, _, _ := startTestServer(t)
+		channel := "#zombie"
+
+		creator := dialTestClient(t, addr)
+		creator.register("creator")
+		creator.send("JOIN " + channel)
+		creator.expect("JOIN " + channel)
+
+		// Hard disconnect: close the raw connection without sending QUIT,
+		// simulating a network drop / ping timeout so the session's ctx is
+		// canceled at roughly the same time its evQuit reaches the channel.
+		creator.conn.Close()
+
+		second := dialTestClient(t, addr)
+		second.register("second")
+		second.send("JOIN " + channel)
+		second.expect("JOIN " + channel)
+		second.expect("366 second " + channel) // RPL_ENDOFNAMES
+
+		second.send("QUIT :done")
+		second.conn.Close()
+	}
+}
+
 func TestIntegrationChannelBanSetListAndEnforced(t *testing.T) {
 	_, addr := startTestServerObj(t)
 

@@ -17,13 +17,21 @@ type channelDirectory struct {
 	byName      map[string]*channelActor
 	pending     map[string]int
 	maxChannels int
+	runCtx      context.Context
 }
 
 func newChannelDirectory() *channelDirectory {
 	return &channelDirectory{
 		byName:  make(map[string]*channelActor),
 		pending: make(map[string]int),
+		runCtx:  context.Background(),
 	}
+}
+
+func (d *channelDirectory) setRunContext(ctx context.Context) {
+	d.mu.Lock()
+	d.runCtx = ctx
+	d.mu.Unlock()
 }
 
 type channelActorDeps struct {
@@ -46,7 +54,7 @@ func (d *channelDirectory) dispatch(ctx context.Context, deps channelActorDeps, 
 		}
 		ch = newChannelActor(name, owner, d, deps)
 		d.byName[name] = ch
-		go ch.run(ctx)
+		go ch.run(d.runCtx)
 	}
 
 	d.pending[name]++
@@ -80,6 +88,17 @@ func (d *channelDirectory) removeIfIdle(name string, ch *channelActor) bool {
 	delete(d.byName, name)
 	delete(d.pending, name)
 	return true
+}
+
+func (d *channelDirectory) forceRemove(name string, ch *channelActor) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if d.byName[name] != ch {
+		return
+	}
+	delete(d.byName, name)
+	delete(d.pending, name)
 }
 
 func (d *channelDirectory) get(name string) (*channelActor, bool) {

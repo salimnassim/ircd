@@ -178,6 +178,18 @@ func (r rplWhoisChannels) rpl() string {
 	)
 }
 
+type rplEndOfWhois struct {
+	client string
+	nick   string
+}
+
+func (r rplEndOfWhois) rpl() string {
+	return fmt.Sprintf(
+		"318 %s %s :End of /WHOIS list.",
+		r.client, r.nick,
+	)
+}
+
 type rplWhoisSpecial struct {
 	client string
 	nick   string

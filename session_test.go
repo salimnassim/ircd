@@ -277,6 +277,45 @@ func TestSessionNamesNoArgsRepliesEndOfNamesOnly(t *testing.T) {
 		t.Errorf("did not expect RPL_NAMREPLY for a no-arg NAMES, got %v", lines)
 	}
 }
+func TestSessionWhoisEndsWithEndOfWhois(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	a, aTH := newTestSession("a", deps)
+	registerSession(cd, a, aTH, "alice")
+	b, bTH := newTestSession("b", deps)
+	registerSession(cd, b, bTH, "bob")
+
+	b.cmdWhois(message{params: []string{"alice"}})
+
+	lines := bTH.drain()
+	if !containsLine(lines, "311") {
+		t.Errorf("expected RPL_WHOISUSER, got %v", lines)
+	}
+	if !containsLine(lines, "318") {
+		t.Errorf("expected RPL_ENDOFWHOIS, got %v", lines)
+	}
+}
+
+func TestSessionWhoisUnknownNickStillEndsWithEndOfWhois(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	s, th := newTestSession("a", deps)
+	registerSession(cd, s, th, "alice")
+
+	s.cmdWhois(message{params: []string{"ghost"}})
+
+	lines := th.drain()
+	if !containsLine(lines, "401") {
+		t.Errorf("expected ERR_NOSUCHNICK, got %v", lines)
+	}
+	if !containsLine(lines, "318") {
+		t.Errorf("expected RPL_ENDOFWHOIS even for an unknown nick, got %v", lines)
+	}
+}
 
 func TestSessionMotdStandaloneMatchesHandshakeMotd(t *testing.T) {
 	cd := newClientDirectory()

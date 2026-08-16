@@ -377,11 +377,13 @@ func (s *session) cmdWhois(m message) {
 	who, ok := s.deps.clients.lookupNick(target)
 	if !ok {
 		s.handle.deliver(s.formatRPL(errNoSuchNick{client: s.nick, nick: target}))
+		s.handle.deliver(s.formatRPL(rplEndOfWhois{client: s.nick, nick: target}))
 		return
 	}
 	wsnap := who.snapshot.Load()
 	if wsnap == nil {
 		s.handle.deliver(s.formatRPL(errNoSuchNick{client: s.nick, nick: target}))
+		s.handle.deliver(s.formatRPL(rplEndOfWhois{client: s.nick, nick: target}))
 		return
 	}
 
@@ -408,6 +410,8 @@ func (s *session) cmdWhois(m message) {
 	if wsnap.away != "" {
 		s.handle.deliver(s.formatRPL(rplWhoisSpecial{client: s.nick, nick: wsnap.nick, text: "User is away."}))
 	}
+
+	s.handle.deliver(s.formatRPL(rplEndOfWhois{client: s.nick, nick: wsnap.nick}))
 }
 
 func (s *session) cmdWho(m message) {

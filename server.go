@@ -211,6 +211,7 @@ func (srv *Server) Serve(ctx context.Context, listener net.Listener, isTLS bool)
 		srv.addPort(port)
 	}
 
+	srv.channels.setRunContext(ctx)
 	srv.sweepOnce.Do(func() { go srv.limiter.runSweeper(ctx) })
 
 	acceptLoop(ctx, listener, isTLS, srv.sessionDeps())
