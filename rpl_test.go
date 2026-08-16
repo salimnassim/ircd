@@ -267,8 +267,23 @@ func TestRPL(t *testing.T) {
 			},
 		},
 		{
-			want: "474 client #channel :Cannot join channel (+z)",
+			want: "474 client #channel :Cannot join channel (+b)",
 			input: errBannedFromChan{
+				client:  "client",
+				channel: "#channel",
+			},
+		},
+		{
+			want: "367 client #channel mask!*@*",
+			input: rplBanList{
+				client:  "client",
+				channel: "#channel",
+				mask:    "mask!*@*",
+			},
+		},
+		{
+			want: "368 client #channel :End of channel ban list.",
+			input: rplEndOfBanList{
 				client:  "client",
 				channel: "#channel",
 			},

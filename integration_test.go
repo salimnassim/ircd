@@ -144,3 +144,81 @@ func TestIntegrationJoinPrivmsgQuitKill(t *testing.T) {
 	alice.expect("Quit: goodbye")
 	alice.expectClosed()
 }
+
+func TestIntegrationChannelBanSetListAndEnforced(t *testing.T) {
+	_, addr := startTestServerObj(t)
+
+	alice := dialTestClient(t, addr)
+	defer alice.conn.Close()
+	alice.register("alice")
+
+	alice.send("JOIN #test")
+	alice.expect("JOIN #test")
+
+	alice.send("MODE #test +b mallory!*@*")
+	alice.expect("MODE #test +b mallory!*@*")
+
+	alice.send("MODE #test b")
+	alice.expect("367 alice #test mallory!*@*")
+	alice.expect("368")
+
+	mallory := dialTestClient(t, addr)
+	defer mallory.conn.Close()
+	mallory.send("NICK mallory")
+	mallory.send("USER mallory 0 0 :Mallory")
+	mallory.expect("376")
+
+	mallory.send("JOIN #test")
+	mallory.expect("474")
+
+	alice.send("MODE #test -b mallory!*@*")
+	alice.expect("MODE #test -b mallory!*@*")
+
+	mallory.send("JOIN #test")
+	mallory.expect("JOIN #test")
+}
+
+// cloakFromNotice extracts the trailing hostname from a
+// "*** Your hostname has been cloaked to <host>" NOTICE line.
+func cloakFromNotice(line string) string {
+	i := strings.LastIndex(line, " ")
+	if i < 0 {
+		return line
+	}
+	return line[i+1:]
+}
+
+func TestIntegrationCloakStableAcrossReconnectAndBanPersists(t *testing.T) {
+	addr, _, _ := startTestServer(t)
+
+	alice := dialTestClient(t, addr)
+	defer alice.conn.Close()
+	alice.register("alice")
+
+	alice.send("JOIN #test")
+	alice.expect("JOIN #test")
+
+	mallory := dialTestClient(t, addr)
+	mallory.send("NICK mallory")
+	mallory.send("USER mallory 0 0 :Mallory")
+	firstCloak := cloakFromNotice(mallory.expect("cloaked to"))
+	mallory.expect("376")
+	mallory.conn.Close()
+
+	mallory2 := dialTestClient(t, addr)
+	defer mallory2.conn.Close()
+	mallory2.send("NICK mallory")
+	mallory2.send("USER mallory 0 0 :Mallory")
+	secondCloak := cloakFromNotice(mallory2.expect("cloaked to"))
+	mallory2.expect("376")
+
+	if firstCloak != secondCloak {
+		t.Fatalf("expected a stable cloak across reconnects, got %q then %q", firstCloak, secondCloak)
+	}
+
+	alice.send("MODE #test +b *!*@" + secondCloak)
+	alice.expect("MODE #test +b *!*@" + secondCloak)
+
+	mallory2.send("JOIN #test")
+	mallory2.expect("474")
+}

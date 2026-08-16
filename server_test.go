@@ -13,6 +13,7 @@ func testServerConfig() ServerConfig {
 		Network:        "TestNet",
 		Version:        "0.0.0-test",
 		MOTD:           []string{"line one"},
+		CloakSecret:    []byte("test-cloak-secret"),
 		PingFrequency:  30,
 		PongMaxLatency: 10,
 	}

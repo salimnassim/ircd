@@ -19,11 +19,12 @@ import (
 
 // ServerConfig holds the settings NewServer needs to construct a Server.
 type ServerConfig struct {
-	Name     string
-	Password string
-	Network  string
-	Version  string
-	MOTD     []string
+	Name        string
+	Password    string
+	Network     string
+	Version     string
+	MOTD        []string
+	CloakSecret []byte
 
 	TLS             bool
 	CertificateFile string
@@ -165,13 +166,14 @@ func (srv *Server) Ports() []string {
 
 func (srv *Server) sessionDeps() sessionDeps {
 	return sessionDeps{
-		serverName: srv.config.Name,
-		network:    srv.config.Network,
-		version:    srv.config.Version,
-		password:   srv.config.Password,
-		motd:       srv.config.MOTD,
-		isupport:   srv.isupport,
-		ports:      srv.Ports,
+		serverName:  srv.config.Name,
+		network:     srv.config.Network,
+		version:     srv.config.Version,
+		password:    srv.config.Password,
+		motd:        srv.config.MOTD,
+		cloakSecret: srv.config.CloakSecret,
+		isupport:    srv.isupport,
+		ports:       srv.Ports,
 
 		pingFrequency:  time.Duration(srv.config.PingFrequency) * time.Second,
 		pongMaxLatency: time.Duration(srv.config.PongMaxLatency) * time.Second,

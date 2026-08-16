@@ -363,6 +363,31 @@ func (r rplEndOfNames) rpl() string {
 	)
 }
 
+type rplBanList struct {
+	client  string
+	channel string
+	mask    string
+}
+
+func (r rplBanList) rpl() string {
+	return fmt.Sprintf(
+		"367 %s %s %s",
+		r.client, r.channel, r.mask,
+	)
+}
+
+type rplEndOfBanList struct {
+	client  string
+	channel string
+}
+
+func (r rplEndOfBanList) rpl() string {
+	return fmt.Sprintf(
+		"368 %s %s :End of channel ban list.",
+		r.client, r.channel,
+	)
+}
+
 type rplMotd struct {
 	client string
 	text   string
@@ -596,7 +621,7 @@ type errBannedFromChan struct {
 
 func (r errBannedFromChan) rpl() string {
 	return fmt.Sprintf(
-		"474 %s %s :Cannot join channel (+z)",
+		"474 %s %s :Cannot join channel (+b)",
 		r.client, r.channel,
 	)
 }
