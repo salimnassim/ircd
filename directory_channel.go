@@ -6,13 +6,17 @@ import (
 	"sync"
 )
 
-var errChannelNotFound = errors.New("channel not found")
+var (
+	errChannelNotFound     = errors.New("channel not found")
+	errChannelLimitReached = errors.New("channel limit reached")
+)
 
 type channelDirectory struct {
 	mu sync.Mutex
 
-	byName  map[string]*channelActor
-	pending map[string]int
+	byName      map[string]*channelActor
+	pending     map[string]int
+	maxChannels int
 }
 
 func newChannelDirectory() *channelDirectory {
@@ -35,6 +39,10 @@ func (d *channelDirectory) dispatch(ctx context.Context, deps channelActorDeps, 
 		if !createIfMissing {
 			d.mu.Unlock()
 			return errChannelNotFound
+		}
+		if d.maxChannels > 0 && len(d.byName) >= d.maxChannels {
+			d.mu.Unlock()
+			return errChannelLimitReached
 		}
 		ch = newChannelActor(name, owner, d, deps)
 		d.byName[name] = ch

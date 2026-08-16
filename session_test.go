@@ -130,6 +130,78 @@ func TestSessionJoinDispatchesAndTracksMembership(t *testing.T) {
 	}
 }
 
+func TestSessionDispatchUnknownCommandRepliesWithErrUnknownCommand(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	s, th := newTestSession("a", deps)
+	cd.register(th.sessionHandle)
+
+	s.dispatch(context.Background(), message{command: "BOGUS"})
+	if !containsLine(th.drain(), "421") {
+		t.Error("expected ERR_UNKNOWNCOMMAND before handshake completes")
+	}
+
+	registerSession(cd, s, th, "alice")
+	th.drain()
+
+	s.dispatch(context.Background(), message{command: "BOGUS"})
+	if !containsLine(th.drain(), "421 alice BOGUS") {
+		t.Error("expected ERR_UNKNOWNCOMMAND after handshake completes")
+	}
+}
+
+func TestSessionJoinRejectsOverChannelLimit(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+	deps.channelLimit = 1
+
+	s, th := newTestSession("a", deps)
+	registerSession(cd, s, th, "alice")
+
+	s.cmdJoin(context.Background(), message{params: []string{"#a"}})
+	if _, ok := s.memberOf["#a"]; !ok {
+		t.Fatal("expected #a to be joined")
+	}
+	th.drain()
+
+	s.cmdJoin(context.Background(), message{params: []string{"#b"}})
+	if _, ok := s.memberOf["#b"]; ok {
+		t.Fatal("expected #b join to be rejected by the per-client channel limit")
+	}
+	if !containsLine(th.drain(), "405") {
+		t.Error("expected ERR_TOOMANYCHANNELS")
+	}
+	if len(s.memberOf) != 1 {
+		t.Fatalf("expected exactly 1 joined channel, got %d", len(s.memberOf))
+	}
+}
+
+func TestSessionJoinRollsBackMembershipWhenGlobalChannelLimitReached(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	chd.maxChannels = 1
+	deps := testSessionDeps(cd, chd)
+
+	other, otherTH := newTestSession("other", deps)
+	registerSession(cd, other, otherTH, "bob")
+	other.cmdJoin(context.Background(), message{params: []string{"#taken"}})
+	waitForMemberCount(t, chd, "#taken", 1)
+
+	s, th := newTestSession("a", deps)
+	registerSession(cd, s, th, "alice")
+
+	s.cmdJoin(context.Background(), message{params: []string{"#new"}})
+	if _, ok := s.memberOf["#new"]; ok {
+		t.Fatal("expected membership to be rolled back when the global channel limit is reached")
+	}
+	if !containsLine(th.drain(), "405") {
+		t.Error("expected ERR_TOOMANYCHANNELS")
+	}
+}
+
 func TestSessionPrivmsgDeliversDirectlyToUser(t *testing.T) {
 	cd := newClientDirectory()
 	chd := newChannelDirectory()
@@ -144,6 +216,129 @@ func TestSessionPrivmsgDeliversDirectlyToUser(t *testing.T) {
 
 	if !containsLine(bTH.drain(), "PRIVMSG bob :hello there") {
 		t.Error("expected bob to receive alice's direct message")
+	}
+}
+
+func TestSessionNoticeDeliversToUser(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	a, aTH := newTestSession("a", deps)
+	registerSession(cd, a, aTH, "alice")
+	b, bTH := newTestSession("b", deps)
+	registerSession(cd, b, bTH, "bob")
+
+	a.cmdNotice(context.Background(), message{params: []string{"bob", "hello"}})
+
+	if !containsLine(bTH.drain(), "NOTICE bob :hello") {
+		t.Error("expected bob to receive alice's notice")
+	}
+}
+
+func TestSessionNamesStandaloneRepliesWithNamReply(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	s, th := newTestSession("a", deps)
+	registerSession(cd, s, th, "alice")
+
+	s.cmdJoin(context.Background(), message{params: []string{"#chan"}})
+	waitForMemberCount(t, chd, "#chan", 1)
+	th.drain()
+
+	s.cmdNames(context.Background(), message{params: []string{"#chan"}})
+
+	lines := drainUntil(t, th, "366")
+	if !containsLine(lines, "353") {
+		t.Errorf("expected RPL_NAMREPLY, got %v", lines)
+	}
+	if !containsLine(lines, "366") {
+		t.Errorf("expected RPL_ENDOFNAMES, got %v", lines)
+	}
+}
+
+func TestSessionNamesNoArgsRepliesEndOfNamesOnly(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	s, th := newTestSession("a", deps)
+	registerSession(cd, s, th, "alice")
+
+	s.cmdNames(context.Background(), message{})
+
+	lines := th.drain()
+	if !containsLine(lines, "366") {
+		t.Errorf("expected RPL_ENDOFNAMES, got %v", lines)
+	}
+	if containsLine(lines, "353") {
+		t.Errorf("did not expect RPL_NAMREPLY for a no-arg NAMES, got %v", lines)
+	}
+}
+
+func TestSessionMotdStandaloneMatchesHandshakeMotd(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	s, th := newTestSession("a", deps)
+	registerSession(cd, s, th, "alice")
+
+	s.sendMotd()
+
+	lines := th.drain()
+	if !containsLine(lines, "375") {
+		t.Errorf("expected RPL_MOTDSTART, got %v", lines)
+	}
+	if !containsLine(lines, "372") {
+		t.Errorf("expected RPL_MOTD, got %v", lines)
+	}
+	if !containsLine(lines, "376") {
+		t.Errorf("expected RPL_ENDOFMOTD, got %v", lines)
+	}
+}
+
+func TestSessionWallopsRequiresOper(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	s, th := newTestSession("a", deps)
+	registerSession(cd, s, th, "mallory")
+
+	s.cmdWallops(message{params: []string{"hello"}})
+
+	if !containsLine(th.drain(), "481") {
+		t.Error("expected ERR_NOPRIVILEGES for a non-oper WALLOPS")
+	}
+}
+
+func TestSessionWallopsReachesOnlyClientsWithWallopsMode(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	deps := testSessionDeps(cd, chd)
+
+	oper, operTH := newTestSession("o", deps)
+	registerSession(cd, oper, operTH, "root")
+	oper.modes |= modeClientOperator
+
+	listener, listenerTH := newTestSession("l", deps)
+	registerSession(cd, listener, listenerTH, "listener")
+	listener.modes |= modeClientWallops
+	listener.publishSnapshot()
+
+	bystander, bystanderTH := newTestSession("b", deps)
+	registerSession(cd, bystander, bystanderTH, "bystander")
+
+	oper.cmdWallops(message{params: []string{"server on fire"}})
+
+	if !containsLine(listenerTH.drain(), "WALLOPS :server on fire") {
+		t.Error("expected the +w listener to receive the WALLOPS")
+	}
+	if lines := bystanderTH.drain(); len(lines) != 0 {
+		t.Errorf("expected a non +w client to receive nothing, got %v", lines)
 	}
 }
 

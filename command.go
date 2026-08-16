@@ -142,6 +142,18 @@ func (cmd kickCommand) command() string {
 	)
 }
 
+type wallopsCommand struct {
+	prefix string
+	text   string
+}
+
+func (cmd wallopsCommand) command() string {
+	return fmt.Sprintf(
+		":%s WALLOPS :%s",
+		cmd.prefix, cmd.text,
+	)
+}
+
 type inviteCommand struct {
 	prefix  string
 	target  string

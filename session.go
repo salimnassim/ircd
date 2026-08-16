@@ -76,10 +76,11 @@ type sessionDeps struct {
 	rateGrace  time.Duration
 	outboxSize int
 
-	clients   *clientDirectory
-	channels  *channelDirectory
-	operators *OperatorStore
-	limiter   *connLimiter
+	clients      *clientDirectory
+	channels     *channelDirectory
+	operators    *OperatorStore
+	limiter      *connLimiter
+	channelLimit int
 
 	nickRegex    *regexp.Regexp
 	channelRegex *regexp.Regexp
@@ -392,6 +393,21 @@ func (s *session) dispatch(ctx context.Context, m message) {
 			return
 		}
 		s.cmdPrivmsg(ctx, m)
+	case "NOTICE":
+		if !s.requireHandshake() || !s.requireParams(m, 1) {
+			return
+		}
+		s.cmdNotice(ctx, m)
+	case "NAMES":
+		if !s.requireHandshake() {
+			return
+		}
+		s.cmdNames(ctx, m)
+	case "MOTD":
+		if !s.requireHandshake() {
+			return
+		}
+		s.sendMotd()
 	case "WHOIS":
 		if !s.requireHandshake() || !s.requireParams(m, 1) {
 			return
@@ -439,6 +455,13 @@ func (s *session) dispatch(ctx context.Context, m message) {
 			return
 		}
 		s.cmdKill(m)
+	case "WALLOPS":
+		if !s.requireHandshake() || !s.requireParams(m, 1) {
+			return
+		}
+		s.cmdWallops(m)
+	default:
+		s.handle.deliver(s.formatRPL(errUnknownCommand{client: s.nick, command: m.command}))
 	}
 }
 

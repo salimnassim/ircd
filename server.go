@@ -42,6 +42,9 @@ type ServerConfig struct {
 	MaxConnectRatePerIP  int // new connections allowed per IP per minute, 0 = unlimited
 	MaxConnectBurstPerIP int
 
+	MaxChannelsGlobal    int
+	MaxChannelsPerClient int
+
 	Parameters ServerConfigParameters
 }
 
@@ -125,11 +128,14 @@ func NewServer(config ServerConfig) *Server {
 		connRate = rate.Limit(float64(config.MaxConnectRatePerIP) / 60.0)
 	}
 
+	channels := newChannelDirectory()
+	channels.maxChannels = config.MaxChannelsGlobal
+
 	return &Server{
 		config:    config,
 		isupport:  config.Parameters.build(),
 		clients:   newClientDirectory(),
-		channels:  newChannelDirectory(),
+		channels:  channels,
 		operators: NewOperatorStore(),
 		limiter: newConnLimiter(
 			config.MaxConnectionsGlobal,
@@ -182,10 +188,11 @@ func (srv *Server) sessionDeps() sessionDeps {
 		rateBurst:  srv.config.RateBurst,
 		outboxSize: srv.config.OutboxSize,
 
-		clients:   srv.clients,
-		channels:  srv.channels,
-		operators: srv.operators,
-		limiter:   srv.limiter,
+		clients:      srv.clients,
+		channels:     srv.channels,
+		operators:    srv.operators,
+		limiter:      srv.limiter,
+		channelLimit: srv.config.MaxChannelsPerClient,
 
 		nickRegex:    nickRegex,
 		channelRegex: channelRegex,

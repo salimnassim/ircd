@@ -39,6 +39,29 @@ func TestChannelDirectoryDispatchNoCreateReturnsNotFound(t *testing.T) {
 	}
 }
 
+func TestChannelDirectoryDispatchEnforcesMaxChannels(t *testing.T) {
+	cd := newClientDirectory()
+	chd := newChannelDirectory()
+	chd.maxChannels = 1
+	th := newTestHandle("a", "nick", "user", "host", false)
+	cd.register(th.sessionHandle)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := chd.dispatch(ctx, testChannelActorDeps(cd), "#a", evJoin{who: th.sessionHandle}, true, th.id); err != nil {
+		t.Fatalf("dispatch #a: %v", err)
+	}
+
+	err := chd.dispatch(ctx, testChannelActorDeps(cd), "#b", evJoin{who: th.sessionHandle}, true, th.id)
+	if err != errChannelLimitReached {
+		t.Fatalf("expected errChannelLimitReached, got %v", err)
+	}
+	if chd.count() != 1 {
+		t.Fatalf("expected channel count to stay at 1, got %d", chd.count())
+	}
+}
+
 func TestChannelDirectoryConcurrentFirstJoinCreatesExactlyOneChannel(t *testing.T) {
 	cd := newClientDirectory()
 	chd := newChannelDirectory()

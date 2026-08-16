@@ -121,6 +121,8 @@ func main() {
 
 	_, tlsEnabled := os.LookupEnv("TLS")
 
+	maxChannelsPerClient := envIntDefault("MAX_CHANNELS_PER_CLIENT", 64)
+
 	config := ircd.ServerConfig{
 		Name:        os.Getenv("SERVER_NAME"),
 		Password:    os.Getenv("SERVER_PASSWORD"),
@@ -142,10 +144,13 @@ func main() {
 		MaxConnectionsPerIP:  envIntDefault("MAX_CONNECTIONS_PER_IP", 10),
 		MaxConnectRatePerIP:  envIntDefault("MAX_CONNECT_RATE_PER_IP", 6),
 		MaxConnectBurstPerIP: envIntDefault("MAX_CONNECT_BURST_PER_IP", 3),
+
+		MaxChannelsGlobal:    envIntDefault("MAX_CHANNELS_GLOBAL", 5000),
+		MaxChannelsPerClient: maxChannelsPerClient,
 		Parameters: ircd.ServerConfigParameters{
 			MaxAwayLength:     128,
 			CaseMapping:       "ascii",
-			ChannelLimit:      "#&:64",
+			ChannelLimit:      fmt.Sprintf("#&:%d", maxChannelsPerClient),
 			ChannelModes:      "b,f,lk,ztSsrOmMiCc",
 			MaxChannelLength:  50,
 			ChannelTypes:      "&#",
