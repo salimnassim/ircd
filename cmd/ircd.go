@@ -85,6 +85,8 @@ func envIntDefault(key string, def int) int {
 		return def
 	}
 	return n
+}
+
 // loadCloakSecret returns the HMAC key used to derive cloaked hostnames from
 // CLOAK_SECRET, generating an ephemeral one when unset. An ephemeral secret
 // means cloaks (and any bans matched against them) won't survive a restart.
