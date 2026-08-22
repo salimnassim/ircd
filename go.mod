@@ -3,7 +3,6 @@ module github.com/salimnassim/ircd
 go 1.27.0
 
 require (
-	github.com/google/uuid v1.6.0
 	github.com/prometheus/client_golang v1.24.1
 	golang.org/x/time v0.15.0
 )
