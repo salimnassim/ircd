@@ -1,5 +1,7 @@
 package ircd
 
+import "slices"
+
 type clientMode uint16
 
 var clientModeMap = map[rune]clientMode{
@@ -140,7 +142,14 @@ func parseModestring[T ~uint16](modestring string, m map[rune]T) (add []T, del [
 func diffModes[T ~uint16](old T, new T, m map[rune]T) (add []T, del []T) {
 	d := old ^ new
 
-	for _, b := range m {
+	keys := make([]rune, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+
+	for _, k := range keys {
+		b := m[k]
 		if d&b != 0 {
 			if new&b != 0 {
 				add = append(add, b)
