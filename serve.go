@@ -6,8 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"time"
-
-	"github.com/google/uuid"
+	"uuid"
 )
 
 func acceptLoop(ctx context.Context, listener net.Listener, isTLS bool, deps sessionDeps) {
@@ -38,7 +37,7 @@ func acceptLoop(ctx context.Context, listener net.Listener, isTLS bool, deps ses
 			continue
 		}
 
-		id := clientID(uuid.Must(uuid.NewRandom()).String())
+		id := clientID(uuid.New().String())
 		go runSession(ctx, conn, id, isTLS, deps)
 	}
 }
